@@ -29,19 +29,19 @@ def create_app(config_class=Config):
     apifairy.init_app(app)
 
     # Error handlers for both Flask and apifairy (ADD: SQLAlchemy integrity errors)
-    # from api.errors import errors
-    # app.register_blueprint(errors)
+    from api.errors import errors
+    app.register_blueprint(errors)
 
     # Auth token creation, verification, and revocation
-    # from api.tokens import tokens
-    # app.register_blueprint(tokens, url_prefix="/api")
+    from api.tokens import tokens
+    app.register_blueprint(tokens, url_prefix="/api")
 
     # Core functionality
     from api.main import main
     app.register_blueprint(main, url_prefix="/api")
 
-    # CLI functions (for inital DB setup and seeding tables with Faker)
-    # from api.cli import bp as cli_bp
-    # app.register_blueprint(cli_bp)
+    # CLI functions (for inital DB setup)
+    from api.cli import bp as cli_bp
+    app.register_blueprint(cli_bp)
 
     return app

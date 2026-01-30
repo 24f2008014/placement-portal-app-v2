@@ -47,6 +47,9 @@ class User(TimeConversionMixin, db.Model):
     roles: Mapped[List["Role"]] = relationship(secondary="user_roles", back_populates="users")
     refresh_tokens: Mapped[List["RefreshToken"]] = relationship(back_populates="user")
 
+    def get_roles(self):
+        return [role.name for role in self.roles]
+    
     # `password` and its setter are for allowing marshmallow to set the password hash directly
     @property
     def password(self):
@@ -61,7 +64,7 @@ class User(TimeConversionMixin, db.Model):
     
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
-
+    
     def __repr__(self):
         return f"User(id={self.id}, email={self.email})"
 
@@ -113,7 +116,6 @@ class Student(db.Model):
     resume_url: Mapped[str] = mapped_column(String(512))
     approval_status: Mapped[bool] = mapped_column(Boolean, default=True)
     applications: Mapped[List["Application"]] = relationship(back_populates="student")
-    placements: Mapped[List["Placement"]] = relationship(back_populates="student")
 
 class Position(TimeConversionMixin, db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -148,11 +150,10 @@ class Application(TimeConversionMixin, db.Model):
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc))
     deleted_at: Mapped[Optional[datetime]] = mapped_column()
     student: Mapped["Student"] = relationship(back_populates="applications")
-    position: Mapped["Student"] = relationship(back_populates="applications")
+    position: Mapped["Position"] = relationship(back_populates="applications")
 
 class Placement(TimeConversionMixin, db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     application_id: Mapped[int] = mapped_column(ForeignKey(Application.id))
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc))
     deleted_at: Mapped[Optional[datetime]] = mapped_column()
-    student: Mapped["Student"] = relationship(back_populates="placements")
