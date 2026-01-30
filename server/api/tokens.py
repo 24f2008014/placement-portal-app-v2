@@ -52,7 +52,7 @@ def token_response(access_token, refresh_token):
             value=refresh_token,
             httponly=True,
             samesite="lax", # "strict" for prod. also add `secure=True`.
-            path=url_for("tokens.refresh"),
+            path="/api/tokens/",
             max_age=int(current_app.config["REFRESH_TOKEN_DAYS"])*24*60*60,
         )
     }
@@ -70,7 +70,7 @@ def get_token():
     user = basic_auth.current_user()
     access_token = generate_access_token(user.id, user.get_roles())
     refresh_token = generate_refresh_token(user.id)
-
+    print("Sending new access and refresh tokens.")
     return token_response(access_token, refresh_token)
 
 @tokens.route("/tokens/refresh", methods=["POST"])

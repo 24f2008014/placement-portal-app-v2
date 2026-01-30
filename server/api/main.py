@@ -13,7 +13,7 @@ empty_schema = EmptySchema()
 def index():
     return "Hello!"
 
-@main.route("/profile", methods=["GET"])
+@main.route("/user", methods=["GET"])
 @authenticate(token_auth, role=["admin"])
 @response(user_schema)
 def profile():
