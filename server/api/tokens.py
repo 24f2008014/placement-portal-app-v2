@@ -81,28 +81,30 @@ def refresh():
     raw = request.cookies.get("refresh_token")
     if not raw:
         abort(401)
+    print("[Refresh]: Cookie received.")
     # old_token = db.session.execute(db.select(RefreshToken).where(RefreshToken.token_hash == hash)).scalar()
     old_token = db.session.scalar(db.select(RefreshToken).where(RefreshToken.token_hash == hash_token(raw)))
     if not old_token.is_valid:
         abort(401)
+    print("[Refresh]: Received valid refresh token.")
     user = db.session.get(User, int(old_token.user_id))
     access_token = generate_access_token(user.id, user.get_roles())
     refresh_token = generate_refresh_token(user.id)
     old_token.is_revoked = True
     db.session.commit()
-
+    print("[Refresh]: Sending new tokens.")
     return token_response(access_token, refresh_token)
 
-# @tokens.route("/tokens/revoke", methods=["POST"])
-# @response(EmptySchema, status_code=204, description="Refresh token revoked.")
-# @other_responses({401: "Invalid refresh token."})
-# def revoke(args):
-#     """Revokes an existing refresh token."""
-#     raw = request.cookies.get("refresh_token")
-#     if not raw:
-#         abort(401)
-#     # old_token = db.session.execute(db.select(RefreshToken).where(RefreshToken.token_hash == hash)).scalar()
-#     old_token = db.session.scalar(db.select(RefreshToken).where(RefreshToken.token_hash == hash_token(raw)))
-#     old_token.is_revoked = True
-#     db.session.commit()
-#     return {}
+@tokens.route("/tokens/revoke", methods=["POST"])
+@response(EmptySchema, status_code=204, description="Refresh token revoked.")
+@other_responses({401: "Invalid refresh token."})
+def revoke():
+    """Revokes an existing refresh token."""
+    raw = request.cookies.get("refresh_token")
+    if not raw:
+        abort(401)
+    # old_token = db.session.execute(db.select(RefreshToken).where(RefreshToken.token_hash == hash)).scalar()
+    old_token = db.session.scalar(db.select(RefreshToken).where(RefreshToken.token_hash == hash_token(raw)))
+    old_token.is_revoked = True
+    db.session.commit()
+    return {}

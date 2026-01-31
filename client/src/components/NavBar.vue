@@ -10,6 +10,7 @@ const auth = useAuthStore();
     <li><RouterLink :to="{ name: 'unprotected' }">Unprotected</RouterLink></li>
     <template v-if="auth.isAuthenticated">
         <li><RouterLink :to="{ name: 'profile' }">Profile</RouterLink></li>
+        <li><a href="#" @click.prevent="auth.logout">Log out</a></li>
     </template>
     <template v-else>
         <li><RouterLink :to="{ name: 'login' }">Login</RouterLink></li>

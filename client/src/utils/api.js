@@ -14,11 +14,12 @@ const refreshApi = axios.create({
 
 api.interceptors.request.use(
     (config) => { // If access token is present, attach it to header before sending request.
-        console.log("Request interceptor start");
+        // console.log("[Request Interceptor]: Start");
         const auth = useAuthStore();
-        const accessToken = auth.accessToken;
-        if (accessToken) { config.headers.Authorization = `Bearer ${accessToken}`; }
-        console.log(`${accessToken}`);
+        if (auth.accessToken) { 
+            config.headers.Authorization = `Bearer ${auth.accessToken}`; 
+        }
+        console.log("[Request Interceptor]: Attached bearer token to header");
         return config;
     }, 
     (error) => { return Promise.reject(error); }
@@ -27,12 +28,21 @@ api.interceptors.request.use(
 api.interceptors.response.use(
     (response) => response,
     (error) => {
+        console.log("[Response Interceptor]: Error");
         const firstRequest = error.config;
         const auth = useAuthStore();
         if (error.response && error.response.status == 401 && !firstRequest._retry) {
+            console.log("[Response Interceptor]: 401, first");
             firstRequest._retry = true;
-            auth.refresh();
-            return api(firstRequest);
+            try {
+                const newAccessToken = auth.refresh();
+                firstRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+                console.log("[Response Interceptor]: Retrying original request with new bearer header");
+                return api(firstRequest);
+            }
+            catch (error) {
+                return Promise.reject(error);
+            }
         }
         return Promise.reject(error);
     }

@@ -29,7 +29,12 @@ const router = createRouter({
 // Navigation guards
 router.beforeEach(async (to, from) => {
   const auth = useAuthStore();
-  console.log(auth.isAuthenticated);
+  // console.log(auth.isAuthenticated);
+
+  // Initialize Pinia auth store on startup
+  if (!auth.isInitialized) {
+    await auth.refresh();
+  }
 
   // Redirect non-logged-in users away from protected pages to login page
   if (!auth.isAuthenticated && to.meta.requiresAuth) {

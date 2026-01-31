@@ -18,7 +18,7 @@ async function getProfile() {
         profile.value = response.data;
     }
     catch (error) {
-        alert("oops.");
+        console.log(error);
     }
     finally {
         loading.value = false;
