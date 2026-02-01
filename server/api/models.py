@@ -46,6 +46,7 @@ class User(TimeConversionMixin, db.Model):
     deleted_at: Mapped[Optional[datetime]] = mapped_column()
     roles: Mapped[List["Role"]] = relationship(secondary="user_roles", back_populates="users")
     refresh_tokens: Mapped[List["RefreshToken"]] = relationship(back_populates="user")
+    student: Mapped["Student"] = relationship(back_populates="user")
 
     def get_roles(self):
         return [role.name for role in self.roles]
@@ -85,7 +86,9 @@ class RefreshToken(db.Model):
     user: Mapped["User"] = relationship(back_populates="refresh_tokens")
 
     def is_valid(self):
-        return datetime.now(timezone.utc) < self.expires_at and not self.is_revoked
+        if self.is_revoked:
+            return False
+        return datetime.now(timezone.utc) < self.expires_at
 
 class Company(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -106,16 +109,17 @@ class Student(db.Model):
     roll_number: Mapped[str] = mapped_column(String(128), unique=True)
     first_name: Mapped[str] = mapped_column(String(128))
     last_name: Mapped[str] = mapped_column(String(128))
-    bio: Mapped[str] = mapped_column(String(1024))
+    bio: Mapped[Optional[str]] = mapped_column(String(1024))
     department_id: Mapped[int] = mapped_column(ForeignKey(Department.id))
     branch_id: Mapped[int] = mapped_column(ForeignKey(Branch.id))
     graduation_year: Mapped[int] = mapped_column()
     cgpa: Mapped[int] = mapped_column(CheckConstraint("cgpa >= 0 AND cgpa <= 10", name="cgpa_check"))
-    date_of_birth: Mapped[datetime] = mapped_column()
+    date_of_birth: Mapped[Optional[datetime]] = mapped_column()
     gender: Mapped[str] = mapped_column(String(128), CheckConstraint("gender IN ('male', 'female', 'other')"))
-    resume_url: Mapped[str] = mapped_column(String(512))
+    resume_url: Mapped[Optional[str]] = mapped_column(String(512))
     approval_status: Mapped[bool] = mapped_column(Boolean, default=True)
     applications: Mapped[List["Application"]] = relationship(back_populates="student")
+    user: Mapped["User"] = relationship(back_populates="student")
 
 class Position(TimeConversionMixin, db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)

@@ -6,6 +6,7 @@ import LoginView from "@/views/LoginView.vue";
 import ProfileView from "@/views/ProfileView.vue";
 import ProtectedView from "@/views/ProtectedView.vue";
 import UnprotectedView from "@/views/UnprotectedView.vue";
+import RegisterView from "@/views/RegisterView.vue";
 
 const routes = [
   {
@@ -14,6 +15,7 @@ const routes = [
     children: [
       { path: "", name: "home", component: HomeView },
       { path: "/login", name: "login", component: LoginView },
+      { path: "/register", name: "register", component: RegisterView },
       { path: "/profile", name: "profile", component: ProfileView, meta: { requiresAuth: true } },
       { path: "/protected", name: "protected", component: ProtectedView, meta: { requiresAuth: true } },
       { path: "/unprotected", name: "unprotected", component: UnprotectedView, },

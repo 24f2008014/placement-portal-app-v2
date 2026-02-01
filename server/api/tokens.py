@@ -44,7 +44,7 @@ def generate_refresh_token(user_id):
     db.session.commit()
     return raw
 
-def token_response(access_token, refresh_token):
+def token_response(access_token, refresh_token, username):
     """Formats the access token + refresh token response."""
     headers = {
         "Set-Cookie": dump_cookie(
@@ -59,6 +59,7 @@ def token_response(access_token, refresh_token):
     return {
         "access_token": access_token,
         "expires_in_seconds": int(current_app.config["ACCESS_TOKEN_MINUTES"]) * 60,
+        "username": username
     }, 200, headers
 
 @tokens.route("/tokens/new", methods=["POST"])
@@ -68,10 +69,11 @@ def token_response(access_token, refresh_token):
 def get_token():
     """Returns an access token (in the response body) and a refresh token (in an HttpOnly cookie)."""
     user = basic_auth.current_user()
+    name = user.student.first_name if "student" in user.get_roles() else ""
     access_token = generate_access_token(user.id, user.get_roles())
     refresh_token = generate_refresh_token(user.id)
     print("Sending new access and refresh tokens.")
-    return token_response(access_token, refresh_token)
+    return token_response(access_token, refresh_token, name)
 
 @tokens.route("/tokens/refresh", methods=["POST"])
 @response(token_schema)
@@ -86,14 +88,17 @@ def refresh():
     old_token = db.session.scalar(db.select(RefreshToken).where(RefreshToken.token_hash == hash_token(raw)))
     if not old_token.is_valid:
         abort(401)
+    if old_token.is_revoked:
+        abort(401)
     print("[Refresh]: Received valid refresh token.")
     user = db.session.get(User, int(old_token.user_id))
     access_token = generate_access_token(user.id, user.get_roles())
     refresh_token = generate_refresh_token(user.id)
     old_token.is_revoked = True
     db.session.commit()
+    name = user.student.first_name if "student" in user.get_roles() else ""
     print("[Refresh]: Sending new tokens.")
-    return token_response(access_token, refresh_token)
+    return token_response(access_token, refresh_token, name)
 
 @tokens.route("/tokens/revoke", methods=["POST"])
 @response(EmptySchema, status_code=204, description="Refresh token revoked.")

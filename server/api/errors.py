@@ -1,6 +1,7 @@
 from flask import Blueprint
 from werkzeug.exceptions import HTTPException
 from api.app import apifairy
+from sqlalchemy.exc import IntegrityError
 
 errors = Blueprint('errors', __name__)
 
@@ -21,5 +22,13 @@ def validation_error(code, messages):
         "code": code,
         "message": "Validation error",
         "description": "One or more errors were found in the data you sent.",
-        "messages": messages
+        "errors": messages
     }, code
+
+@errors.app_errorhandler(IntegrityError)
+def sqlalchemy_integrity_error(error):
+    return {
+        "code": 400,
+        "message": "SQLAlchemy integrity error",
+        "description": str(error.orig)
+    }, 400

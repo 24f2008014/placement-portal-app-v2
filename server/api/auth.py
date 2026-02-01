@@ -3,9 +3,9 @@ from flask_httpauth import HTTPBasicAuth, HTTPTokenAuth
 from api import db
 from api.models import User
 from werkzeug.exceptions import Unauthorized, Forbidden
-import jwt
+import jwt, time
 
-basic_auth = HTTPBasicAuth()
+basic_auth = HTTPBasicAuth(scheme="custom")
 token_auth = HTTPTokenAuth()
 
 @basic_auth.verify_password

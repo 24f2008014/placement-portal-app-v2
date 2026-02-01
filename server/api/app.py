@@ -44,4 +44,9 @@ def create_app(config_class=Config):
     from api.cli import bp as cli_bp
     app.register_blueprint(cli_bp)
 
+    # Shell context for easier DB manipulation via the CLI
+    @app.shell_context_processor
+    def make_shell_context():
+        return {"db": db}
+
     return app

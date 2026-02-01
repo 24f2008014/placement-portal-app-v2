@@ -6,6 +6,7 @@ import router from "@/router";
 export const useAuthStore = defineStore("auth", () => {
   const accessToken = ref(null);
   const accessExpiresAt = ref(null);
+  const currentUser = ref(null);
   const isInitialized = ref(false);
 
   const isAuthenticated = computed(() => {
@@ -24,16 +25,25 @@ export const useAuthStore = defineStore("auth", () => {
   function deleteAccessToken() {
     accessToken.value = null;
     accessExpiresAt.value = null;
+    currentUser.value = null;
     delete api.defaults.headers.common["Authorization"];
     console.log("[deleteAccessToken]: Deleted");
   };
 
   async function login(email, password) {
-    const response = await api.post("/tokens/new", null,
-      { auth: { username: email, password: password } }
-    );
-    console.log(`Login successful: ${response.data}`)
-    setAccessToken(response.data.access_token, response.data.expires_in_seconds);
+    try {
+      const response = await refreshApi.post("/tokens/new", null,
+        { auth: { username: email, password: password } }
+      );
+      console.log(`Login successful: ${response.data}`);
+      setAccessToken(response.data.access_token, response.data.expires_in_seconds);
+      currentUser.value = response.data.username;
+      console.log(response.data);
+    }
+    catch (error) {
+      console.log("login caught");
+      return Promise.reject(error);
+    }
   };
 
   async function refresh() {
@@ -63,5 +73,5 @@ export const useAuthStore = defineStore("auth", () => {
     }
   };
 
-  return { accessToken, accessExpiresAt, isInitialized, isAuthenticated, setAccessToken, deleteAccessToken, login, refresh, logout };
+  return { accessToken, accessExpiresAt, currentUser, isInitialized, isAuthenticated, setAccessToken, deleteAccessToken, login, refresh, logout };
 });
