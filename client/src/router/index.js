@@ -5,9 +5,10 @@ import HomeView from "@/views/HomeView.vue";
 import LoginView from "@/views/LoginView.vue";
 import ProfileView from "@/views/ProfileView.vue";
 import ProtectedView from "@/views/ProtectedView.vue";
-import UnprotectedView from "@/views/UnprotectedView.vue";
 import RegisterView from "@/views/RegisterView.vue";
 import AccountView from "@/views/AccountView.vue";
+import CompanyDashboardView from "@/views/CompanyDashboardView.vue";
+import AdminDashboardView from "@/views/AdminDashboardView.vue";
 
 const routes = [
   {
@@ -20,7 +21,8 @@ const routes = [
       { path: "/profile", name: "profile", component: ProfileView, meta: { requiresAuth: true } },
       { path: "/account", name: "account", component: AccountView, meta: { requiresAuth: true } },
       { path: "/protected", name: "protected", component: ProtectedView, meta: { requiresAuth: true } },
-      { path: "/unprotected", name: "unprotected", component: UnprotectedView, },
+      { path: "/company/dashboard", name: "company_dashboard", component: CompanyDashboardView, meta: { requiresAuth: true, roleRequired: "company" } },
+      { path: "/admin/dashboard", name: "admin_dashboard", component: AdminDashboardView, meta: { requiresAuth: true, roleRequired: "admin" } },
     ]
   }
 ];
@@ -45,6 +47,11 @@ router.beforeEach(async (to, from) => {
       name: "login",
       query: { redirect: to.fullPath }
     };
+  }
+
+  // Role-based guard
+  if (to.meta.roleRequired && to.meta.roleRequired != auth.currentUser.role) {
+    return { name: "home" };
   }
 
   // Redirect users away from login/register page if already logged in

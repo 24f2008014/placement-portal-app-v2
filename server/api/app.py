@@ -40,6 +40,10 @@ def create_app(config_class=Config):
     from api.main import main
     app.register_blueprint(main, url_prefix="/api")
 
+    # Company user functionality
+    from api.company import company
+    app.register_blueprint(company, url_prefix="/api")
+
     # CLI functions (for inital DB setup)
     from api.cli import bp as cli_bp
     app.register_blueprint(cli_bp)

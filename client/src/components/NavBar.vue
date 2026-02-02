@@ -13,8 +13,8 @@ const auth = useAuthStore();
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <ul class="navbar-nav">
                     <li class="nav-item"><RouterLink :to="{ name: 'home' }" class="nav-link">Home</RouterLink></li>
-                    <li class="nav-item"><RouterLink :to="{ name: 'protected' }" class="nav-link">Protected</RouterLink></li>
-                    <li class="nav-item"><RouterLink :to="{ name: 'unprotected' }" class="nav-link">Unprotected</RouterLink></li>
+                    <li class="nav-item" v-if="auth.currentUser.role=='company'"><RouterLink :to="{ name: 'company_dashboard' }" class="nav-link">Dashboard</RouterLink></li>
+                    <li class="nav-item" v-if="auth.currentUser.role=='admin'"><RouterLink :to="{ name: 'admin_dashboard' }" class="nav-link">Dashboard</RouterLink></li>
                 </ul>
                 <ul class="ms-auto navbar-nav">
                     <template v-if="auth.isAuthenticated">

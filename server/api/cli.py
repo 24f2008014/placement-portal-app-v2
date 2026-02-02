@@ -1,7 +1,7 @@
 import click
 from flask import Blueprint
 from api import db
-from api.models import User, Role, Department, Branch
+from api.models import User, Role, Department, Branch, Industry
 
 # Flask docs: "cli_group=None removes the nesting & merges the commands directly to the application's level". 
 # This allows commands to be run as `flask <command>` instead of `flask cli <command>`.
@@ -32,6 +32,19 @@ def create_department(name):
         db.session.commit()
     else:
         click.echo(f"'{name}' department already exists in 'Department' table.")
+
+@bp.cli.command('create-industry')
+@click.argument('name')
+def create_industry(name):
+    """Adds the specified industry to the `Industry` table."""
+    industry = db.session.execute(db.select(Industry).where(Industry.name == name)).scalar_one_or_none()
+    if industry is None:
+        industry = Industry(name=name)
+        db.session.add(industry)
+        click.echo(f"'{name}' industry added to 'Industry' table.")
+        db.session.commit()
+    else:
+        click.echo(f"'{name}' industry already exists in 'Industry' table.")
 
 @bp.cli.command('create-branch')
 @click.argument('branch_name')
@@ -77,7 +90,7 @@ def create_admin(ctx):
 @bp.cli.command('setup-db')
 @click.pass_context
 def setup_db(ctx):
-    """Sets up user roles and departments and adds an admin account."""
+    """Sets up all relevant tables and adds an admin account."""
     ctx.invoke(create_admin)
     for role in ["student", "company"]:
         ctx.invoke(create_role, name=role)
@@ -89,3 +102,5 @@ def setup_db(ctx):
         ctx.invoke(create_branch, branch_name=branch, department_name="Data Science and Artificial Intelligence")
     for branch in ["B.S. in Electrical Engineering"]:
         ctx.invoke(create_branch, branch_name=branch, department_name="Electrical Engineering")
+    for industry in ["Education", "Entertainment", "Finance", "Medical", "Software", "Technology"]:
+        ctx.invoke(create_industry, name=industry)

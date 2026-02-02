@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from "vue";
 import StudentRegisterForm from "@/components/StudentRegisterForm.vue";
+import CompanyRegisterForm from "@/components/CompanyRegisterForm.vue";
 
 const isStudent = ref(true);
 </script>
@@ -14,6 +15,7 @@ const isStudent = ref(true);
             </template>
             <template v-else>
                 <a href="#" @click="isStudent = !isStudent">Are you a student? Click here.</a>
+                <CompanyRegisterForm />
             </template>
         </div>
     </div>

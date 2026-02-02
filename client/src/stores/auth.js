@@ -1,12 +1,17 @@
 import { ref, computed } from "vue";
 import { defineStore } from "pinia";
 import { api, refreshApi } from "@/utils/api";
+import { jwtDecode } from "jwt-decode";
 import router from "@/router";
 
 export const useAuthStore = defineStore("auth", () => {
   const accessToken = ref(null);
   const accessExpiresAt = ref(null);
-  const currentUser = ref(null);
+  const currentUser = ref({
+    id: "",
+    role: "",
+    name: ""
+  });
   const isInitialized = ref(false);
 
   const isAuthenticated = computed(() => {
@@ -20,6 +25,9 @@ export const useAuthStore = defineStore("auth", () => {
     accessExpiresAt.value = Date.now() + exp * 1000;
     api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
     console.log(`[setAccessToken]: Header set, isAuthenticated: ${isAuthenticated.value}`);
+    const decoded = jwtDecode(token);
+    currentUser.value.id = decoded.sub;
+    currentUser.value.role = decoded.roles[0];
   };
 
   function deleteAccessToken() {
@@ -37,7 +45,7 @@ export const useAuthStore = defineStore("auth", () => {
       );
       console.log(`Login successful: ${response.data}`);
       setAccessToken(response.data.access_token, response.data.expires_in_seconds);
-      currentUser.value = response.data.username;
+      currentUser.value.name = response.data.username;
       console.log(response.data);
     }
     catch (error) {
@@ -51,7 +59,7 @@ export const useAuthStore = defineStore("auth", () => {
       console.log("[Refresh]: Fetching new tokens");
       const response = await refreshApi.post("/tokens/refresh", null);
       setAccessToken(response.data.access_token, response.data.expires_in_seconds);
-      currentUser.value = response.data.username;
+      currentUser.value.name = response.data.username;
       isInitialized.value = true;
       console.log("[Refresh]: Set new tokens");
       return response.data.access_token;

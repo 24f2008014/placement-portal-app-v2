@@ -52,6 +52,7 @@ class User(Updateable, TimeConversionMixin, db.Model):
     roles: Mapped[List["Role"]] = relationship(secondary="user_roles", back_populates="users")
     refresh_tokens: Mapped[List["RefreshToken"]] = relationship(back_populates="user")
     student: Mapped["Student"] = relationship(back_populates="user")
+    company: Mapped["Company"] = relationship(back_populates="user")
 
     def get_roles(self):
         return [role.name for role in self.roles]
@@ -95,7 +96,7 @@ class RefreshToken(db.Model):
             return False
         return datetime.now(timezone.utc) < self.expires_at
 
-class Company(db.Model):
+class Company(Updateable, db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey(User.id))
     name: Mapped[str] = mapped_column(String(128))
@@ -107,6 +108,7 @@ class Company(db.Model):
     location: Mapped[str] = mapped_column(String(128))
     approval_status: Mapped[bool] = mapped_column(Boolean, default=False)
     positions: Mapped[List["Position"]] = relationship(back_populates="company")
+    user: Mapped["User"] = relationship(back_populates="company")
 
 class Student(Updateable, db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)

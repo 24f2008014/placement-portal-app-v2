@@ -1,9 +1,9 @@
 from flask import Blueprint, abort
 from api.app import db
-from apifairy import authenticate, body, response, other_responses
+from apifairy import authenticate, body, response, other_responses, arguments
 from api.auth import token_auth
-from api.schemas import UserSchema, EmptySchema, RegisterSchema, StudentSchema, DepartmentSchema, BranchSchema, UpdateUserSchema
-from api.models import User, Role, Department, Branch, Student
+from api.schemas import UserSchema, EmptySchema, RegisterSchema, StudentSchema, DepartmentSchema, BranchSchema, UpdateUserSchema, IndustrySchema, CompanySchema, PositionSchema, paginate_query, ListQueryArgsSchema, PaginatedCollection
+from api.models import User, Role, Department, Branch, Student, Industry, Position, Application, Placement
 
 main = Blueprint("main", __name__)
 user_schema = UserSchema()
@@ -11,8 +11,11 @@ update_user_schema = UpdateUserSchema()
 empty_schema = EmptySchema()
 register_schema = RegisterSchema()
 student_schema = StudentSchema()
+company_schema = CompanySchema()
 departments_schema = DepartmentSchema(many=True)
 branches_schema = BranchSchema(many=True)
+industries_schema = IndustrySchema(many=True)
+position_schema = PositionSchema()
 
 @main.route("/")
 def index():
@@ -60,6 +63,24 @@ def update_student(data):
     db.session.commit()
     return student
 
+@main.route("/companies/me", methods=["GET"])
+@authenticate(token_auth)
+@response(company_schema)
+def get_company_self():
+    """Returns your company's details."""
+    return token_auth.current_user().company
+
+@main.route("/companies/me", methods=["PUT"])
+@authenticate(token_auth)
+@body(CompanySchema(load_instance=False))
+@response(company_schema)
+def update_company_self(data):
+    """Update your company's details."""
+    company = token_auth.current_user().company
+    company.update(data)
+    db.session.commit()
+    return company
+
 @main.route("/register", methods=["POST"])
 @body(register_schema)
 @response(user_schema, 201)
@@ -69,7 +90,6 @@ def new(data):
     password = data["password"]
     profile_obj = data["profile"]
     role = "student" if isinstance(profile_obj, Student) else "company"
-
     user = User(email=email)
     user.set_password(password)
     user.roles = [db.session.scalar(db.select(Role).where(Role.name == role))]
@@ -77,26 +97,31 @@ def new(data):
     profile_obj.user = user
     db.session.add(profile_obj)
     db.session.commit()
-
-    # if role == "student":
-    #     user.roles = [db.session.scalar(db.select(Role).where(Role.name == "student"))]
-    #     try:
-    #         student_obj = student_schema.load(profile, session=db.session)
-    #         student_obj.user_id = user.id
-    #         db.session.add(student_obj)
-    #         db.session.commit()
-    #     except ValidationError as e:
-    #         messages = {"json": e.messages}
-    #         abort(400, messages)
-    
     return user
 
 @main.route("/departments", methods=["GET"])
 @response(departments_schema)
 def get_departments():
+    """Return all departments."""
     return db.session.scalars(db.select(Department))
 
 @main.route("/branches", methods=["GET"])
 @response(branches_schema)
 def get_branches():
+    """Return all branches."""
     return db.session.scalars(db.select(Branch))
+
+@main.route("/industries", methods=["GET"])
+@response(industries_schema)
+def get_industries():
+    """Return all industries."""
+    return db.session.scalars(db.select(Industry))
+
+@main.route("/students", methods=["GET"])
+@authenticate(token_auth, role=["admin"])
+@arguments(ListQueryArgsSchema())
+@response(PaginatedCollection(StudentSchema()))
+def get_all_students(args):
+    query = db.session.query(Student)
+    items, pagination = paginate_query(query, Student, args, {"first_name", "last_name"}, {"id", "user_id"}, "main.get_all_students")
+    return { "pagination": pagination, "data": items }, 200

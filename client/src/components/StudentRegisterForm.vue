@@ -13,9 +13,9 @@ const inputRollNumber = ref();
 const inputFirstName = ref();
 const inputLastName = ref();
 const inputDateOfBirth = ref();
-const inputGender = ref();
-const inputDepartment = ref();
-const inputBranch = ref();
+const inputGender = ref("");
+const inputDepartment = ref("");
+const inputBranch = ref("");
 const inputGraduationYear = ref();
 const inputCgpa = ref();
 const departments = ref("");
@@ -152,7 +152,7 @@ onMounted(() => {
                         <option :value="d.id">{{ d.name }}</option>
                     </template>
                 </select>
-                <div v-if="errors.department_id" class="invalid-feedback" id="inputCgpaValidation">{{ errors.department_id[0] }}</div>
+                <div v-if="errors.department_id" class="invalid-feedback" id="inputDepartmentValidation">{{ errors.department_id[0] }}</div>
             </div>
             <div class="col">
                 <label for="inputBranch" class="form-label">Branch</label>
@@ -162,7 +162,7 @@ onMounted(() => {
                         <option :value="b.id">{{ b.name }}</option>
                     </template>
                 </select>
-                <div v-if="errors.branch_id" class="invalid-feedback" id="inputCgpaValidation">{{ errors.branch_id[0] }}</div>
+                <div v-if="errors.branch_id" class="invalid-feedback" id="inputBranchValidation">{{ errors.branch_id[0] }}</div>
             </div>
         </div>
 
