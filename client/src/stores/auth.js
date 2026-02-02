@@ -51,6 +51,7 @@ export const useAuthStore = defineStore("auth", () => {
       console.log("[Refresh]: Fetching new tokens");
       const response = await refreshApi.post("/tokens/refresh", null);
       setAccessToken(response.data.access_token, response.data.expires_in_seconds);
+      currentUser.value = response.data.username;
       isInitialized.value = true;
       console.log("[Refresh]: Set new tokens");
       return response.data.access_token;

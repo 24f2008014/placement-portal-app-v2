@@ -1,7 +1,7 @@
 from api import db, ma
 from marshmallow import validate, validates, validates_schema, ValidationError, fields
 from marshmallow_sqlalchemy import SQLAlchemySchema, auto_field
-from api.auth import token_auth
+from api.auth import token_auth, basic_auth
 from api.models import User, Student, Department, Branch
 from marshmallow_oneofschema import OneOfSchema
 
@@ -26,6 +26,14 @@ class UserSchema(ma.SQLAlchemySchema):
     created_at = ma.auto_field(dump_only=True)
     deleted_at = ma.auto_field()
 
+class UpdateUserSchema(UserSchema):
+    old_password = fields.String(load_only=True, validate=validate.Length(min=6))
+
+    @validates("old_password")
+    def validate_old_password(self, value, **kwargs):
+        if not token_auth.current_user().check_password(value):
+            raise ValidationError("Old password is incorrect.")
+
 class StudentSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Student
@@ -40,10 +48,9 @@ class StudentSchema(ma.SQLAlchemyAutoSchema):
 
     @validates("roll_number")
     def validate_roll_number(self, value, **kwargs):
-        if db.session.scalar(db.select(Student).where(Student.roll_number == value)):
+        student = token_auth.current_user().student
+        if (student.roll_number != value) and db.session.scalar(db.select(Student).where(Student.roll_number == value)):
             raise ValidationError("Roll number in use. Please provide a unique roll number.")
-    # department_id = auto_field(required=True)
-    # branch_id = auto_field(required=True)
 
 class ProfileOneOfSchema(OneOfSchema):
     type_field = "type"
@@ -65,9 +72,6 @@ class ProfileOneOfSchema(OneOfSchema):
 class RegisterSchema(ma.Schema):
     email = fields.Email(required=True)
     password = fields.String(required=True, validate=validate.Length(min=6))
-    # role = fields.String(required=True, validate=validate.OneOf(["student", "company"]))
-    # profile = fields.Dict(required=True)
-    # type = fields.String(required=False)
     profile = fields.Nested(ProfileOneOfSchema(), required=True)
 
     @validates("email")

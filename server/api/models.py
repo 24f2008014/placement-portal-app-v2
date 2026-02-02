@@ -7,6 +7,11 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from zoneinfo import ZoneInfo
 from datetime import datetime, timezone, timedelta
 
+class Updateable:
+    def update(self, data):
+        for attr, value in data.items():
+            setattr(self, attr, value)
+
 class TimeConversionMixin:
     """
     Mixin for converting naive/UTC datetimes to aware (IST) datetime strings.
@@ -38,7 +43,7 @@ class Role(db.Model):
     name: Mapped[str] = mapped_column(String(64))
     users: Mapped[List["User"]] = relationship(secondary="user_roles", back_populates="roles")
 
-class User(TimeConversionMixin, db.Model):
+class User(Updateable, TimeConversionMixin, db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(String(128), index=True, unique=True)
     password_hash: Mapped[str] = mapped_column(String(256))
@@ -103,7 +108,7 @@ class Company(db.Model):
     approval_status: Mapped[bool] = mapped_column(Boolean, default=False)
     positions: Mapped[List["Position"]] = relationship(back_populates="company")
 
-class Student(db.Model):
+class Student(Updateable, db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey(User.id))
     roll_number: Mapped[str] = mapped_column(String(128), unique=True)

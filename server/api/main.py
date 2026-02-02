@@ -2,11 +2,12 @@ from flask import Blueprint, abort
 from api.app import db
 from apifairy import authenticate, body, response, other_responses
 from api.auth import token_auth
-from api.schemas import UserSchema, EmptySchema, RegisterSchema, StudentSchema, DepartmentSchema, BranchSchema
+from api.schemas import UserSchema, EmptySchema, RegisterSchema, StudentSchema, DepartmentSchema, BranchSchema, UpdateUserSchema
 from api.models import User, Role, Department, Branch, Student
 
 main = Blueprint("main", __name__)
 user_schema = UserSchema()
+update_user_schema = UpdateUserSchema()
 empty_schema = EmptySchema()
 register_schema = RegisterSchema()
 student_schema = StudentSchema()
@@ -19,10 +20,45 @@ def index():
 
 @main.route("/user", methods=["GET"])
 @authenticate(token_auth)
-@response(user_schema)
+@response(register_schema)
 def profile():
     """Returns a user's details."""
     return token_auth.current_user()
+
+@main.route("/users/me", methods=["GET"])
+@authenticate(token_auth)
+@response(user_schema)
+def get_user():
+    """Returns a user's details."""
+    return token_auth.current_user()
+
+@main.route("/users/me", methods=["PUT"])
+@authenticate(token_auth)
+@body(update_user_schema)
+@response(user_schema)
+def update_user(data):
+    """Update a user's email address and password."""
+    user = token_auth.current_user()
+    user.update(data)
+    db.session.commit()
+    return user
+
+@main.route("/students/me", methods=["GET"])
+@authenticate(token_auth)
+@response(student_schema)
+def get_student():
+    """Returns a user's details."""
+    return token_auth.current_user().student
+
+@main.route("/students/me", methods=["PUT"])
+@authenticate(token_auth)
+@body(StudentSchema(load_instance=False))
+@response(student_schema)
+def update_student(data):
+    student = token_auth.current_user().student
+    student.update(data)
+    db.session.commit()
+    return student
 
 @main.route("/register", methods=["POST"])
 @body(register_schema)

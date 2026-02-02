@@ -2,6 +2,7 @@
 import { onMounted, ref, computed } from "vue";
 import { api } from "@/utils/api";
 import { useRouter } from "vue-router";
+import { markRequiredFields, flattenResponse } from "@/utils/helpers";
 
 const router = useRouter();
 const errors = ref({});
@@ -75,18 +76,6 @@ async function submitForm() {
     catch (error) {
         console.log(error.response.data)
         if ("errors" in error.response.data) {
-            const flattenResponse = (obj) => {
-                let result = {};
-                for (const key in obj) {
-                    if (typeof obj[key] === "object" && !Array.isArray(obj[key])) {
-                        Object.assign(result, flattenResponse(obj[key]))
-                    } 
-                    else { 
-                        result[key] = obj[key] 
-                    }
-                }
-                return result;
-            }
             errors.value = flattenResponse(error.response.data.errors.json)
         }
     }
@@ -95,9 +84,7 @@ async function submitForm() {
 onMounted(() => {
     getDepartments();
     getBranches();
-    document.querySelectorAll("input[required], select[required]").forEach((e) => {
-        document.querySelector(`label[for=${e.id}]`).classList.add("required");
-    });
+    markRequiredFields();
 });
 </script>
 

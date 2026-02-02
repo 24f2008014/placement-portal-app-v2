@@ -7,6 +7,7 @@ import ProfileView from "@/views/ProfileView.vue";
 import ProtectedView from "@/views/ProtectedView.vue";
 import UnprotectedView from "@/views/UnprotectedView.vue";
 import RegisterView from "@/views/RegisterView.vue";
+import AccountView from "@/views/AccountView.vue";
 
 const routes = [
   {
@@ -17,6 +18,7 @@ const routes = [
       { path: "/login", name: "login", component: LoginView },
       { path: "/register", name: "register", component: RegisterView },
       { path: "/profile", name: "profile", component: ProfileView, meta: { requiresAuth: true } },
+      { path: "/account", name: "account", component: AccountView, meta: { requiresAuth: true } },
       { path: "/protected", name: "protected", component: ProtectedView, meta: { requiresAuth: true } },
       { path: "/unprotected", name: "unprotected", component: UnprotectedView, },
     ]
@@ -31,7 +33,6 @@ const router = createRouter({
 // Navigation guards
 router.beforeEach(async (to, from) => {
   const auth = useAuthStore();
-  // console.log(auth.isAuthenticated);
 
   // Initialize Pinia auth store on startup
   if (!auth.isInitialized) {
@@ -46,8 +47,8 @@ router.beforeEach(async (to, from) => {
     };
   }
 
-  // Redirect users away from login page if already logged in
-  if (auth.isAuthenticated && to.name == "login") {
+  // Redirect users away from login/register page if already logged in
+  if (auth.isAuthenticated && (to.name == "login" || to.name == "register")) {
     return { name: "home" };
   }
 });

@@ -14,7 +14,6 @@ const refreshApi = axios.create({
 
 api.interceptors.request.use(
     (config) => { // If access token is present, attach it to header before sending request.
-        // console.log("[Request Interceptor]: Start");
         const auth = useAuthStore();
         if (auth.accessToken) { 
             config.headers.Authorization = `Bearer ${auth.accessToken}`; 
