@@ -17,4 +17,14 @@ const flattenResponse = (obj) => {
     return result;
 }
 
-export { markRequiredFields, flattenResponse };
+const dateOptions = { 
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour12: true,
+    hour: "numeric",
+    minute: "2-digit"
+};
+const formatDate = ((d) => new Intl.DateTimeFormat("en-GB", dateOptions).format(new Date(d)));
+
+export { markRequiredFields, flattenResponse, formatDate };

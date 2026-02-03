@@ -4,9 +4,9 @@ const auth = useAuthStore();
 </script>
 
 <template>
-    <nav class="navbar navbar-expand-lg sticky-top bg-body-tertiary mb-4">
-        <div class="container-xxl">
-            <a class="navbar-brand" href="#">Placer</a>
+    <nav class="navbar navbar-expand-lg py-2 shadow bg-body-tertiary">
+        <div class="container align-items-center">
+            <a class="navbar-brand fw-bold" href="#">Placer</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -15,6 +15,8 @@ const auth = useAuthStore();
                     <li class="nav-item"><RouterLink :to="{ name: 'home' }" class="nav-link">Home</RouterLink></li>
                     <li class="nav-item" v-if="auth.currentUser.role=='company'"><RouterLink :to="{ name: 'company_dashboard' }" class="nav-link">Dashboard</RouterLink></li>
                     <li class="nav-item" v-if="auth.currentUser.role=='admin'"><RouterLink :to="{ name: 'admin_dashboard' }" class="nav-link">Dashboard</RouterLink></li>
+                    <li class="nav-item" v-if="auth.currentUser.role=='student'"><RouterLink :to="{ name: 'student_dashboard' }" class="nav-link">Dashboard</RouterLink></li>
+                    <li class="nav-item" v-if="auth.currentUser.role=='company'"><RouterLink :to="{ name: 'company_positions' }" class="nav-link">Positions</RouterLink></li>
                 </ul>
                 <ul class="ms-auto navbar-nav">
                     <template v-if="auth.isAuthenticated">

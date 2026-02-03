@@ -9,6 +9,11 @@ import RegisterView from "@/views/RegisterView.vue";
 import AccountView from "@/views/AccountView.vue";
 import CompanyDashboardView from "@/views/CompanyDashboardView.vue";
 import AdminDashboardView from "@/views/AdminDashboardView.vue";
+import CompanyPositionsView from "@/views/CompanyPositionsView.vue";
+import PositionView from "@/views/PositionView.vue";
+import StudentDashboardView from "@/views/StudentDashboardView.vue";
+import StudentPositionView from "@/views/StudentPositionView.vue";
+import CompanyView from "@/views/CompanyView.vue";
 
 const routes = [
   {
@@ -21,8 +26,13 @@ const routes = [
       { path: "/profile", name: "profile", component: ProfileView, meta: { requiresAuth: true } },
       { path: "/account", name: "account", component: AccountView, meta: { requiresAuth: true } },
       { path: "/protected", name: "protected", component: ProtectedView, meta: { requiresAuth: true } },
-      { path: "/company/dashboard", name: "company_dashboard", component: CompanyDashboardView, meta: { requiresAuth: true, roleRequired: "company" } },
-      { path: "/admin/dashboard", name: "admin_dashboard", component: AdminDashboardView, meta: { requiresAuth: true, roleRequired: "admin" } },
+      { path: "/company/dashboard", name: "company_dashboard", component: CompanyDashboardView, meta: { requiresAuth: true, roleRequired: ["company"] } },
+      { path: "/admin/dashboard", name: "admin_dashboard", component: AdminDashboardView, meta: { requiresAuth: true, roleRequired: ["admin"] } },
+      { path: "/student/dashboard", name: "student_dashboard", component: StudentDashboardView, meta: { requiresAuth: true, roleRequired: ["student"] } },
+      { path: "/company/positions", name: "company_positions", component: CompanyPositionsView, meta: { requiresAuth: true, roleRequired: ["company"] } },
+      { path: "/student/positions/:id", name: "student_position", component: StudentPositionView, meta: { requiresAuth: true } },
+      { path: "/positions/:id", name: "position", component: PositionView, meta: { requiresAuth: true } },
+      { path: "/companies/:id", name: "company", component: CompanyView, meta: { requiresAuth: true } },
     ]
   }
 ];
@@ -50,7 +60,7 @@ router.beforeEach(async (to, from) => {
   }
 
   // Role-based guard
-  if (to.meta.roleRequired && to.meta.roleRequired != auth.currentUser.role) {
+  if (to.meta.roleRequired && !to.meta.roleRequired.includes(auth.currentUser.role)) {
     return { name: "home" };
   }
 

@@ -33,7 +33,9 @@ export const useAuthStore = defineStore("auth", () => {
   function deleteAccessToken() {
     accessToken.value = null;
     accessExpiresAt.value = null;
-    currentUser.value = null;
+    currentUser.value.id = "";
+    currentUser.value.role = "";
+    currentUser.value.name = "";
     delete api.defaults.headers.common["Authorization"];
     console.log("[deleteAccessToken]: Deleted");
   };

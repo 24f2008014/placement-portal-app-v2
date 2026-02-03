@@ -40,6 +40,10 @@ def create_app(config_class=Config):
     from api.main import main
     app.register_blueprint(main, url_prefix="/api")
 
+    # Admin functionality
+    from api.admin import admin
+    app.register_blueprint(admin, url_prefix="/api")
+
     # Company user functionality
     from api.company import company
     app.register_blueprint(company, url_prefix="/api")

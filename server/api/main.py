@@ -3,7 +3,7 @@ from api.app import db
 from apifairy import authenticate, body, response, other_responses, arguments
 from api.auth import token_auth
 from api.schemas import UserSchema, EmptySchema, RegisterSchema, StudentSchema, DepartmentSchema, BranchSchema, UpdateUserSchema, IndustrySchema, CompanySchema, PositionSchema, paginate_query, ListQueryArgsSchema, PaginatedCollection
-from api.models import User, Role, Department, Branch, Student, Industry, Position, Application, Placement
+from api.models import User, Role, Department, Branch, Student, Industry, Position, Application, Placement, Company
 
 main = Blueprint("main", __name__)
 user_schema = UserSchema()
@@ -125,3 +125,29 @@ def get_all_students(args):
     query = db.session.query(Student)
     items, pagination = paginate_query(query, Student, args, {"first_name", "last_name"}, {"id", "user_id"}, "main.get_all_students")
     return { "pagination": pagination, "data": items }, 200
+
+@main.route("/positions", methods=["GET"])
+@authenticate(token_auth)
+@arguments(ListQueryArgsSchema())
+@response(PaginatedCollection(PositionSchema()))
+def get_positions(args):
+    query = db.session.query(Position)
+    items, pagination = paginate_query(query, Position, args, {"role"}, {"id"}, "main.get_positions")
+    return { "pagination": pagination, "data": items }, 200
+
+@main.route("/companies", methods=["GET"])
+@authenticate(token_auth)
+@arguments(ListQueryArgsSchema())
+@response(PaginatedCollection(CompanySchema()))
+def get_companies(args):
+    query = db.session.query(Company)
+    items, pagination = paginate_query(query, Company, args, {"id", "approval_status"}, {"id"}, "main.get_companies")
+    return { "pagination": pagination, "data": items }, 200
+
+@main.route("/companies/<int:id>", methods=["GET"])
+@authenticate(token_auth)
+@response(CompanySchema())
+def get_company(id):
+    """Get a company by ID."""
+    company = db.get_or_404(Company, id)
+    return company

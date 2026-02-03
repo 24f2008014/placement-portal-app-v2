@@ -223,13 +223,32 @@ class PositionSchema(ma.SQLAlchemyAutoSchema):
         include_fk = True
 
     id = auto_field(dump_only=True)
+    company_id = auto_field(dump_only=True)
     role = auto_field()
     salary_min = auto_field(validate=validate.Range(min=0))
     salary_max = auto_field(validate=validate.Range(min=0))
     deadline = auto_field()
     min_cgpa = auto_field(validate=validate.Range(min=0, max=10))
+    company = fields.Nested(CompanySchema, dump_only=True)
 
     @validates("deadline")
     def validate_deadline(self, value, **kwargs):
-        if datetime.strptime(value) < datetime.now():
+        # if datetime.strptime(value, "%Y-%m-%dT%H:%M") < datetime.now():
+        if value < datetime.now():
             raise ValidationError("Deadline cannot be in the past.")
+
+class ApplicationSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = Application
+        include_fk = True
+
+    id = auto_field(dump_only=True)
+    student_id = auto_field(dump_only=True)
+    position_id = auto_field(dump_only=True)
+    status = auto_field(validate=validate.OneOf(["pending", "shortlisted", "offered", "placed", "rejected"]))
+    interview_date = auto_field()
+    interview_completed = auto_field()
+    interview_feedback = auto_field()
+    offer_salary = auto_field()
+    offer_joining_date = auto_field()
+    offer_accepted = auto_field()
