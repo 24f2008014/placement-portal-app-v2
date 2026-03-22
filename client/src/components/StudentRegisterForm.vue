@@ -72,6 +72,8 @@ async function submitForm() {
             }
         }
         const response = await api.post("/register", formData);
+        alert.addAlert("Account successfully created.", "success");
+        router.push({ name: "login" });
     }
     catch (error) {
         console.log(error.response.data)
