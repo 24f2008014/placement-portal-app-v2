@@ -156,8 +156,9 @@ class StudentSchema(ma.SQLAlchemyAutoSchema):
 
     @validates("roll_number")
     def validate_roll_number(self, value, **kwargs):
-        student = token_auth.current_user().student
-        if (student.roll_number != value) and db.session.scalar(db.select(Student).where(Student.roll_number == value)):
+        user = token_auth.current_user()
+        old_roll_number = user.student.roll_number if user else None
+        if (old_roll_number != value) and db.session.scalar(db.select(Student).where(Student.roll_number == value)):
             raise ValidationError("Roll number in use. Please provide a unique roll number.")
 
 class ProfileOneOfSchema(OneOfSchema):
