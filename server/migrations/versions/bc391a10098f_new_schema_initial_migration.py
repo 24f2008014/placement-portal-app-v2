@@ -1,8 +1,8 @@
-"""Initial migration.
+"""New schema initial migration
 
-Revision ID: c16e12695d13
+Revision ID: bc391a10098f
 Revises: 
-Create Date: 2026-01-30 08:26:34.193899
+Create Date: 2026-03-22 12:32:29.624451
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'c16e12695d13'
+revision = 'bc391a10098f'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -61,11 +61,25 @@ def upgrade():
     sa.Column('contact_phone_number', sa.String(length=32), nullable=True),
     sa.Column('website', sa.String(length=128), nullable=False),
     sa.Column('location', sa.String(length=128), nullable=False),
-    sa.Column('approval_status', sa.Boolean(), nullable=False),
+    sa.Column('status', sa.String(length=128), server_default='pending', nullable=False),
     sa.ForeignKeyConstraint(['industry_id'], ['industry.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('refresh_token',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('token_hash', sa.String(length=128), nullable=False),
+    sa.Column('issued_at', sa.DateTime(), nullable=False),
+    sa.Column('expires_at', sa.DateTime(), nullable=False),
+    sa.Column('is_revoked', sa.Boolean(), nullable=False),
+    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    with op.batch_alter_table('refresh_token', schema=None) as batch_op:
+        batch_op.create_index(batch_op.f('ix_refresh_token_token_hash'), ['token_hash'], unique=False)
+        batch_op.create_index(batch_op.f('ix_refresh_token_user_id'), ['user_id'], unique=False)
+
     op.create_table('user_roles',
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('role_id', sa.Integer(), nullable=False),
@@ -81,9 +95,11 @@ def upgrade():
     sa.Column('salary_max', sa.Integer(), nullable=False),
     sa.Column('description', sa.String(), nullable=False),
     sa.Column('deadline', sa.DateTime(), nullable=False),
-    sa.Column('min_cgpa', sa.Integer(), nullable=False),
-    sa.Column('approval_status', sa.Boolean(), nullable=False),
+    sa.Column('min_cgpa', sa.Float(), nullable=False),
+    sa.Column('is_approved', sa.Boolean(), nullable=False),
+    sa.Column('status', sa.String(length=128), server_default='open', nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=True),
     sa.Column('deleted_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['company_id'], ['company.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -94,17 +110,15 @@ def upgrade():
     sa.Column('roll_number', sa.String(length=128), nullable=False),
     sa.Column('first_name', sa.String(length=128), nullable=False),
     sa.Column('last_name', sa.String(length=128), nullable=False),
-    sa.Column('bio', sa.String(length=1024), nullable=False),
-    sa.Column('department_id', sa.Integer(), nullable=False),
+    sa.Column('bio', sa.String(length=1024), nullable=True),
     sa.Column('branch_id', sa.Integer(), nullable=False),
     sa.Column('graduation_year', sa.Integer(), nullable=False),
-    sa.Column('cgpa', sa.Integer(), nullable=False),
-    sa.Column('date_of_birth', sa.DateTime(), nullable=False),
+    sa.Column('cgpa', sa.Float(), nullable=False),
+    sa.Column('date_of_birth', sa.DateTime(), nullable=True),
     sa.Column('gender', sa.String(length=128), nullable=False),
-    sa.Column('resume_url', sa.String(length=512), nullable=False),
-    sa.Column('approval_status', sa.Boolean(), nullable=False),
+    sa.Column('resume_url', sa.String(length=512), nullable=True),
+    sa.Column('status', sa.String(length=128), server_default='whitelisted', nullable=False),
     sa.ForeignKeyConstraint(['branch_id'], ['branch.id'], ),
-    sa.ForeignKeyConstraint(['department_id'], ['department.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('roll_number')
@@ -113,22 +127,29 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('student_id', sa.Integer(), nullable=False),
     sa.Column('position_id', sa.Integer(), nullable=False),
-    sa.Column('status', sa.String(length=128), nullable=False),
+    sa.Column('status', sa.String(length=128), server_default='pending', nullable=False),
     sa.Column('interview_date', sa.DateTime(), nullable=True),
-    sa.Column('interview_completed', sa.Boolean(), nullable=True),
-    sa.Column('interview_feedback', sa.String(), nullable=True),
-    sa.Column('offer_salary', sa.DateTime(), nullable=True),
-    sa.Column('offer_joining_date', sa.DateTime(), nullable=True),
-    sa.Column('offer_accepted', sa.Boolean(), nullable=True),
+    sa.Column('feedback', sa.String(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=True),
     sa.Column('deleted_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['position_id'], ['position.id'], ),
     sa.ForeignKeyConstraint(['student_id'], ['student.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('position_departments',
+    sa.Column('position_id', sa.Integer(), nullable=False),
+    sa.Column('department_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['department_id'], ['department.id'], ),
+    sa.ForeignKeyConstraint(['position_id'], ['position.id'], ),
+    sa.PrimaryKeyConstraint('position_id', 'department_id')
+    )
     op.create_table('placement',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('application_id', sa.Integer(), nullable=False),
+    sa.Column('joining_date', sa.DateTime(), nullable=True),
+    sa.Column('salary', sa.Integer(), nullable=True),
+    sa.Column('status', sa.String(length=128), server_default='pending', nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('deleted_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['application_id'], ['application.id'], ),
@@ -140,10 +161,16 @@ def upgrade():
 def downgrade():
     # ### commands auto generated by Alembic - please adjust! ###
     op.drop_table('placement')
+    op.drop_table('position_departments')
     op.drop_table('application')
     op.drop_table('student')
     op.drop_table('position')
     op.drop_table('user_roles')
+    with op.batch_alter_table('refresh_token', schema=None) as batch_op:
+        batch_op.drop_index(batch_op.f('ix_refresh_token_user_id'))
+        batch_op.drop_index(batch_op.f('ix_refresh_token_token_hash'))
+
+    op.drop_table('refresh_token')
     op.drop_table('company')
     op.drop_table('branch')
     with op.batch_alter_table('user', schema=None) as batch_op:
