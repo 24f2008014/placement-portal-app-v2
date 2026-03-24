@@ -2,6 +2,7 @@
 import { onMounted, ref, computed } from "vue";
 import { api } from "@/utils/api";
 import { useRouter } from "vue-router";
+import { flattenResponse } from "@/utils/helpers";
 
 const props = defineProps(["url", "fields", "item_route_name"]);
 const errors = ref({});
@@ -39,7 +40,7 @@ async function getPaginatedData(url) {
         const response = await api.get(url);
         paginatedData.value = response.data.data;
         pagination.value = response.data.pagination;
-        console.log(response.data.data)
+        console.log(response.data.data);
     }
     catch (error) {
         console.log(error)
@@ -74,10 +75,9 @@ onMounted(() => {
             </tr>
         </thead>
         <tbody>
-            <tr v-for="i in paginatedData" :key="i.id" @click='router.push({ "name": props.item_route_name, "params": { "id": `${i.id}`} })'>
-                 <td v-for="v in Object.values(props.fields)">{{ i[v] }}</td>
+            <tr v-for="i in paginatedData" :key="i.id" @click='router.push({ name: props.item_route_name, params: { "id": `${i.id}`} })'>
+                 <td v-for="v in Object.values(props.fields)">{{ flattenResponse(i)[v] }}</td>
             </tr>
         </tbody>
     </table>
-    <!-- <p>{{ pagination }}</p> -->
 </template>
