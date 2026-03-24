@@ -135,12 +135,36 @@ class CompanySchema(ma.SQLAlchemyAutoSchema):
     
     id = auto_field(dump_only=True)
     user_id = auto_field(dump_only=True)
+    industry = fields.Nested("IndustrySchema", only=("name",), dump_only=True)
+    user = fields.Nested(UserSchema, only=("email",), dump_only=True)
     
     @validates("name")
     def validate_name(self, value, **kwargs):
-        company = token_auth.current_user().company
-        if (company.name != value) and db.session.scalar(db.select(Company).where(Company.name == value)):
+        user = token_auth.current_user()
+        company_name = user.company.name if user else None
+        if (company_name != value) and db.session.scalar(db.select(Company).where(Company.name == value)):
             raise ValidationError("A company with that name already exists.")
+
+class DepartmentSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = Department
+    id = auto_field(dump_only=True)
+    name = auto_field(dump_only=True)
+
+class BranchSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = Branch
+        include_fk = True
+    id = auto_field(dump_only=True)
+    department_id = auto_field(dump_only=True)
+    name = auto_field(dump_only=True)
+
+class IndustrySchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = Industry
+        include_fk = True
+    id = auto_field(dump_only=True)
+    name = auto_field(dump_only=True)
 
 class StudentSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
@@ -153,6 +177,8 @@ class StudentSchema(ma.SQLAlchemyAutoSchema):
     user_id = auto_field(dump_only=True)
     roll_number = auto_field(validate=validate.Length(min=1))
     gender = auto_field(validate=validate.OneOf(["male", "female", "other"]))
+    branch = fields.Nested(BranchSchema, only=("name", "department_id",), dump_only=True)
+    user = fields.Nested(UserSchema, only=("email",), dump_only=True)
 
     @validates("roll_number")
     def validate_roll_number(self, value, **kwargs):
@@ -198,25 +224,6 @@ class RegisterSchema(ma.Schema):
     #     if r == "student":
     #         # StudentSchema.load("profile")
     #         pass
-
-class DepartmentSchema(ma.SQLAlchemyAutoSchema):
-    class Meta:
-        model = Department
-    id = auto_field(dump_only=True)
-    name = auto_field(dump_only=True)
-
-class BranchSchema(ma.SQLAlchemyAutoSchema):
-    class Meta:
-        model = Branch
-    id = auto_field(dump_only=True)
-    department_id = auto_field(dump_only=True)
-    name = auto_field(dump_only=True)
-
-class IndustrySchema(ma.SQLAlchemyAutoSchema):
-    class Meta:
-        model = Industry
-    id = auto_field(dump_only=True)
-    name = auto_field(dump_only=True)
 
 class PositionSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
