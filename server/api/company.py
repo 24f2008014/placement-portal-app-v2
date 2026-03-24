@@ -11,44 +11,50 @@ company = Blueprint("company", __name__)
 @authenticate(token_auth, role=["company"])
 @body(PositionSchema())
 @response(PositionSchema())
-def post_position(data):
+def new_position(data):
     company = token_auth.current_user().company
-    if company.approval_status == False:
+    if company.status != "whitelisted":
         abort(403)
     position = Position(company=company, **data)
     db.session.add(position)
     db.session.commit()
     return position
 
-@company.route("/positions/<int:id>", methods=["GET"])
-@authenticate(token_auth)
-@response(PositionSchema())
-def get_position(id):
-    """Get a position by ID."""
+@company.route("/positions/<int:id>", methods=["DELETE"])
+@authenticate(token_auth, role=["company"])
+def delete_position(id):
+    """Delete a position by ID."""
     position = db.get_or_404(Position, id)
-    # if (token_auth.current_user().company) and (token_auth.current_user().company != position.company):
-    #     abort(403)
-    return position
+    if token_auth.current_user().company and token_auth.current_user().company != position.company:
+        abort(403)
+    db.session.delete(position)
+    db.session.commit()
+    return "", 204
 
 @company.route("/companies/me/positions", methods=["GET"])
 @authenticate(token_auth, role=["company"])
 @arguments(ListQueryArgsSchema())
 @response(PaginatedCollection(PositionSchema()))
-def get_positions_self(args):
+def get_company_positions(args):
     """Get all positions made by your company."""
     query = db.session.query(Position)
     items, pagination = paginate_query(query, Position, args, {"role"}, {"id"}, "company.get_positions_self")
     return { "pagination": pagination, "data": items }, 200
 
-@company.route("/positions/<int:id>/applications", methods=["GET"])
-@authenticate(token_auth, role=["company", "admin"])
-@arguments(ListQueryArgsSchema())
-@response(PaginatedCollection(ApplicationSchema()))
-def get_applications(args, id):
-    """Get all applications made for a position."""
-    position = db.get_or_404(Position, id)
-    if (token_auth.current_user().company) and (token_auth.current_user().company != position.company):
-        abort(403)
-    query = db.session.query(Application).where(Application.position == position)
-    items, pagination = paginate_query(query, Application, args, {"status"}, {"id"}, "company.get_applications")
-    return { "pagination": pagination, "data": items }, 200
+@company.route("/companies/me", methods=["GET"])
+@authenticate(token_auth)
+@response(CompanySchema())
+def get_company_self():
+    """Returns your company's details."""
+    return token_auth.current_user().company
+
+@company.route("/companies/me", methods=["PUT"])
+@authenticate(token_auth)
+@body(CompanySchema(load_instance=False))
+@response(CompanySchema())
+def update_company_self(data):
+    """Update your company's details."""
+    company = token_auth.current_user().company
+    company.update(data)
+    db.session.commit()
+    return company
