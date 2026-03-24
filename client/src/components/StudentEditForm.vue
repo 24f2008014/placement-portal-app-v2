@@ -53,12 +53,13 @@ async function getBranches() {
 async function getDetails() {
     try {
         const response = await api.get("/students/me");
+        console.log(response.data);
         inputRollNumber.value = response.data.roll_number;
         inputFirstName.value = response.data.first_name;
         inputLastName.value = response.data.last_name;
         inputDateOfBirth.value = response.data.date_of_birth.split("T")[0];
         inputGender.value = response.data.gender;
-        inputDepartment.value = response.data.department_id;
+        inputDepartment.value = response.data.branch.department_id;
         inputBranch.value = response.data.branch_id;
         inputGraduationYear.value = response.data.graduation_year;
         inputCgpa.value = response.data.cgpa;
@@ -77,7 +78,7 @@ async function submitForm() {
             last_name: inputLastName.value,
             date_of_birth: inputDateOfBirth.value,
             gender: inputGender.value,
-            department_id: inputDepartment.value,
+            // department_id: inputDepartment.value,
             branch_id: inputBranch.value,
             graduation_year: inputGraduationYear.value,
             cgpa: inputCgpa.value
@@ -153,7 +154,7 @@ onMounted(() => {
                         <option :value="d.id">{{ d.name }}</option>
                     </template>
                 </select>
-                <div v-if="errors.department_id" class="invalid-feedback" id="inputCgpaValidation">{{ errors.department_id[0] }}</div>
+                <div v-if="errors.department_id" class="invalid-feedback" id="inputDepartmentValidation">{{ errors.department_id[0] }}</div>
             </div>
             <div class="col">
                 <label for="inputBranch" class="form-label">Branch</label>
@@ -163,7 +164,7 @@ onMounted(() => {
                         <option :value="b.id">{{ b.name }}</option>
                     </template>
                 </select>
-                <div v-if="errors.branch_id" class="invalid-feedback" id="inputCgpaValidation">{{ errors.branch_id[0] }}</div>
+                <div v-if="errors.branch_id" class="invalid-feedback" id="inputBranchValidation">{{ errors.branch_id[0] }}</div>
             </div>
         </div>
 

@@ -65,7 +65,7 @@ async function submitForm() {
                 last_name: inputLastName.value,
                 date_of_birth: inputDateOfBirth.value,
                 gender: inputGender.value,
-                department_id: inputDepartment.value,
+                // department_id: inputDepartment.value,
                 branch_id: inputBranch.value,
                 graduation_year: inputGraduationYear.value,
                 cgpa: inputCgpa.value

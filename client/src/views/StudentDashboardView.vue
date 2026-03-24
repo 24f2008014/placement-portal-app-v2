@@ -13,7 +13,7 @@ const positions_fields = {
     "Role": "role",
 };
 const position_route_name = "student_position";
-const companies_url = `/companies?filters={"approval_status":true}`;
+const companies_url = `/companies?filters={"status":"whitelisted"}`;
 const companies_fields = {
     "ID": "id",
     "Name": "name",

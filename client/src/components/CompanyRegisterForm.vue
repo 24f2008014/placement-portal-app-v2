@@ -3,7 +3,9 @@ import { onMounted, ref } from "vue";
 import { api } from "@/utils/api";
 import { useRouter } from "vue-router";
 import { markRequiredFields, flattenResponse } from "@/utils/helpers";
+import { useAlertStore } from "@/stores/alert";
 
+const alert = useAlertStore();
 const router = useRouter();
 const errors = ref({});
 const inputEmail = ref();
