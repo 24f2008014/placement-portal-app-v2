@@ -28,6 +28,7 @@ class TimeConversionMixin:
 class Industry(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(128))
+    companies: Mapped[List["Company"]] = relationship(back_populates="industry")
 
 class Department(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -38,6 +39,7 @@ class Branch(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     department_id: Mapped[int] = mapped_column(ForeignKey(Department.id))
     name: Mapped[str] = mapped_column(String(128))
+    students: Mapped["Student"] = relationship(back_populates="branch")
 
 class Role(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -110,6 +112,7 @@ class Company(Updateable, db.Model):
     status: Mapped[str] = mapped_column(String(128), CheckConstraint("status IN ('pending', 'whitelisted', 'blacklisted')"), default="pending", server_default="pending")
     positions: Mapped[List["Position"]] = relationship(back_populates="company")
     user: Mapped["User"] = relationship(back_populates="company")
+    industry: Mapped["Industry"] = relationship(back_populates="companies")
 
 class Student(Updateable, db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -127,6 +130,7 @@ class Student(Updateable, db.Model):
     status: Mapped[str] = mapped_column(String(128), CheckConstraint("status IN ('whitelisted', 'blacklisted')"), default="whitelisted", server_default="whitelisted")
     applications: Mapped[List["Application"]] = relationship(back_populates="student")
     user: Mapped["User"] = relationship(back_populates="student")
+    branch: Mapped["Branch"] = relationship(back_populates="students")
 
 class Position(Updateable, TimeConversionMixin, db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -168,6 +172,7 @@ class Application(Updateable, TimeConversionMixin, db.Model):
     deleted_at: Mapped[Optional[datetime]] = mapped_column()
     student: Mapped["Student"] = relationship(back_populates="applications")
     position: Mapped["Position"] = relationship(back_populates="applications")
+    placements: Mapped[List["Placement"]] = relationship(back_populates="application")
 
 class Placement(Updateable, TimeConversionMixin, db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -177,3 +182,4 @@ class Placement(Updateable, TimeConversionMixin, db.Model):
     status: Mapped[str] = mapped_column(String(128), CheckConstraint("status IN ('pending', 'accepted', 'rejected', 'withdrawn')"), default="pending", server_default="pending")
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc))
     deleted_at: Mapped[Optional[datetime]] = mapped_column()
+    application: Mapped["Application"] = relationship(back_populates="placements")
