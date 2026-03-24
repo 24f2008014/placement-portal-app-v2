@@ -13,6 +13,7 @@ import CompanyPositionsView from "@/views/CompanyPositionsView.vue";
 import PositionView from "@/views/PositionView.vue";
 import StudentDashboardView from "@/views/StudentDashboardView.vue";
 import StudentPositionView from "@/views/StudentPositionView.vue";
+import StudentView from "@/views/StudentView.vue";
 import CompanyView from "@/views/CompanyView.vue";
 
 const routes = [
@@ -23,7 +24,7 @@ const routes = [
       { path: "", name: "home", component: HomeView },
       { path: "/login", name: "login", component: LoginView },
       { path: "/register", name: "register", component: RegisterView },
-      { path: "/profile", name: "profile", component: ProfileView, meta: { requiresAuth: true } },
+      { path: "/profile", name: "profile", component: ProfileView, meta: { requiresAuth: true, roleRequired: ["student", "company"] } },
       { path: "/account", name: "account", component: AccountView, meta: { requiresAuth: true } },
       { path: "/protected", name: "protected", component: ProtectedView, meta: { requiresAuth: true } },
       { path: "/company/dashboard", name: "company_dashboard", component: CompanyDashboardView, meta: { requiresAuth: true, roleRequired: ["company"] } },
@@ -33,6 +34,7 @@ const routes = [
       { path: "/student/positions/:id", name: "student_position", component: StudentPositionView, meta: { requiresAuth: true } },
       { path: "/positions/:id", name: "position", component: PositionView, meta: { requiresAuth: true } },
       { path: "/companies/:id", name: "company", component: CompanyView, meta: { requiresAuth: true } },
+      { path: "/students/:id", name: "student", component: StudentView, meta: { requiresAuth: true, roleRequired: ["admin", "company"] } }
     ]
   }
 ];
