@@ -2,43 +2,26 @@ from flask import Blueprint, abort
 from api.app import db
 from apifairy import authenticate, body, response, other_responses, arguments
 from api.auth import token_auth
-from api.schemas import UserSchema, EmptySchema, RegisterSchema, StudentSchema, DepartmentSchema, BranchSchema, UpdateUserSchema, IndustrySchema, CompanySchema, PositionSchema, paginate_query, ListQueryArgsSchema, PaginatedCollection
+from api.schemas import UserSchema, EmptySchema, RegisterSchema, StudentSchema, DepartmentSchema, BranchSchema, UpdateUserSchema, IndustrySchema, CompanySchema, PositionSchema, paginate_query, ListQueryArgsSchema, PaginatedCollection, ApplicationSchema, PlacementSchema
 from api.models import User, Role, Department, Branch, Student, Industry, Position, Application, Placement, Company
 
 main = Blueprint("main", __name__)
-user_schema = UserSchema()
-update_user_schema = UpdateUserSchema()
-empty_schema = EmptySchema()
-register_schema = RegisterSchema()
-student_schema = StudentSchema()
-company_schema = CompanySchema()
-departments_schema = DepartmentSchema(many=True)
-branches_schema = BranchSchema(many=True)
-industries_schema = IndustrySchema(many=True)
-position_schema = PositionSchema()
 
 @main.route("/")
 def index():
     return "Hello!"
 
-@main.route("/user", methods=["GET"])
-@authenticate(token_auth)
-@response(register_schema)
-def profile():
-    """Returns a user's details."""
-    return token_auth.current_user()
-
 @main.route("/users/me", methods=["GET"])
 @authenticate(token_auth)
-@response(user_schema)
+@response(UserSchema())
 def get_user():
     """Returns a user's details."""
     return token_auth.current_user()
 
 @main.route("/users/me", methods=["PUT"])
 @authenticate(token_auth)
-@body(update_user_schema)
-@response(user_schema)
+@body(UpdateUserSchema())
+@response(UserSchema())
 def update_user(data):
     """Update a user's email address and password."""
     user = token_auth.current_user()
@@ -46,45 +29,10 @@ def update_user(data):
     db.session.commit()
     return user
 
-@main.route("/students/me", methods=["GET"])
-@authenticate(token_auth)
-@response(student_schema)
-def get_student():
-    """Returns a user's details."""
-    return token_auth.current_user().student
-
-@main.route("/students/me", methods=["PUT"])
-@authenticate(token_auth)
-@body(StudentSchema(load_instance=False))
-@response(student_schema)
-def update_student(data):
-    student = token_auth.current_user().student
-    student.update(data)
-    db.session.commit()
-    return student
-
-@main.route("/companies/me", methods=["GET"])
-@authenticate(token_auth)
-@response(company_schema)
-def get_company_self():
-    """Returns your company's details."""
-    return token_auth.current_user().company
-
-@main.route("/companies/me", methods=["PUT"])
-@authenticate(token_auth)
-@body(CompanySchema(load_instance=False))
-@response(company_schema)
-def update_company_self(data):
-    """Update your company's details."""
-    company = token_auth.current_user().company
-    company.update(data)
-    db.session.commit()
-    return company
-
 @main.route("/register", methods=["POST"])
-@body(register_schema)
-@response(user_schema, 201)
-def new(data):
+@body(RegisterSchema())
+@response(UserSchema(), 201)
+def register(data):
     """Register a new account."""
     email = data["email"]
     password = data["password"]
@@ -100,34 +48,25 @@ def new(data):
     return user
 
 @main.route("/departments", methods=["GET"])
-@response(departments_schema)
+@response(DepartmentSchema(many=True))
 def get_departments():
     """Return all departments."""
     return db.session.scalars(db.select(Department))
 
 @main.route("/branches", methods=["GET"])
-@response(branches_schema)
+@response(BranchSchema(many=True))
 def get_branches():
     """Return all branches."""
     return db.session.scalars(db.select(Branch))
 
 @main.route("/industries", methods=["GET"])
-@response(industries_schema)
+@response(IndustrySchema(many=True))
 def get_industries():
     """Return all industries."""
     return db.session.scalars(db.select(Industry))
 
-@main.route("/students", methods=["GET"])
-@authenticate(token_auth, role=["admin"])
-@arguments(ListQueryArgsSchema())
-@response(PaginatedCollection(StudentSchema()))
-def get_all_students(args):
-    query = db.session.query(Student)
-    items, pagination = paginate_query(query, Student, args, {"first_name", "last_name"}, {"id", "user_id"}, "main.get_all_students")
-    return { "pagination": pagination, "data": items }, 200
-
 @main.route("/positions", methods=["GET"])
-@authenticate(token_auth)
+@authenticate(token_auth, role=["admin", "student"])
 @arguments(ListQueryArgsSchema())
 @response(PaginatedCollection(PositionSchema()))
 def get_positions(args):
@@ -135,19 +74,90 @@ def get_positions(args):
     items, pagination = paginate_query(query, Position, args, {"role"}, {"id"}, "main.get_positions")
     return { "pagination": pagination, "data": items }, 200
 
-@main.route("/companies", methods=["GET"])
+@main.route("/positions/<int:id>", methods=["GET"])
 @authenticate(token_auth)
+@response(PositionSchema())
+def get_position(id):
+    """Get a position by ID."""
+    position = db.get_or_404(Position, id)
+    if token_auth.current_user().company and token_auth.current_user().company != position.company:
+        abort(403)
+    return position
+
+@main.route("/positions/<int:id>/applications", methods=["GET"])
+@authenticate(token_auth, role=["company", "admin"])
+@arguments(ListQueryArgsSchema())
+@response(PaginatedCollection(ApplicationSchema()))
+def get_applications(args, id):
+    """Get all applications made for a position."""
+    position = db.get_or_404(Position, id)
+    if token_auth.current_user().company and token_auth.current_user().company != position.company:
+        abort(403)
+    query = db.session.query(Application).where(Application.position == position)
+    items, pagination = paginate_query(query, Application, args, {"status"}, {"id"}, "company.get_applications")
+    return { "pagination": pagination, "data": items }, 200
+
+@main.route("/companies", methods=["GET"])
+@authenticate(token_auth, role=["admin", "student"])
 @arguments(ListQueryArgsSchema())
 @response(PaginatedCollection(CompanySchema()))
 def get_companies(args):
     query = db.session.query(Company)
-    items, pagination = paginate_query(query, Company, args, {"id", "approval_status"}, {"id"}, "main.get_companies")
+    items, pagination = paginate_query(
+        query=query,
+        model=Company,
+        args=args,
+        allowed_filters={"id", "status"},
+        allowed_sort={"id"},
+        endpoint="main.get_companies"
+    )
     return { "pagination": pagination, "data": items }, 200
 
 @main.route("/companies/<int:id>", methods=["GET"])
-@authenticate(token_auth)
+@authenticate(token_auth, role=["admin", "student"])
 @response(CompanySchema())
 def get_company(id):
     """Get a company by ID."""
     company = db.get_or_404(Company, id)
     return company
+
+@main.route("/students/<int:id>", methods=["GET"])
+@authenticate(token_auth, role=["admin", "company"])
+@response(StudentSchema())
+def get_student(id):
+    """Get a student by ID."""
+    student = db.get_or_404(Student, id)
+    if token_auth.current_user().company:
+        application = db.session.execute(
+            db.select(Application).filter(
+                Application.student_id == id,
+                Application.position.company == token_auth.current_user().company
+            )
+        ).first()
+        if application is None:
+            abort(403)
+    return student
+
+@main.route("/applications/<int:id>", methods=["GET"])
+@authenticate(token_auth)
+@response(ApplicationSchema())
+def get_application(id):
+    """Get an application by ID."""
+    application = db.get_or_404(Application, id)
+    if token_auth.current_user().company and token_auth.current_user().company != application.position.company:
+        abort(403)
+    if token_auth.current_user().student and token_auth.current_user().student != application.student:
+        abort(403)
+    return application
+
+@main.route("/placements/<int:id>", methods=["GET"])
+@authenticate(token_auth)
+@response(PlacementSchema())
+def get_placement(id):
+    """Get a placement by ID."""
+    placement = db.get_or_404(Placement, id)
+    if token_auth.current_user().company and token_auth.current_user().company != placement.application.position.company:
+        abort(403)
+    if token_auth.current_user().student and token_auth.current_user().student != placement.application.student:
+        abort(403)
+    return placement
