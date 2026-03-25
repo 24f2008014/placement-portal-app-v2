@@ -15,21 +15,25 @@ def new_position(data):
     company = token_auth.current_user().company
     if company.status != "whitelisted":
         abort(403)
-    position = Position(company=company, **data)
+    # position = Position(company=company, **data)
+    position = data
+    position.company = company
     db.session.add(position)
     db.session.commit()
     return position
 
-@company.route("/positions/<int:id>", methods=["DELETE"])
+@company.route("/positions/<int:id>", methods=["PATCH"])
 @authenticate(token_auth, role=["company"])
-def delete_position(id):
-    """Delete a position by ID."""
+@body(PositionSchema(only=("status",), partial=True, load_instance=False))
+@response(PositionSchema())
+def change_position_status(data, id):
+    """Change a position's status."""
     position = db.get_or_404(Position, id)
     if token_auth.current_user().company and token_auth.current_user().company != position.company:
         abort(403)
-    db.session.delete(position)
+    position.update(data)
     db.session.commit()
-    return "", 204
+    return position
 
 @company.route("/companies/me/positions", methods=["GET"])
 @authenticate(token_auth, role=["company"])

@@ -41,10 +41,22 @@ def get_student_applications(args, id):
 
 @admin.route("/students/<int:id>", methods=["PATCH"])
 @authenticate(token_auth, role=["admin"])
-@body(StudentSchema(partial=("status",)))
+@body(StudentSchema(only=("status",), partial=True, load_instance=False))
 @response(StudentSchema())
 def update_student_status(data, id):
+    print(data)
     student = db.get_or_404(Student, id)
     student.update(data)
     db.session.commit()
     return student
+
+@admin.route("/companies/<int:id>", methods=["PATCH"])
+@authenticate(token_auth, role=["admin"])
+@body(CompanySchema(only=("status",), partial=True, load_instance=False))
+@response(CompanySchema())
+def update_company_status(data, id):
+    print(data)
+    company = db.get_or_404(Company, id)
+    company.update(data)
+    db.session.commit()
+    return company

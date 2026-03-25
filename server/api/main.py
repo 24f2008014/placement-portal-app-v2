@@ -94,7 +94,18 @@ def get_applications(args, id):
     if token_auth.current_user().company and token_auth.current_user().company != position.company:
         abort(403)
     query = db.session.query(Application).where(Application.position == position)
-    items, pagination = paginate_query(query, Application, args, {"status"}, {"id"}, "company.get_applications")
+    items, pagination = paginate_query(query, Application, args, {"status"}, {"id"}, "main.get_applications")
+    return { "pagination": pagination, "data": items }, 200
+
+@main.route("/companies/<int:id>/positions", methods=["GET"])
+@authenticate(token_auth, role=["student", "admin"])
+@arguments(ListQueryArgsSchema())
+@response(PaginatedCollection(PositionSchema()))
+def get_company_positions(args, id):
+    """Get all positions for a company."""
+    company = db.get_or_404(Company, id)
+    query = db.session.query(Position).filter(Position.company == company)
+    items, pagination = paginate_query(query, Application, args, {"status"}, {"id"}, "main.get_company_positions")
     return { "pagination": pagination, "data": items }, 200
 
 @main.route("/companies", methods=["GET"])

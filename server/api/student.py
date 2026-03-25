@@ -35,8 +35,24 @@ def get_applications_self(args):
         query=query,
         model=Application,
         args=args,
-        allowed_filters={"id", "status"},
+        allowed_filters={"id", "status", "position_id"},
         allowed_sort={"id"},
         endpoint="student.get_applications_self"
     )
     return { "pagination": pagination, "data": items }, 200
+
+@student.route("/positions/<int:id>/applications", methods=["POST"])
+@authenticate(token_auth, role=["student"])
+@response(ApplicationSchema(), 201)
+def create_application(id):
+    student = token_auth.current_user().student
+    position = db.get_or_404(Position, id)
+    if position.status == "closed" or position.is_approved == False:
+        abort(403)
+    existing_application = db.session.scalar(db.select(Application).filter(Application.student == student))
+    if existing_application is not None:
+        abort(403)
+    application = Application(student=student, position=position)
+    db.session.add(application)
+    db.session.commit()
+    return application
