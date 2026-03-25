@@ -23,7 +23,7 @@ const auth = useAuthStore();
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"><i class="bi bi-person-circle fs-4 pe-1"></i></a>
                             <ul class="dropdown-menu">
-                                <li><RouterLink :to="{ name: 'profile' }" class="dropdown-item">Profile</RouterLink></li>
+                                <li v-if="auth.currentUser.role!='admin'"><RouterLink :to="{ name: 'profile' }" class="dropdown-item">Profile</RouterLink></li>
                                 <li><RouterLink :to="{ name: 'account' }" class="dropdown-item">Account</RouterLink></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a href="#" @click.prevent="auth.logout" class="dropdown-item">Log out</a></li>
