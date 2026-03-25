@@ -1,5 +1,5 @@
 from api import db, ma
-from marshmallow import validate, validates, validates_schema, ValidationError, fields, pre_load
+from marshmallow import validate, validates, validates_schema, ValidationError, fields, pre_load, post_load
 from marshmallow_sqlalchemy import SQLAlchemySchema, auto_field
 from api.auth import token_auth
 from api.models import User, Student, Department, Branch, Industry, Company, Position, Application, Placement
@@ -148,8 +148,8 @@ class CompanySchema(ma.SQLAlchemyAutoSchema):
 class DepartmentSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Department
+        load_instance = True
     id = auto_field(dump_only=True)
-    name = auto_field(dump_only=True)
 
 class BranchSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
@@ -229,6 +229,8 @@ class PositionSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Position
         include_fk = True
+        load_instance = True
+        sqla_session = db.session
 
     id = auto_field(dump_only=True)
     company_id = auto_field(dump_only=True)
@@ -238,17 +240,29 @@ class PositionSchema(ma.SQLAlchemyAutoSchema):
     min_cgpa = auto_field(validate=validate.Range(min=0, max=10))
     status = auto_field(validate=validate.OneOf(["open", "closed"]))
     company = fields.Nested(CompanySchema, dump_only=True)
+    departments = fields.Nested(DepartmentSchema, many=True, dump_only=True)
+    department_ids = fields.List(fields.Integer(), load_only=True)
 
     @validates("deadline")
     def validate_deadline(self, value, **kwargs):
         # if datetime.strptime(value, "%Y-%m-%dT%H:%M") < datetime.now():
         if value < datetime.now():
             raise ValidationError("Deadline cannot be in the past.")
+    
+    @post_load
+    def make_instance(self, data, **kwargs):
+        dept_ids = data.pop("department_ids", [])
+        instance = super().make_instance(data, **kwargs)
+        if dept_ids:
+            instance.departments = Department.query.filter(Department.id.in_(dept_ids)).all()
+        return instance
+        
 
 class ApplicationSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Application
         include_fk = True
+        load_instance = True
 
     id = auto_field(dump_only=True)
     student_id = auto_field(dump_only=True)
