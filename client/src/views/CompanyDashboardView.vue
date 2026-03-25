@@ -14,6 +14,7 @@ const positions_closed_url = "/companies/me/positions";
 const positions_fields = {
     "ID": "id",
     "Role": "role",
+    "Status": "status"
 };
 const position_route_name = "position";
 
@@ -50,9 +51,18 @@ onMounted(() => {
         <template v-if="status === 'pending'">
             <div class="row">
                 <div class="col">
-                    <h4>Status: <code class="text-danger">Approval pending</code></h4>
-                    <p class="lead">Your company account requires admin approval before you can list any new positions. Thank you for your patience.</p>
+                    <h4>Status: <code class="text-warning">Approval pending</code></h4>
+                    <p class="lead">Your company account requires admin approval before you can list any new positions. Please wait. Thank you for your patience.</p>
                     <hr>
+                </div>
+            </div>
+        </template>
+
+        <template v-else-if="status === 'blacklisted'">
+            <div class="row">
+                <div class="col">
+                    <h4>Status: <code class="text-danger">Blacklisted</code></h4>
+                    <p class="lead">Your company account has been blacklisted, and you cannot list any new positions. Please contact an administrator for further details.</p>
                 </div>
             </div>
         </template>

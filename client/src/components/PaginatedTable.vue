@@ -40,7 +40,7 @@ async function getPaginatedData(url) {
         const response = await api.get(url);
         paginatedData.value = response.data.data;
         pagination.value = response.data.pagination;
-        console.log(response.data.data);
+        // console.log(response.data.data);
     }
     catch (error) {
         console.log(error)
