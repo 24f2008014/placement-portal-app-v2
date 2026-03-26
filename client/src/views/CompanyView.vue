@@ -47,8 +47,9 @@ async function changeStatus() {
 const positions_url = `/companies/${route.params.id}/positions`
 const positions_route_name = "position"
 const positions_fields = {
-    "ID": "id",
-    "Status": "status"
+    "ID": {name: "id", filter: true, sort: true},
+    "Role": {name: "role", filter: true},
+    "Status": {name: "status", filter: false}
 }
 
 onMounted(() => {

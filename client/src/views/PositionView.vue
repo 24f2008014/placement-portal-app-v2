@@ -20,8 +20,13 @@ const studentApplication = ref([]);
 const applications_url = `/positions/${route.params.id}/applications`;
 const applications_fields = {
     "ID": "id",
+    "Roll No.": "roll_number",
+    "First Name": "first_name",
+    "Last Name": "last_name",
+    "Created At": "created_at",
+    "Status": "status"
 };
-const application_item_route = "";
+const application_item_route = "application";
 
 async function getPosition() {
     try {
@@ -102,7 +107,9 @@ async function postApplication() {
 
 onMounted(() => {
     getPosition();
-    getStudentApplication();
+    if (auth.currentUser.role == "student") {
+        getStudentApplication();
+    }
 });
 </script>
 
