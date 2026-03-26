@@ -4,6 +4,7 @@ from apifairy import authenticate, body, response, other_responses, arguments
 from api.auth import token_auth
 from api.schemas import UserSchema, EmptySchema, RegisterSchema, StudentSchema, DepartmentSchema, BranchSchema, UpdateUserSchema, IndustrySchema, CompanySchema, PositionSchema, paginate_query, ListQueryArgsSchema, PaginatedCollection, ApplicationSchema
 from api.models import User, Role, Department, Branch, Student, Industry, Position, Application, Placement, Company
+from datetime import datetime, timezone
 
 student = Blueprint("student", __name__)
 
@@ -54,5 +55,19 @@ def create_application(id):
         abort(403)
     application = Application(student=student, position=position)
     db.session.add(application)
+    db.session.commit()
+    return application
+
+@student.route("/applications/<int:id>/withdraw", methods=["POST"])
+@authenticate(token_auth, role=["student"])
+@response(ApplicationSchema())
+def withdraw_application(id):
+    application = db.get_or_404(Application, id)
+    if token_auth.current_user().student != application.student:
+        abort(403)
+    if application.status == "withdrawn" or application.position.status == "closed" or application.placements:
+        abort(403)
+    application.status = "withdrawn"
+    application.deleted_at = datetime.now(timezone.utc)
     db.session.commit()
     return application

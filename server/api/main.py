@@ -71,7 +71,16 @@ def get_industries():
 @response(PaginatedCollection(PositionSchema()))
 def get_positions(args):
     query = db.session.query(Position)
-    items, pagination = paginate_query(query, Position, args, {"role"}, {"id"}, "main.get_positions")
+    if token_auth.current_user().student:
+        query = query.filter(Position.is_approved == True, Position.status == "open")
+    items, pagination = paginate_query(
+        query=query,
+        model=Position,
+        args=args,
+        allowed_filters={"role"},
+        allowed_sort={"id"},
+        endpoint="main.get_positions"
+    )
     return { "pagination": pagination, "data": items }, 200
 
 @main.route("/positions/<int:id>", methods=["GET"])
@@ -95,6 +104,7 @@ def get_applications(args, id):
         abort(403)
     query = db.session.query(Application).where(Application.position == position)
     items, pagination = paginate_query(query, Application, args, {"status"}, {"id"}, "main.get_applications")
+    print(items)
     return { "pagination": pagination, "data": items }, 200
 
 @main.route("/companies/<int:id>/positions", methods=["GET"])
@@ -105,7 +115,14 @@ def get_company_positions(args, id):
     """Get all positions for a company."""
     company = db.get_or_404(Company, id)
     query = db.session.query(Position).filter(Position.company == company)
-    items, pagination = paginate_query(query, Application, args, {"status"}, {"id"}, "main.get_company_positions")
+    items, pagination = paginate_query(
+        query=query,
+        model=Position,
+        args=args,
+        allowed_filters={"status", "id"},
+        allowed_sort={"id", "role", "status"},
+        endpoint="main.get_company_positions"
+    )
     return { "pagination": pagination, "data": items }, 200
 
 @main.route("/companies", methods=["GET"])
@@ -140,9 +157,9 @@ def get_student(id):
     student = db.get_or_404(Student, id)
     if token_auth.current_user().company:
         application = db.session.execute(
-            db.select(Application).filter(
+            db.select(Application).join(Position).filter(
                 Application.student_id == id,
-                Application.position.company == token_auth.current_user().company
+                Position.company_id == token_auth.current_user().company.id
             )
         ).first()
         if application is None:

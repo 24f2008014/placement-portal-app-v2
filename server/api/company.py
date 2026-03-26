@@ -2,8 +2,9 @@ from flask import Blueprint, abort
 from api.app import db
 from apifairy import authenticate, body, response, other_responses, arguments
 from api.auth import token_auth
-from api.schemas import UserSchema, EmptySchema, RegisterSchema, StudentSchema, DepartmentSchema, BranchSchema, UpdateUserSchema, IndustrySchema, CompanySchema, PositionSchema, paginate_query, ListQueryArgsSchema, PaginatedCollection, ApplicationSchema
+from api.schemas import UserSchema, EmptySchema, RegisterSchema, StudentSchema, DepartmentSchema, BranchSchema, UpdateUserSchema, IndustrySchema, CompanySchema, PositionSchema, paginate_query, ListQueryArgsSchema, PaginatedCollection, ApplicationSchema, PlacementSchema
 from api.models import User, Role, Department, Branch, Student, Industry, Position, Application, Placement
+from datetime import datetime, timezone
 
 company = Blueprint("company", __name__)
 
@@ -62,3 +63,52 @@ def update_company_self(data):
     company.update(data)
     db.session.commit()
     return company
+
+@company.route("/applications/<int:id>/shortlist", methods=["POST"])
+@authenticate(token_auth, role=["company"])
+@body(ApplicationSchema(only=("interview_date",), partial=True, load_instance=False))
+@response(ApplicationSchema())
+def shortlist_application(data, id):
+    """Shortlist an applicant for an interview."""
+    application = db.get_or_404(Application, id)
+    if token_auth.current_user().company != application.position.company:
+        abort(403)
+    if application.status == "withdrawn" or application.position.status == "closed":
+        abort(403)
+    application.status = "shortlisted"
+    application.update(data)
+    application.updated_at = datetime.now(timezone.utc)
+    db.session.commit()
+    return application
+
+@company.route("/applications/<int:id>/select", methods=["POST"])
+@authenticate(token_auth, role=["company"])
+@body(PlacementSchema())
+@response(PlacementSchema())
+def select_application(data, id):
+    """Select an applicant and make them a placement offer."""
+    application = db.get_or_404(Application, id)
+    if token_auth.current_user().company != application.position.company:
+        abort(403)
+    if application.status == "withdrawn" or application.position.status == "closed":
+        abort(403)
+    application.status = "selected"
+    application.updated_at = datetime.now(timezone.utc)
+    placement = Placement(application=application, **data)
+    db.session.add(placement)
+    db.session.commit()
+    return placement
+
+@company.route("/applications/<int:id>/reject", methods=["POST"])
+@authenticate(token_auth, role=["company"])
+@response(ApplicationSchema())
+def reject_application(id):
+    """Reject an application."""
+    application = db.get_or_404(Application, id)
+    if token_auth.current_user().company != application.position.company:
+        abort(403)
+    if application.status == "withdrawn" or application.position.status == "closed" or application.placements:
+        abort(403)
+    application.status = "rejected"
+    db.session.commit()
+    return application
