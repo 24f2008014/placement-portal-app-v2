@@ -257,17 +257,19 @@ class PositionSchema(ma.SQLAlchemyAutoSchema):
             instance.departments = Department.query.filter(Department.id.in_(dept_ids)).all()
         return instance
         
-
 class ApplicationSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Application
         include_fk = True
         load_instance = True
+        sqla_session = db.session
 
     id = auto_field(dump_only=True)
     student_id = auto_field(dump_only=True)
     position_id = auto_field(dump_only=True)
     status = auto_field(validate=validate.OneOf(["pending", "shortlisted", "selected", "rejected", "withdrawn"]))
+    student = fields.Nested(StudentSchema, only=("id", "first_name", "last_name", "roll_number"), dump_only=True)
+    position = fields.Nested(PositionSchema, only=("id", "role", "company.name", "company.contact_email"), dump_only=True)
 
 class PlacementSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
@@ -278,3 +280,9 @@ class PlacementSchema(ma.SQLAlchemyAutoSchema):
     application_id = auto_field(dump_only=True)
     salary = auto_field(validate=validate.Range(min=0))
     status = auto_field(validate=validate.OneOf(["pending", "accepted", "rejected", "withdrawn"]))
+
+    @validates("joining_date")
+    def validate_joining_date(self, value, **kwargs):
+        # if datetime.strptime(value, "%Y-%m-%dT%H:%M") < datetime.now():
+        if value < datetime.now():
+            raise ValidationError("Deadline cannot be in the past.")
