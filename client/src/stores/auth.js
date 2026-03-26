@@ -20,11 +20,11 @@ export const useAuthStore = defineStore("auth", () => {
   });
 
   function setAccessToken(token, exp) {
-    console.log("[setAccessToken]: Start");
+    // console.log("[setAccessToken]: Start");
     accessToken.value = token;
     accessExpiresAt.value = Date.now() + exp * 1000;
     api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-    console.log(`[setAccessToken]: Header set, isAuthenticated: ${isAuthenticated.value}`);
+    // console.log(`[setAccessToken]: Header set, isAuthenticated: ${isAuthenticated.value}`);
     const decoded = jwtDecode(token);
     currentUser.value.id = decoded.sub;
     currentUser.value.role = decoded.roles[0];
@@ -37,7 +37,7 @@ export const useAuthStore = defineStore("auth", () => {
     currentUser.value.role = "";
     currentUser.value.name = "";
     delete api.defaults.headers.common["Authorization"];
-    console.log("[deleteAccessToken]: Deleted");
+    // console.log("[deleteAccessToken]: Deleted");
   };
 
   async function login(email, password) {
@@ -45,28 +45,28 @@ export const useAuthStore = defineStore("auth", () => {
       const response = await refreshApi.post("/tokens/new", null,
         { auth: { username: email, password: password } }
       );
-      console.log(`Login successful: ${response.data}`);
+      // console.log(`Login successful: ${response.data}`);
       setAccessToken(response.data.access_token, response.data.expires_in_seconds);
       currentUser.value.name = response.data.username;
       console.log(response.data);
     }
     catch (error) {
-      console.log("login caught");
+      // console.log("login caught");
       return Promise.reject(error);
     }
   };
 
   async function refresh() {
     try {
-      console.log("[Refresh]: Fetching new tokens");
+      // console.log("[Refresh]: Fetching new tokens");
       const response = await refreshApi.post("/tokens/refresh", null);
       setAccessToken(response.data.access_token, response.data.expires_in_seconds);
       currentUser.value.name = response.data.username;
       isInitialized.value = true;
-      console.log("[Refresh]: Set new tokens");
+      // console.log("[Refresh]: Set new tokens");
       return response.data.access_token;
     } catch (error) {
-      console.log(`[Refresh]: ${error}`);
+      // console.log(`[Refresh]: ${error}`);
       isInitialized.value = true;
     }
   };
@@ -76,10 +76,10 @@ export const useAuthStore = defineStore("auth", () => {
       await api.post("/tokens/revoke", null);
       deleteAccessToken();
       router.replace({ name: "home" });
-      console.log(`[Logout]: Success`);
+      // console.log(`[Logout]: Success`);
     }
     catch (error) {
-      console.log(`[Logout]: ${error}`);
+      // console.log(`[Logout]: ${error}`);
       return Promise.reject(error);
     }
   };

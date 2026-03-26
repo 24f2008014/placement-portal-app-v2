@@ -18,7 +18,7 @@ api.interceptors.request.use(
         if (auth.accessToken) { 
             config.headers.Authorization = `Bearer ${auth.accessToken}`; 
         }
-        console.log("[Request Interceptor]: Attached bearer token to header");
+        // console.log("[Request Interceptor]: Attached bearer token to header");
         return config;
     }, 
     (error) => { return Promise.reject(error); }
@@ -27,16 +27,16 @@ api.interceptors.request.use(
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        console.log("[Response Interceptor]: Error");
+        // console.log("[Response Interceptor]: Error");
         const firstRequest = error.config;
         const auth = useAuthStore();
         if (error.response && error.response.status == 401 && !firstRequest._retry) {
-            console.log("[Response Interceptor]: 401, first");
+            // console.log("[Response Interceptor]: 401, first");
             firstRequest._retry = true;
             try {
                 const newAccessToken = auth.refresh();
                 firstRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-                console.log("[Response Interceptor]: Retrying original request with new bearer header");
+                // console.log("[Response Interceptor]: Retrying original request with new bearer header");
                 return api(firstRequest);
             }
             catch (error) {
