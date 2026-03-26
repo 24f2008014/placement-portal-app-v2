@@ -22,21 +22,21 @@ const routes = [
     path: "/",
     component: BaseLayout,
     children: [
-      { path: "", name: "home", component: HomeView },
-      { path: "/login", name: "login", component: LoginView },
-      { path: "/register", name: "register", component: RegisterView },
-      { path: "/profile", name: "profile", component: ProfileView, meta: { requiresAuth: true, roleRequired: ["student", "company"] } },
-      { path: "/account", name: "account", component: AccountView, meta: { requiresAuth: true } },
-      { path: "/protected", name: "protected", component: ProtectedView, meta: { requiresAuth: true } },
-      { path: "/company/dashboard", name: "company_dashboard", component: CompanyDashboardView, meta: { requiresAuth: true, roleRequired: ["company"] } },
-      { path: "/admin/dashboard", name: "admin_dashboard", component: AdminDashboardView, meta: { requiresAuth: true, roleRequired: ["admin"] } },
-      { path: "/student/dashboard", name: "student_dashboard", component: StudentDashboardView, meta: { requiresAuth: true, roleRequired: ["student"] } },
-      { path: "/company/positions", name: "company_positions", component: CompanyPositionsView, meta: { requiresAuth: true, roleRequired: ["company"] } },
-      { path: "/student/positions/:id", name: "student_position", component: StudentPositionView, meta: { requiresAuth: true } },
-      { path: "/positions/:id", name: "position", component: PositionView, meta: { requiresAuth: true } },
-      { path: "/companies/:id", name: "company", component: CompanyView, meta: { requiresAuth: true, roleRequired: ["admin", "student"] } },
-      { path: "/students/:id", name: "student", component: StudentView, meta: { requiresAuth: true, roleRequired: ["admin", "company"] } },
-      { path: "/applications/:id", name: "application", component: ApplicationView, meta: { requiresAuth: true } }
+      { path: "", name: "home", component: HomeView, meta: { title: "Home" } },
+      { path: "/login", name: "login", component: LoginView, meta: { title: "Login" } },
+      { path: "/register", name: "register", component: RegisterView, meta: { title: "Register" } },
+      { path: "/profile", name: "profile", component: ProfileView, meta: { requiresAuth: true, roleRequired: ["student", "company"], title: "Profile" } },
+      { path: "/account", name: "account", component: AccountView, meta: { requiresAuth: true }, title: "Account" },
+      { path: "/protected", name: "protected", component: ProtectedView, meta: { requiresAuth: true }, title: "Protected" },
+      { path: "/company/dashboard", name: "company_dashboard", component: CompanyDashboardView, meta: { requiresAuth: true, roleRequired: ["company"], title: "Dashboard" } },
+      { path: "/admin/dashboard", name: "admin_dashboard", component: AdminDashboardView, meta: { requiresAuth: true, roleRequired: ["admin"], title: "Dashboard" } },
+      { path: "/student/dashboard", name: "student_dashboard", component: StudentDashboardView, meta: { requiresAuth: true, roleRequired: ["student"], title: "Dashboard" } },
+      { path: "/company/positions", name: "company_positions", component: CompanyPositionsView, meta: { requiresAuth: true, roleRequired: ["company"], title: "Your Positions" } },
+      { path: "/student/positions/:id", name: "student_position", component: StudentPositionView, meta: { requiresAuth: true, title: "View Position" } },
+      { path: "/positions/:id", name: "position", component: PositionView, meta: { requiresAuth: true, title: "View Position" } },
+      { path: "/companies/:id", name: "company", component: CompanyView, meta: { requiresAuth: true, roleRequired: ["admin", "student"], title: "Company" } },
+      { path: "/students/:id", name: "student", component: StudentView, meta: { requiresAuth: true, roleRequired: ["admin", "company"], title: "Student" } },
+      { path: "/applications/:id", name: "application", component: ApplicationView, meta: { requiresAuth: true, title: "Application" } }
     ]
   }
 ];
@@ -73,5 +73,14 @@ router.beforeEach(async (to, from) => {
     return { name: "home" };
   }
 });
+
+router.afterEach((to, from) => {
+  const id = to.params.id;
+  if (id) {
+    document.title = to.meta.title ? `${to.meta.title} #${id} | Placer` : "Placer";
+  } else {
+    document.title = to.meta.title ? `${to.meta.title} | Placer` : "Placer";
+  }
+})
 
 export default router;
