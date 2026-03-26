@@ -6,18 +6,26 @@ const auth = useAuthStore();
 <template>
     <nav class="navbar navbar-expand-lg py-2 shadow bg-body-tertiary">
         <div class="container align-items-center">
-            <a class="navbar-brand fw-bold" href="#">Placer</a>
+            <a class="navbar-brand fw-bold" href="#"><RouterLink :to="{ name: 'home' }" class="nav-link">Placer</RouterLink></a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
+
                 <ul class="navbar-nav">
-                    <li class="nav-item"><RouterLink :to="{ name: 'home' }" class="nav-link">Home</RouterLink></li>
-                    <li class="nav-item" v-if="auth.currentUser.role=='company'"><RouterLink :to="{ name: 'company_dashboard' }" class="nav-link">Dashboard</RouterLink></li>
-                    <li class="nav-item" v-if="auth.currentUser.role=='admin'"><RouterLink :to="{ name: 'admin_dashboard' }" class="nav-link">Dashboard</RouterLink></li>
-                    <li class="nav-item" v-if="auth.currentUser.role=='student'"><RouterLink :to="{ name: 'student_dashboard' }" class="nav-link">Dashboard</RouterLink></li>
-                    <li class="nav-item" v-if="auth.currentUser.role=='company'"><RouterLink :to="{ name: 'company_positions' }" class="nav-link">Positions</RouterLink></li>
+                    <!-- <li class="nav-item"><RouterLink :to="{ name: 'home' }" class="nav-link">Home</RouterLink></li> -->
+                    <template v-if="auth.currentUser.role=='student'">
+                        <li class="nav-item"><RouterLink :to="{ name: 'student_dashboard' }" class="nav-link">Dashboard</RouterLink></li>
+                    </template>
+                    <template v-if="auth.currentUser.role=='company'">
+                        <li class="nav-item"><RouterLink :to="{ name: 'company_dashboard' }" class="nav-link">Dashboard</RouterLink></li>
+                        <li class="nav-item"><RouterLink :to="{ name: 'company_positions' }" class="nav-link">Positions</RouterLink></li>
+                    </template>
+                    <template v-if="auth.currentUser.role=='admin'">
+                        <li class="nav-item"><RouterLink :to="{ name: 'admin_dashboard' }" class="nav-link">Dashboard</RouterLink></li>
+                    </template>
                 </ul>
+
                 <ul class="ms-auto navbar-nav">
                     <template v-if="auth.isAuthenticated">
                         <li class="nav-item dropdown">
@@ -35,6 +43,7 @@ const auth = useAuthStore();
                         <li class="nav-item"><RouterLink :to="{ name: 'login' }" class="nav-link">Login</RouterLink></li>
                     </template>
                 </ul>
+
             </div>
         </div>
     </nav>
