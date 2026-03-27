@@ -1,14 +1,16 @@
 <script setup>
-import { onMounted, ref, computed, reactive, watch } from "vue";
+import { onMounted, ref, computed, reactive, watch, useId } from "vue";
 import { api } from "@/utils/api";
 import { useRouter } from "vue-router";
 import { flattenResponse } from "@/utils/helpers";
+import { formatDate } from "@/utils/helpers";
 
 const props = defineProps(["url", "fields", "item_route_name"]);
 const errors = ref({});
 const paginatedData = ref();
 const pagination = ref({});
 const router = useRouter();
+const filterDropdownId = useId();
 
 const hasPrevious = computed(() => {
     return pagination.value.prev !== null;
@@ -34,14 +36,31 @@ const totalPages = computed(() => Math.ceil(pagination.value.total / pagination.
 const currentPage = computed(() => (pagination.value.offset / pagination.value.limit) + 1);
 const startItem = computed(() => pagination.value.offset + 1);
 
-async function getPaginatedData(url, params=null) {
+const tableState = reactive({
+    sort_by: "id",
+    sort_dir: "desc"
+});
+
+function clearFilters() {
+    Object.keys(filters).forEach(k => filters[k] = "");
+    getPaginatedData(props.url, tableState, filters);
+}
+
+const filters = reactive({
+    id: "",
+});
+
+async function getPaginatedData(url, params=null, filters=null) {
     errors.value = {};
     let fetchUrl = url;
     if (params) {
-        let fetchParams = new URLSearchParams(params).toString();
-        fetchUrl = `${url}?${fetchParams}`;
+        fetchUrl = `${url}?sort_by=${params.sort_by}&sort_dir=${params.sort_dir}`;
+        if (Object.keys(filters).length!=0) {
+            fetchUrl += `&filters=${JSON.stringify(filters)}`;
+        }
     }
     try {
+        // console.log(fetchUrl);
         const response = await api.get(fetchUrl);
         paginatedData.value = response.data.data;
         pagination.value = response.data.pagination;
@@ -54,13 +73,8 @@ async function getPaginatedData(url, params=null) {
     }
 };
 
-const tableState = reactive({
-    sort_by: "id",
-    sort_dir: "asc"
-});
-
 watch(tableState, async (newState, oldState) => {
-    getPaginatedData(props.url, newState);
+    getPaginatedData(props.url, newState, filters);
 });
 
 function sort(col) {
@@ -81,7 +95,7 @@ function sortClasses(col) {
 }
 
 onMounted(() => {
-    getPaginatedData(props.url, tableState);
+    getPaginatedData(props.url, tableState, filters);
 })
 </script>
 
@@ -99,22 +113,35 @@ onMounted(() => {
         </div>        
     </div>
 
-    <!-- <button class="btn btn-primary btn-sm mb-3" data-bs-toggle="collapse" data-bs-target="#searchCollapse">Filter</button>
-    <div class="row mb-3 collapse" id="searchCollapse">
+    <button class="btn btn-primary btn-sm mb-3" data-bs-toggle="collapse" :data-bs-target="'#' + filterDropdownId">Filter</button>
+    <div class="row mb-3 collapse" :id="filterDropdownId">
         <div class="col">
-            <form class="p-3 border rounded shadow-sm" @submit.prevent="filterData">
+            <form class="p-3 border rounded shadow-sm" @submit.prevent="getPaginatedData(props.url, tableState, filters)">
                 <div class="row mb-3">
-                    <template v-for="v in Object.values(props.fields)">
-                        <div class="col" v-if="v.filter==true">
-                            <label :for="v.name" class="form-label">{{ v.name }}</label>
-                            <input :type="v.input_type" class="form-control" :id="v.name" v-model="v.name">
+                    <template v-for="f in Object.values(props.fields)">
+                        <div class="col" v-if="f.filter==true">
+                            <label :for="f.name" class="form-label">{{ f.label }}</label>
+                            <template v-if="f.type=='select'">
+                                <select class="form-select" :id="f.name" v-model="filters[f.name]">
+                                    <option value="" selected>...</option>
+                                    <template v-for="o in f.input.options">
+                                        <option :value="o.value">{{ o.label }}</option>
+                                    </template>
+                                </select>
+                            </template>
+                            <input v-else v-bind="f.input" class="form-control" :id="f.name" v-model="filters[f.name]">
                         </div>
                     </template>
                 </div>
-                <button class="btn btn-success btn-sm">Submit</button>
+                <div class="row">
+                    <div class="col d-flex gap-3">
+                        <button type="submit" class="btn btn-success btn-sm">Submit</button>
+                        <button type="button" class="btn btn-secondary btn-sm" @click="clearFilters">Reset</button>
+                    </div>
+                </div>
             </form>
         </div>
-    </div> -->
+    </div>
 
     <table class="border table table-hover">
         <thead>
@@ -128,7 +155,14 @@ onMounted(() => {
                 :key="i.id"
                 @click='router.push({ name: props.item_route_name, params: { "id": `${i.id}`} })'
             >
-                 <td v-for="v in Object.values(props.fields)">{{ flattenResponse(i)[v.name] }}</td>
+                 <td v-for="f in Object.values(props.fields)">
+                    <template v-if="f.type=='date'">
+                        {{ formatDate(flattenResponse(i)[f.name]) }}    
+                    </template>
+                    <template v-else>
+                        {{ flattenResponse(i)[f.name] }}
+                    </template>
+                </td>
             </tr>
         </tbody>
     </table>
