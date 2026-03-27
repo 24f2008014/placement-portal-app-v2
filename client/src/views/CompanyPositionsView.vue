@@ -4,8 +4,8 @@ import PositionCreateForm from "@/components/PositionCreateForm.vue";
 import PaginatedTable from "@/components/PaginatedTable.vue";
 const positions_url = "/companies/me/positions";
 const positions_fields = {
-    "ID": "id",
-    "Role": "role",
+    "ID": {name: "id", filter: true, sort: true},
+    "Role": {name: "role", filter: false}
 };
 const position_route_name = "position";
 </script>

@@ -47,9 +47,13 @@ async function changeStatus() {
 const positions_url = `/companies/${route.params.id}/positions`
 const positions_route_name = "position"
 const positions_fields = {
-    "ID": {name: "id", filter: true, sort: true},
-    "Role": {name: "role", filter: true},
-    "Status": {name: "status", filter: false}
+    "ID": {name: "id", label: "ID", filter: true, input: {type: "number", min: "1"}},
+    "Role": {name: "role", label: "Role", filter: true, input: {type: "text"}},
+    "Min. Salary": {name: "salary_min", filter: true, label: "Min. Salary \u2265", input: {type: "number", min: "0"}},
+    "Max. Salary": {name: "salary_max", filter: true, label: "Max. Salary \u2265", input: {type: "number", min: "0"}},
+    "Min. CGPA": {name: "min_cgpa", filter: true, label: "Min. CGPA \u2265"},
+    "Deadline": {name: "deadline", filter: true, label: "Deadline \u2265", type: "date", input: {type: "datetime-local"}},
+    "Status": {name: "status", filter: false},
 }
 
 onMounted(() => {

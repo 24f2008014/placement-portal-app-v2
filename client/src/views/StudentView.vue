@@ -61,8 +61,8 @@ async function changeStatus() {
 const applications_url = `/students/${route.params.id}/applications`
 const applications_route_name = "application"
 const applications_fields = {
-    "ID": "id",
-    "Status": "status"
+    "ID": {name: "id", filter: true, sort: true},
+    "Status": {name: "status", filter: false}
 }
 
 onMounted(() => {

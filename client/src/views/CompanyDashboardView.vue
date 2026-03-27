@@ -12,9 +12,9 @@ const status = ref();
 const positions_open_url = "/companies/me/positions";
 const positions_closed_url = "/companies/me/positions";
 const positions_fields = {
-    "ID": "id",
-    "Role": "role",
-    "Status": "status"
+    "ID": {name: "id", filter: true, sort: true},
+    "Role": {name: "role", filter: false},
+    "Status": {name: "status", filter: false}
 };
 const position_route_name = "position";
 

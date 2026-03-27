@@ -19,12 +19,12 @@ const errors = ref({});
 const studentApplication = ref([]);
 const applications_url = `/positions/${route.params.id}/applications`;
 const applications_fields = {
-    "ID": "id",
-    "Roll No.": "roll_number",
-    "First Name": "first_name",
-    "Last Name": "last_name",
-    "Created At": "created_at",
-    "Status": "status"
+    "ID": {name: "id", filter: true, sort: true},
+    "Roll No.": {name: "roll_number", filter: false},
+    "First Name": {name: "first_name", filter: false},
+    "Last Name": {name: "last_name", filter: false},
+    "Created At": {name: "created_at", filter: false},
+    "Status": {name: "status", filter: false}
 };
 const application_item_route = "application";
 
