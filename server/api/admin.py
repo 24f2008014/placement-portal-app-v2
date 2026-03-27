@@ -2,10 +2,28 @@ from flask import Blueprint, abort
 from api.app import db
 from apifairy import authenticate, body, response, other_responses, arguments
 from api.auth import token_auth
-from api.schemas import UserSchema, EmptySchema, RegisterSchema, StudentSchema, DepartmentSchema, BranchSchema, UpdateUserSchema, IndustrySchema, CompanySchema, PositionSchema, paginate_query, ListQueryArgsSchema, PaginatedCollection, ApplicationSchema
+from api.schemas import UserSchema, EmptySchema, RegisterSchema, StudentSchema, DepartmentSchema, BranchSchema, UpdateUserSchema, IndustrySchema, CompanySchema, PositionSchema, paginate_query, ListQueryArgsSchema, PaginatedCollection, ApplicationSchema, StatsSchema
 from api.models import User, Role, Department, Branch, Student, Industry, Position, Application, Placement, Company
+from sqlalchemy import func
 
 admin = Blueprint("admin", __name__)
+
+@admin.route("/stats", methods=["GET"])
+@authenticate(token_auth, role=["admin"])
+@response(StatsSchema())
+def get_stats():
+    num_students = db.session.scalar(db.select(func.count()).select_from(Student))
+    num_companies = db.session.scalar(db.select(func.count()).select_from(Company))
+    num_positions = db.session.scalar(db.select(func.count()).select_from(Position))
+    num_applications = db.session.scalar(db.select(func.count()).select_from(Application))
+    num_placements = db.session.scalar(db.select(func.count()).select_from(Placement))
+    return {
+        "num_students": num_students,
+        "num_companies": num_companies,
+        "num_positions": num_positions,
+        "num_applications": num_applications,
+        "num_placements": num_placements
+    }
 
 @admin.route("/students", methods=["GET"])
 @authenticate(token_auth, role=["admin"])
@@ -17,8 +35,17 @@ def get_students(args):
         query=query,
         model=Student,
         args=args,
-        allowed_filters={"id", "roll_number", "email", "first_name", "last_name", "status"},
-        allowed_sort={"id"},
+        allowed_filters={
+            "id": "equals",
+            "roll_number": "equals",
+            "contact_email": "ilike",
+            "first_name": "ilike",
+            "last_name": "ilike",
+            "cgpa": "gt",
+            "gender": "equals",
+            "status": "equals"
+        },
+        allowed_sort={"id", "roll_number", "contact_email", "first_name", "last_name", "cgpa", "gender", "status"},
         endpoint="admin.get_students"
     )
     return { "pagination": pagination, "data": items }, 200

@@ -19,9 +19,19 @@ def paginate_query(query, model, args, allowed_filters, allowed_sort, endpoint):
 
     # Filter
     for k, v in filters.items():
-        if k not in allowed_filters:
+        if k not in allowed_filters.keys():
             raise BadRequest("Bad filter.")
-        query = query.filter(getattr(model, k) == v)
+        if len(str(v)) > 0:
+            if allowed_filters[k] == "gt":
+                query = query.filter(getattr(model, k) >= v)
+            elif allowed_filters[k] == "lt":
+                query = query.filter(getattr(model, k) <= v)
+            elif allowed_filters[k] == "equals":
+                query = query.filter(getattr(model, k) == v)
+            elif allowed_filters[k] == "ilike":
+                query = query.filter(getattr(model, k).ilike(f"%{v}%"))
+            # elif allowed_filters[k] == "ilike_relationship":
+            #     query = query.filter(getattr(getattr(model, str.split(k, ".")[0]), str.split(k, ".")[1]).ilike(f"%{v}%"))
     
     # Total number of records
     total = int(db.session.scalar(select(func.count()).select_from(query.subquery())))
@@ -286,3 +296,10 @@ class PlacementSchema(ma.SQLAlchemyAutoSchema):
         # if datetime.strptime(value, "%Y-%m-%dT%H:%M") < datetime.now():
         if value < datetime.now():
             raise ValidationError("Deadline cannot be in the past.")
+
+class StatsSchema(ma.Schema):
+    num_students = fields.Integer()
+    num_companies = fields.Integer()
+    num_positions = fields.Integer()
+    num_applications = fields.Integer()
+    num_placements = fields.Integer()

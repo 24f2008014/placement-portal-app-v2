@@ -36,8 +36,12 @@ def get_applications_self(args):
         query=query,
         model=Application,
         args=args,
-        allowed_filters={"id", "status", "position_id"},
-        allowed_sort={"id"},
+        allowed_filters={
+            "id": "equals",
+            "position_id": "equals",
+            "status": "equals",
+        },
+        allowed_sort={"id", "position_id", "status", "interview_date"},
         endpoint="student.get_applications_self"
     )
     return { "pagination": pagination, "data": items }, 200

@@ -77,8 +77,16 @@ def get_positions(args):
         query=query,
         model=Position,
         args=args,
-        allowed_filters={"role"},
-        allowed_sort={"id"},
+        allowed_filters={
+            "id": "equals",
+            "role": "ilike",
+            "salary_min": "gt",
+            "salary_max": "gt",
+            "deadline": "gt",
+            "min_cgpa": "gt",
+            "status": "equals"
+        },
+        allowed_sort={"id", "role", "salary_min", "salary_max", "deadline", "min_cgpa", "status"},
         endpoint="main.get_positions"
     )
     return { "pagination": pagination, "data": items }, 200
@@ -115,14 +123,24 @@ def get_company_positions(args, id):
     """Get all positions for a company."""
     company = db.get_or_404(Company, id)
     query = db.session.query(Position).filter(Position.company == company)
+    if token_auth.current_user().student:
+        query = query.filter(Position.is_approved == True)
     items, pagination = paginate_query(
         query=query,
         model=Position,
         args=args,
-        allowed_filters={"status", "id"},
-        allowed_sort={"id", "role", "status"},
+        allowed_filters={
+            "id": "equals",
+            "role": "ilike",
+            "salary_min": "gt",
+            "salary_max": "gt",
+            "deadline": "gt",
+            "min_cgpa": "gt",
+            "status": "equals"
+        },
+        allowed_sort={"id", "role", "salary_min", "salary_max", "deadline", "min_cgpa", "status"},
         endpoint="main.get_company_positions"
-    )
+    )    
     return { "pagination": pagination, "data": items }, 200
 
 @main.route("/companies", methods=["GET"])
@@ -135,8 +153,13 @@ def get_companies(args):
         query=query,
         model=Company,
         args=args,
-        allowed_filters={"id", "status"},
-        allowed_sort={"id"},
+        allowed_filters={
+            "id": "equals",
+            "name": "ilike",
+            "status": "equals",
+            "contact_email": "ilike"
+        },
+        allowed_sort={"id", "status"},
         endpoint="main.get_companies"
     )
     return { "pagination": pagination, "data": items }, 200
