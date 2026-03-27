@@ -16,6 +16,7 @@ const auth = useAuthStore();
                     <!-- <li class="nav-item"><RouterLink :to="{ name: 'home' }" class="nav-link">Home</RouterLink></li> -->
                     <template v-if="auth.currentUser.role=='student'">
                         <li class="nav-item"><RouterLink :to="{ name: 'student_dashboard' }" class="nav-link">Dashboard</RouterLink></li>
+                        <li class="nav-item"><RouterLink :to="{ name: 'companies' }" class="nav-link">Companies</RouterLink></li>
                     </template>
                     <template v-if="auth.currentUser.role=='company'">
                         <li class="nav-item"><RouterLink :to="{ name: 'company_dashboard' }" class="nav-link">Dashboard</RouterLink></li>
