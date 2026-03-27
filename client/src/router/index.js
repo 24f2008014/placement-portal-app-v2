@@ -16,6 +16,8 @@ import StudentPositionView from "@/views/StudentPositionView.vue";
 import StudentView from "@/views/StudentView.vue";
 import CompanyView from "@/views/CompanyView.vue";
 import ApplicationView from "@/views/ApplicationView.vue";
+import { useAlertStore } from "@/stores/alert";
+import CompaniesView from "@/views/CompaniesView.vue";
 
 const routes = [
   {
@@ -36,7 +38,9 @@ const routes = [
       { path: "/positions/:id", name: "position", component: PositionView, meta: { requiresAuth: true, title: "View Position" } },
       { path: "/companies/:id", name: "company", component: CompanyView, meta: { requiresAuth: true, roleRequired: ["admin", "student"], title: "Company" } },
       { path: "/students/:id", name: "student", component: StudentView, meta: { requiresAuth: true, roleRequired: ["admin", "company"], title: "Student" } },
-      { path: "/applications/:id", name: "application", component: ApplicationView, meta: { requiresAuth: true, title: "Application" } }
+      { path: "/applications/:id", name: "application", component: ApplicationView, meta: { requiresAuth: true, title: "Application" } },
+      { path: "/companies", name: "companies", component: CompaniesView, meta: { requiresAuth: true, roleRequired: ["student", "admin"], title: "Companies" } },
+      { path: "/:pathMatch(.*)*", redirect: "/" }
     ]
   }
 ];
@@ -49,6 +53,7 @@ const router = createRouter({
 // Navigation guards
 router.beforeEach(async (to, from) => {
   const auth = useAuthStore();
+  const alert = useAlertStore();
 
   // Initialize Pinia auth store on startup
   if (!auth.isInitialized) {
@@ -65,6 +70,7 @@ router.beforeEach(async (to, from) => {
 
   // Role-based guard
   if (to.meta.roleRequired && !to.meta.roleRequired.includes(auth.currentUser.role)) {
+    alert.addAlert("You are not authorized to view that page.", "error");
     return { name: "home" };
   }
 
