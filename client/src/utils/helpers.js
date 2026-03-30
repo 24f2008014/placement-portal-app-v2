@@ -1,3 +1,5 @@
+import { api } from "./api";
+
 const markRequiredFields = () => {
     document.querySelectorAll("input[required], select[required]").forEach((e) => {
         document.querySelector(`label[for=${e.id}]`).classList.add("required");
@@ -27,4 +29,16 @@ const dateOptions = {
 };
 const formatDate = ((d) => new Intl.DateTimeFormat("en-GB", dateOptions).format(new Date(d)));
 
-export { markRequiredFields, flattenResponse, formatDate };
+async function viewResume(url) {
+    try {
+        const response = await api.get(`/uploads/resumes/${url}`, {responseType: "blob"});
+        const blob = new Blob([response.data], {type: "application/pdf"})
+        const objectURL = URL.createObjectURL(blob);
+        window.open(objectURL, "_blank");
+    }
+    catch (error) {
+        console.log(error);
+    }
+};
+
+export { markRequiredFields, flattenResponse, formatDate, viewResume };
