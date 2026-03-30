@@ -14,7 +14,8 @@ const positions_closed_url = "/companies/me/positions";
 const positions_fields = {
     "ID": {name: "id", filter: true, sort: true},
     "Role": {name: "role", filter: false},
-    "Status": {name: "status", filter: false}
+    "Status": {name: "status", filter: false},
+    "Applications": {name: "num_applications", filter: false}
 };
 const position_route_name = "position";
 

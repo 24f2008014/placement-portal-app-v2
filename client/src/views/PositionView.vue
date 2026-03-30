@@ -23,7 +23,7 @@ const applications_fields = {
     "Roll No.": {name: "roll_number", filter: false},
     "First Name": {name: "first_name", filter: false},
     "Last Name": {name: "last_name", filter: false},
-    "Created At": {name: "created_at", filter: false},
+    "Created At": {name: "created_at", filter: false, type: "date"},
     "Status": {name: "status", filter: false}
 };
 const application_item_route = "application";

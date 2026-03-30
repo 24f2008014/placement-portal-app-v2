@@ -1,11 +1,13 @@
 <script setup>
 import { useAuthStore } from "@/stores/auth";
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import PaginatedTable from "@/components/PaginatedTable.vue";
+import { api } from "@/utils/api";
 
 const loading = ref(true);
 const errors = ref({});
 const auth = useAuthStore();
+const stats = ref({});
 
 const positions_url = "/positions";
 const positions_fields = {
@@ -30,12 +32,27 @@ const my_applications_fields = {
     "Status": {name: "status", filter: true, label: "Status", type: "select", input: {type: "select", options: [{label: "Pending", value: "pending"}, {label: "Shortlisted", value: "shortlisted"}, {label: "Selected", value: "selected"}, {label: "Rejected", value: "rejected"}, {label: "Withdrawn", value: "withdrawn"}]}},
 }
 const my_application_route = "application";
+
+async function getStats() {
+    try {
+        const response = await api.get("/students/me/stats");
+        stats.value = response.data;
+    }
+    catch (error) {
+        console.log(error);
+    }
+}
+
+onMounted(() => {
+    getStats();
+})
 </script>
 
 <template>
     <div class="row">
         <h6 class="display-6">Student Dashboard</h6>
         <p class="lead text-muted">Welcome back, {{ auth.currentUser.name }}!</p>
+        <p>{{ stats }}</p>
     </div>
     <hr>
     <div class="row justify-content-center">

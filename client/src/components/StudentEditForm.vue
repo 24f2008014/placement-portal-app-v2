@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, computed } from "vue";
+import { onMounted, ref, computed, handleError } from "vue";
 import { api } from "@/utils/api";
 import { useAlertStore } from "@/stores/alert";
 import { markRequiredFields, flattenResponse } from "@/utils/helpers";
@@ -15,6 +15,8 @@ const inputDepartment = ref();
 const inputBranch = ref();
 const inputGraduationYear = ref();
 const inputCgpa = ref();
+const inputResume = ref();
+const resumeUrl = ref();
 const departments = ref("");
 const branches = ref("");
 const updateSuccessful = ref(false);
@@ -63,6 +65,7 @@ async function getDetails() {
         inputBranch.value = response.data.branch_id;
         inputGraduationYear.value = response.data.graduation_year;
         inputCgpa.value = response.data.cgpa;
+        resumeUrl.value = response.data.resume_url;
     }
     catch (error) {
         console.log(error);
@@ -72,18 +75,19 @@ async function getDetails() {
 async function submitForm() {
     errors.value = {};
     try {
-        const formData = {
-            roll_number: inputRollNumber.value,
-            first_name: inputFirstName.value,
-            last_name: inputLastName.value,
-            date_of_birth: inputDateOfBirth.value,
-            gender: inputGender.value,
-            // department_id: inputDepartment.value,
-            branch_id: inputBranch.value,
-            graduation_year: inputGraduationYear.value,
-            cgpa: inputCgpa.value
+        const formData = new FormData();
+        formData.append("roll_number", inputRollNumber.value);
+        formData.append("first_name", inputFirstName.value);
+        formData.append("last_name", inputLastName.value);
+        formData.append("date_of_birth", inputDateOfBirth.value);
+        formData.append("gender", inputGender.value);
+        formData.append("branch_id", inputBranch.value);
+        formData.append("graduation_year", inputGraduationYear.value);
+        formData.append("cgpa", inputCgpa.value);
+        if (inputResume.value) {
+            formData.append("resume", inputResume.value);
         }
-        const response = await api.put("/students/me", formData);
+        const response = await api.put("/students/me", formData, { headers: { "Content-Type": "multipart/form-data" } });
         updateSuccessful.value = true;
         alert.addAlert("Successfully updated your profile.", "success");
     }
@@ -92,6 +96,22 @@ async function submitForm() {
         if ("errors" in error.response.data) {
             errors.value = flattenResponse(error.response.data.errors.json)
         }
+    }
+};
+
+function handleFileUpload(event) {
+    inputResume.value = event.target.files[0];
+};
+
+async function viewResume() {
+    try {
+        const response = await api.get(`/uploads/resumes/${resumeUrl.value}`, {responseType: "blob"});
+        const blob = new Blob([response.data], {type: "application/pdf"})
+        const objectURL = URL.createObjectURL(blob);
+        window.open(objectURL, "_blank");
+    }
+    catch (error) {
+        console.log(error);
     }
 };
 
@@ -181,10 +201,12 @@ onMounted(() => {
             </div>
         </div>
 
-        <!-- <div class="mb-3">
-            <label for="inputResume" class="form-label">Upload your resume</label>
-            <input class="form-control" type="file" id="inputResume" accept=".pdf" v-model="inputResume">
-        </div> -->
+        <div class="mb-3">
+            <label for="inputResume" class="form-label">Upload resume (PDF)
+            </label>
+            <p v-if="resumeUrl"><a @click="viewResume" style="color: lightblue; cursor: pointer">View Existing ({{ resumeUrl }})</a></p>
+            <input class="form-control" type="file" id="inputResume" accept=".pdf" @change="handleFileUpload">
+        </div>
 
         <button type="submit" class="btn btn-primary mb-3">Submit</button>
     </form>

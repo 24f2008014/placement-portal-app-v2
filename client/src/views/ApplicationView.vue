@@ -10,6 +10,7 @@ import { useAlertStore } from "@/stores/alert";
 import { formatDate } from "@/utils/helpers";
 import Modal from "@/components/Modal.vue";
 import { flattenResponse } from "@/utils/helpers";
+import { viewResume } from "@/utils/helpers";
 
 const alert = useAlertStore();
 const auth = useAuthStore();
@@ -19,6 +20,8 @@ const router = useRouter();
 const route = useRoute();
 const errors = ref({});
 const shortlistInterviewDate = ref(null);
+const selectJoiningDate = ref(null);
+const selectSalary = ref(null);
 const now = new Date();
 const minDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
 
@@ -27,6 +30,7 @@ async function getApplication() {
         loading.value = true;
         const response = await api.get(`/applications/${route.params.id}`);
         application.value = response.data;
+        console.log(response.data)
     }
     catch (error) {
         console.log(error);
@@ -85,7 +89,11 @@ async function rejectApplication() {
 
 async function selectApplication() {
     try {
-        const response = await api.post(`/applications/${route.params.id}/select`);
+        const formData = {
+            joining_date: selectJoiningDate.value,
+            salary: selectSalary.value
+        };
+        const response = await api.post(`/applications/${route.params.id}/select`, formData);
         application.value = response.data;
         const statusModal = document.getElementById("selectModal");
         const statusModalInstance = bootstrap.Modal.getInstance(statusModal);
@@ -125,7 +133,10 @@ onMounted(() => {
     <p v-if="Object.keys(errors).length > 0" class="text-danger">{{ errors }}</p>
 
     <template v-if="!loading">
-        <p>{{ application }}</p>
+        <div class="row mb-4">
+            <h3>Student</h3>
+            <a @click="viewResume(application.student.resume_url)">{{ application.student.resume_url }}</a>
+        </div>
         <div class="row mb-4">
             <div class="col">
                 <h6 class="text-primary-emphasis">Student Name</h6>
@@ -155,16 +166,20 @@ onMounted(() => {
             <div class="row mb-4">
                 <div class="col">
                     <h3>Current Status: <code>{{ application.status }}</code></h3>
-                    <p v-if="application.status=='pending'">Your application is currently <strong>pending</strong>. Please wait for the company to take a look at it.</p>
+                    <template v-if="application.status=='pending'">
+                        <p>Your application is currently <strong>pending</strong>. Please wait for the company to take a look at it.</p>
+                        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#withdrawApplicationModal"><i class="bi bi-x-lg me-2"></i>Withdraw Application</button>
+                    </template>
                     <template v-else-if="application.status=='shortlisted'">
                         <p>Your application has been shortlisted, and you have an interview scheduled. The company will get in touch with you via email soon to organize the interview. In case you have any further questions, here is their email address.</p>
                         <p class="mb-0"><strong>Interview Date: </strong>{{ formatDate(application.interview_date) }}</p>
                         <p class="mb-3"><strong>Company Email: </strong>{{ application.position.company.contact_email }}</p>
                     </template>
-                    <p v-else-if="application.status=='selected'">Your application has been <strong>selected</strong>! Congratulations!</p>
+                    <template v-else-if="application.status=='selected'">
+                        <p>Your application has been <strong>selected</strong>. Congratulations! <RouterLink :to="{ name: 'placement', params: { 'id': application.placements[0].id } }">Click here</RouterLink> to view the linked placement offer.</p>
+                    </template>
                     <p v-else-if="application.status=='rejected'">Unfortunately, your application has been<strong>rejected</strong>. Thank you for applying.</p>
                     <p v-else-if="application.status=='withdrawn'">You have <strong>withdrawn</strong> your application.</p>
-                    <button v-if="application.status!='withdrawn'" type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#withdrawApplicationModal"><i class="bi bi-x-lg me-2"></i>Withdraw Application</button>
                 </div>
 
                 <div>
@@ -201,10 +216,16 @@ onMounted(() => {
                     </template>
                     <template v-else-if="application.status=='shortlisted'">
                         <p>This application has been <strong>shortlisted</strong>. You can either make them a placement offer, or reject their application.</p>
-                        <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#selectModal"><i class="bi bi-check-lg me-2"></i>Select</button>
-                        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal"><i class="bi bi-x-lg me-2"></i>Reject</button>
+                        <div class="row">
+                            <div class="col d-flex gap-3">
+                                <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#selectModal"><i class="bi bi-check-lg me-2"></i>Select</button>
+                                <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal"><i class="bi bi-x-lg me-2"></i>Reject</button>
+                            </div>
+                        </div>
                     </template>
-                    <p v-else-if="application.status=='selected'">This application has been <strong>selected</strong>.</p>
+                    <template v-else-if="application.status=='selected'">
+                        <p>This application has been <strong>selected</strong>. <RouterLink :to="{ name: 'placement', params: { 'id': application.placements[0].id } }">Click here</RouterLink> to view the linked placement offer.</p>
+                    </template>
                     <p v-else-if="application.status=='rejected'">This application has been<strong>rejected</strong>.</p>
                     <p v-else-if="application.status=='withdrawn'">The candidate has <strong>withdrawn</strong> their application.</p>
                 </div>
@@ -232,7 +253,21 @@ onMounted(() => {
 
                 <Modal :title="'Select Application'" :id="'selectModal'" :yesLabel="'Select'" @confirm="selectApplication">
                     <template #modal-body>
-                        <p>Are you sure you want to <strong>select</strong> this student's application (#{{ $route.params.id }})?</p>
+                        <p>Would you like to <strong>select</strong> this student's application (#{{ $route.params.id }}) and make them a placement offer?</p>
+                        <form>
+                            <div class="row mb-3">
+                                <div class="col">
+                                    <label for="selectJoiningDate" class="form-label"><strong>Joining Date</strong></label>
+                                    <input class="form-control" type="date" :class="{ 'is-invalid': errors.joining_date }"id="selectJoiningDate" v-model="selectJoiningDate" required aria-describedby="selectJoiningDateValidation" :min="minDate">
+                                    <div v-if="errors.joining_date" class="invalid-feedback" id="selectJoiningDateValidation">{{ errors.joining_date[0] }}</div>
+                                </div>
+                                <div class="col">
+                                    <label for="selectSalary" class="form-label"><strong>Salary Offer</strong></label>
+                                    <input class="form-control" type="number" :class="{ 'is-invalid': errors.salary }"id="selectSalary" v-model="selectSalary" required aria-describedby="selectSalaryValidation" min=0>
+                                    <div v-if="errors.salary" class="invalid-feedback" id="selectSalaryValidation">{{ errors.salary[0] }}</div>
+                                </div>
+                            </div>
+                        </form>
                     </template>
                 </Modal>
             </div>
