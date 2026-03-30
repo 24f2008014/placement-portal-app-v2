@@ -18,6 +18,7 @@ import CompanyView from "@/views/CompanyView.vue";
 import ApplicationView from "@/views/ApplicationView.vue";
 import { useAlertStore } from "@/stores/alert";
 import CompaniesView from "@/views/CompaniesView.vue";
+import PlacementView from "@/views/PlacementView.vue";
 
 const routes = [
   {
@@ -40,6 +41,7 @@ const routes = [
       { path: "/students/:id", name: "student", component: StudentView, meta: { requiresAuth: true, roleRequired: ["admin", "company"], title: "Student" } },
       { path: "/applications/:id", name: "application", component: ApplicationView, meta: { requiresAuth: true, title: "Application" } },
       { path: "/companies", name: "companies", component: CompaniesView, meta: { requiresAuth: true, roleRequired: ["student", "admin"], title: "Companies" } },
+      { path: "/placements/:id", name: "placement", component: PlacementView, meta: { requiresAuth: true, title: "Placement" } },
       { path: "/:pathMatch(.*)*", redirect: "/" }
     ]
   }
