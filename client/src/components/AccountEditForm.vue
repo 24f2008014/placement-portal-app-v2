@@ -15,11 +15,10 @@ async function getDetails() {
     try {
         const response = await api.get("/users/me");
         inputEmail.value = response.data.email;
+    } catch (error) {
+        console.error(error);
     }
-    catch (error) {
-        console.log(error);
-    }
-}
+};
 
 async function submitForm() {
     errors.value = {};
@@ -28,17 +27,16 @@ async function submitForm() {
             email: inputEmail.value,
             old_password: inputOldPassword.value,
             password: inputPassword.value,
-        }
+        };
         const response = await api.put("/users/me", formData);
         updateSuccessful.value = true;
         alert.addAlert("Account info updated.", "success");
         inputOldPassword.value = null;
         inputPassword.value = null;
-    }
-    catch (error) {
-        console.log(error.response.data)
+    } catch (error) {
+        console.error(error.response.data)
         if ("errors" in error.response.data) {
-            errors.value = flattenResponse(error.response.data.errors.json)
+            errors.value = flattenResponse(error.response.data.errors.json);
         }
     }
 };
@@ -52,7 +50,9 @@ onMounted(() => {
 <template>
     <h3 class="display-6">Account Details</h3>
     <hr class="mb-4">
+
     <p v-if="updateSuccessful" class="text-success">Successfully updated your account info.</p>
+
     <form class="border px-3 py-3 needs-validation body-bg-tertiary" @submit.prevent="submitForm">
         <div class="mb-3">
             <label for="inputEmail" class="form-label">Email address</label>

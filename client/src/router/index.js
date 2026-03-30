@@ -1,23 +1,21 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
+import { useAlertStore } from "@/stores/alert";
 import BaseLayout from "@/layouts/BaseLayout.vue";
 import HomeView from "@/views/HomeView.vue";
-import LoginView from "@/views/LoginView.vue";
-import ProfileView from "@/views/ProfileView.vue";
-import ProtectedView from "@/views/ProtectedView.vue";
 import RegisterView from "@/views/RegisterView.vue";
+import LoginView from "@/views/LoginView.vue";
 import AccountView from "@/views/AccountView.vue";
-import CompanyDashboardView from "@/views/CompanyDashboardView.vue";
+import ProfileView from "@/views/ProfileView.vue";
 import AdminDashboardView from "@/views/AdminDashboardView.vue";
-import CompanyPositionsView from "@/views/CompanyPositionsView.vue";
-import PositionView from "@/views/PositionView.vue";
+import CompanyDashboardView from "@/views/CompanyDashboardView.vue";
 import StudentDashboardView from "@/views/StudentDashboardView.vue";
-import StudentPositionView from "@/views/StudentPositionView.vue";
-import StudentView from "@/views/StudentView.vue";
-import CompanyView from "@/views/CompanyView.vue";
-import ApplicationView from "@/views/ApplicationView.vue";
-import { useAlertStore } from "@/stores/alert";
+import CompanyPositionsView from "@/views/CompanyPositionsView.vue";
 import CompaniesView from "@/views/CompaniesView.vue";
+import CompanyView from "@/views/CompanyView.vue";
+import PositionView from "@/views/PositionView.vue";
+import StudentView from "@/views/StudentView.vue";
+import ApplicationView from "@/views/ApplicationView.vue";
 import PlacementView from "@/views/PlacementView.vue";
 
 const routes = [
@@ -25,24 +23,98 @@ const routes = [
     path: "/",
     component: BaseLayout,
     children: [
-      { path: "", name: "home", component: HomeView, meta: { title: "Home" } },
-      { path: "/login", name: "login", component: LoginView, meta: { title: "Login" } },
-      { path: "/register", name: "register", component: RegisterView, meta: { title: "Register" } },
-      { path: "/profile", name: "profile", component: ProfileView, meta: { requiresAuth: true, roleRequired: ["student", "company"], title: "Profile" } },
-      { path: "/account", name: "account", component: AccountView, meta: { requiresAuth: true }, title: "Account" },
-      { path: "/protected", name: "protected", component: ProtectedView, meta: { requiresAuth: true }, title: "Protected" },
-      { path: "/company/dashboard", name: "company_dashboard", component: CompanyDashboardView, meta: { requiresAuth: true, roleRequired: ["company"], title: "Dashboard" } },
-      { path: "/admin/dashboard", name: "admin_dashboard", component: AdminDashboardView, meta: { requiresAuth: true, roleRequired: ["admin"], title: "Dashboard" } },
-      { path: "/student/dashboard", name: "student_dashboard", component: StudentDashboardView, meta: { requiresAuth: true, roleRequired: ["student"], title: "Dashboard" } },
-      { path: "/company/positions", name: "company_positions", component: CompanyPositionsView, meta: { requiresAuth: true, roleRequired: ["company"], title: "Your Positions" } },
-      { path: "/student/positions/:id", name: "student_position", component: StudentPositionView, meta: { requiresAuth: true, title: "View Position" } },
-      { path: "/positions/:id", name: "position", component: PositionView, meta: { requiresAuth: true, title: "View Position" } },
-      { path: "/companies/:id", name: "company", component: CompanyView, meta: { requiresAuth: true, roleRequired: ["admin", "student"], title: "Company" } },
-      { path: "/students/:id", name: "student", component: StudentView, meta: { requiresAuth: true, roleRequired: ["admin", "company"], title: "Student" } },
-      { path: "/applications/:id", name: "application", component: ApplicationView, meta: { requiresAuth: true, title: "Application" } },
-      { path: "/companies", name: "companies", component: CompaniesView, meta: { requiresAuth: true, roleRequired: ["student", "admin"], title: "Companies" } },
-      { path: "/placements/:id", name: "placement", component: PlacementView, meta: { requiresAuth: true, title: "Placement" } },
-      { path: "/:pathMatch(.*)*", redirect: "/" }
+      { 
+        path: "",
+        name: "home",
+        component: HomeView,
+        meta: { title: "Home" }
+      },
+      { 
+        path: "/login",
+        name: "login",
+        component: LoginView,
+        meta: { title: "Login" }
+      },
+      { 
+        path: "/register",
+        name: "register",
+        component: RegisterView,
+        meta: { title: "Register" }
+      },
+      {
+        path: "/profile",
+        name: "profile",
+        component: ProfileView,
+        meta: { title: "Profile", requiresAuth: true, roleRequired: ["company", "student"] }
+      },
+      {
+        path: "/account",
+        name: "account",
+        component: AccountView,
+        meta: { requiresAuth: true, title: "Account" }
+      },
+      {
+        path: "/company/dashboard",
+        name: "company_dashboard",
+        component: CompanyDashboardView,
+        meta: { title: "Dashboard", requiresAuth: true, roleRequired: ["company"] }
+      },
+      {
+        path: "/admin/dashboard",
+        name: "admin_dashboard",
+        component: AdminDashboardView,
+        meta: { title: "Dashboard", requiresAuth: true, roleRequired: ["admin"] }
+      },
+      {
+        path: "/student/dashboard",
+        name: "student_dashboard",
+        component: StudentDashboardView,
+        meta: { title: "Dashboard", requiresAuth: true, roleRequired: ["student"] }
+      },
+      {
+        path: "/company/positions",
+        name: "company_positions",
+        component: CompanyPositionsView,
+        meta: { title: "Your Positions", requiresAuth: true, roleRequired: ["company"] }
+      },
+      {
+        path: "/positions/:id",
+        name: "position",
+        component: PositionView,
+        meta: { title: "View Position", requiresAuth: true }
+      },
+      {
+        path: "/companies/:id",
+        name: "company",
+        component: CompanyView,
+        meta: { title: "Company", requiresAuth: true, roleRequired: ["admin", "student"] } },
+      {
+        path: "/students/:id",
+        name: "student",
+        component: StudentView,
+        meta: { title: "Student", requiresAuth: true, roleRequired: ["admin", "company"] } },
+      {
+        path: "/applications/:id",
+        name: "application",
+        component: ApplicationView,
+        meta: { title: "Application", requiresAuth: true }
+      },
+      {
+        path: "/companies",
+        name: "companies",
+        component: CompaniesView,
+        meta: { title: "Companies", requiresAuth: true, roleRequired: ["admin", "student"] }
+      },
+      {
+        path: "/placements/:id",
+        name: "placement",
+        component: PlacementView,
+        meta: { title: "Placement", requiresAuth: true }
+      },
+      {
+        path: "/:pathMatch(.*)*",
+        redirect: "/"
+      }
     ]
   }
 ];
@@ -52,12 +124,11 @@ const router = createRouter({
   routes: routes,
 })
 
-// Navigation guards
 router.beforeEach(async (to, from) => {
   const auth = useAuthStore();
   const alert = useAlertStore();
 
-  // Initialize Pinia auth store on startup
+  // Initialize auth store on startup
   if (!auth.isInitialized) {
     await auth.refresh();
   }
@@ -82,6 +153,7 @@ router.beforeEach(async (to, from) => {
   }
 });
 
+// Dynamic page titles
 router.afterEach((to, from) => {
   const id = to.params.id;
   if (id) {
@@ -89,6 +161,6 @@ router.afterEach((to, from) => {
   } else {
     document.title = to.meta.title ? `${to.meta.title} | Placer` : "Placer";
   }
-})
+});
 
 export default router;

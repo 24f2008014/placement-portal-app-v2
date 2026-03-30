@@ -20,6 +20,7 @@ const props = defineProps(["application"]);
                 <i class="bi bi-x-lg me-2 fs-6 text-danger"></i><strong>Closed</strong>
             </p>            
         </div>
+        
         <div class="col">
             <h4 class="mb-2">Eligibility</h4>
             <p class="lead mb-1"><i class="bi bi-dash me-2 fs-6"></i> <strong>Minimum CGPA:</strong> {{ props.application.min_cgpa }}</p>
