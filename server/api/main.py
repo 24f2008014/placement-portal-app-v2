@@ -1,4 +1,4 @@
-from flask import Blueprint, abort
+from flask import Blueprint, abort, send_from_directory, current_app
 from api.app import db
 from apifairy import authenticate, body, response, other_responses, arguments
 from api.auth import token_auth
@@ -111,7 +111,17 @@ def get_applications(args, id):
     if token_auth.current_user().company and token_auth.current_user().company != position.company:
         abort(403)
     query = db.session.query(Application).where(Application.position == position)
-    items, pagination = paginate_query(query, Application, args, {"status"}, {"id"}, "main.get_applications")
+    items, pagination = paginate_query(
+        query=query,
+        model=Application,
+        args=args,
+        allowed_filters={
+            "id": "equals",
+            "status": "equals"
+        },
+        allowed_sort={"id"},
+        endpoint="main.get_applications"
+    )
     print(items)
     return { "pagination": pagination, "data": items }, 200
 
@@ -188,6 +198,20 @@ def get_student(id):
         if application is None:
             abort(403)
     return student
+
+import os
+
+@main.route("/uploads/resumes/<filename>", methods=["GET"])
+@authenticate(token_auth)
+def get_resume(filename):
+    """Get a resume."""
+    if token_auth.current_user().student\
+        and db.session.scalar(db.select(Student).filter(Student.resume_url == filename)) == token_auth.current_user().student:
+        abort(403)
+    return send_from_directory(
+        os.path.join(os.path.dirname(os.getcwd()), "server", current_app.config["UPLOAD_FOLDER"]),
+        filename
+    )
 
 @main.route("/applications/<int:id>", methods=["GET"])
 @authenticate(token_auth)

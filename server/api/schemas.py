@@ -8,7 +8,9 @@ from datetime import datetime
 from sqlalchemy import func, asc, desc, select
 import json
 from werkzeug.exceptions import BadRequest
-from flask import request, url_for
+from flask import request, url_for, current_app
+from werkzeug.utils import secure_filename
+import os
 
 def paginate_query(query, model, args, allowed_filters, allowed_sort, endpoint):
     limit = int(args.get("limit", 10))
@@ -189,6 +191,7 @@ class StudentSchema(ma.SQLAlchemyAutoSchema):
     gender = auto_field(validate=validate.OneOf(["male", "female", "other"]))
     branch = fields.Nested(BranchSchema, only=("name", "department_id",), dump_only=True)
     user = fields.Nested(UserSchema, only=("email",), dump_only=True)
+    resume = fields.Raw(load_only=True, required=False)
 
     @validates("roll_number")
     def validate_roll_number(self, value, **kwargs):
@@ -196,6 +199,18 @@ class StudentSchema(ma.SQLAlchemyAutoSchema):
         old_roll_number = user.student.roll_number if user else None
         if (old_roll_number != value) and db.session.scalar(db.select(Student).where(Student.roll_number == value)):
             raise ValidationError("Roll number in use. Please provide a unique roll number.")
+    
+    @pre_load
+    def check_resume(self, data, **kwargs):
+        if "resume" in data and data["resume"].filename.rsplit(".", 1)[1].lower() == "pdf":
+            user = token_auth.current_user()
+            student_id = user.student.id
+            filename = f"{student_id}_{secure_filename(data['resume'].filename)}"
+            file_path = os.path.join(current_app.config["UPLOAD_FOLDER"], filename)
+            data["resume"].save(file_path)
+            data["resume_url"] = filename
+            data.pop("resume", None)
+        return data
 
 class ProfileOneOfSchema(OneOfSchema):
     type_field = "type"
@@ -252,6 +267,10 @@ class PositionSchema(ma.SQLAlchemyAutoSchema):
     company = fields.Nested(CompanySchema, dump_only=True)
     departments = fields.Nested(DepartmentSchema, many=True, dump_only=True)
     department_ids = fields.List(fields.Integer(), load_only=True)
+    num_applications = fields.Method("get_num_applications", dump_only=True)
+
+    def get_num_applications(self, obj):
+        return len(obj.applications)
 
     @validates("deadline")
     def validate_deadline(self, value, **kwargs):
@@ -278,8 +297,9 @@ class ApplicationSchema(ma.SQLAlchemyAutoSchema):
     student_id = auto_field(dump_only=True)
     position_id = auto_field(dump_only=True)
     status = auto_field(validate=validate.OneOf(["pending", "shortlisted", "selected", "rejected", "withdrawn"]))
-    student = fields.Nested(StudentSchema, only=("id", "first_name", "last_name", "roll_number"), dump_only=True)
+    student = fields.Nested(StudentSchema, only=("id", "first_name", "last_name", "roll_number", "resume_url"), dump_only=True)
     position = fields.Nested(PositionSchema, only=("id", "role", "company.name", "company.contact_email"), dump_only=True)
+    placements = fields.Nested("PlacementSchema", only=("id", "status"), many=True)
 
 class PlacementSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
@@ -290,6 +310,7 @@ class PlacementSchema(ma.SQLAlchemyAutoSchema):
     application_id = auto_field(dump_only=True)
     salary = auto_field(validate=validate.Range(min=0))
     status = auto_field(validate=validate.OneOf(["pending", "accepted", "rejected", "withdrawn"]))
+    application = fields.Nested(ApplicationSchema, only=("id", "position.role", "position.company.name", "position.company.id", "position.id", "student.first_name", "student.last_name", "student.roll_number", "student.id"), dump_only=True)
 
     @validates("joining_date")
     def validate_joining_date(self, value, **kwargs):
@@ -303,3 +324,6 @@ class StatsSchema(ma.Schema):
     num_positions = fields.Integer()
     num_applications = fields.Integer()
     num_placements = fields.Integer()
+
+class StudentStatsSchema(ma.Schema):
+    num_applications = fields.Integer()

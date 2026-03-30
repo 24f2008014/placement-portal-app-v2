@@ -43,7 +43,17 @@ def change_position_status(data, id):
 def get_company_positions(args):
     """Get all positions made by your company."""
     query = db.session.query(Position)
-    items, pagination = paginate_query(query, Position, args, {"role"}, {"id"}, "company.get_positions_self")
+    items, pagination = paginate_query(
+        query=query,
+        model=Position,
+        args=args,
+        allowed_filters={
+            "id": "equals",
+            "role": "ilike"
+        },
+        allowed_sort={"id"},
+        endpoint="company.get_positions_self"
+    )
     return { "pagination": pagination, "data": items }, 200
 
 @company.route("/companies/me", methods=["GET"])
@@ -84,7 +94,7 @@ def shortlist_application(data, id):
 @company.route("/applications/<int:id>/select", methods=["POST"])
 @authenticate(token_auth, role=["company"])
 @body(PlacementSchema())
-@response(PlacementSchema())
+@response(PlacementSchema(), 201)
 def select_application(data, id):
     """Select an applicant and make them a placement offer."""
     application = db.get_or_404(Application, id)
@@ -112,3 +122,17 @@ def reject_application(id):
     application.status = "rejected"
     db.session.commit()
     return application
+
+@company.route("/placements/<int:id>/withdraw", methods=["POST"])
+@authenticate(token_auth, role=["student"])
+@response(PlacementSchema())
+def withdraw_placement(id):
+    """Withdraw a pending placement offer."""
+    placement = db.get_or_404(Placement, id)
+    if token_auth.current_user().company != placement.application.position.company:
+        abort(403)
+    if placement.status != "pending":
+        abort(403)
+    placement.status = "withdrawn"
+    db.session.commit()
+    return placement

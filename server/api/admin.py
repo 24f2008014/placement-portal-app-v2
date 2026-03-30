@@ -60,7 +60,9 @@ def get_student_applications(args, id):
         query=query,
         model=Application,
         args=args,
-        allowed_filters={"id"},
+        allowed_filters={
+            "id": "equals"
+        },
         allowed_sort={"id"},
         endpoint="admin.get_student_applications"
     )

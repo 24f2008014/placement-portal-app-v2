@@ -1,12 +1,23 @@
-from flask import Blueprint, abort
+from flask import Blueprint, abort, request
 from api.app import db
 from apifairy import authenticate, body, response, other_responses, arguments
 from api.auth import token_auth
-from api.schemas import UserSchema, EmptySchema, RegisterSchema, StudentSchema, DepartmentSchema, BranchSchema, UpdateUserSchema, IndustrySchema, CompanySchema, PositionSchema, paginate_query, ListQueryArgsSchema, PaginatedCollection, ApplicationSchema
+from api.schemas import UserSchema, EmptySchema, RegisterSchema, StudentSchema, DepartmentSchema, BranchSchema, UpdateUserSchema, IndustrySchema, CompanySchema, PositionSchema, paginate_query, ListQueryArgsSchema, PaginatedCollection, ApplicationSchema, StudentStatsSchema, PlacementSchema
 from api.models import User, Role, Department, Branch, Student, Industry, Position, Application, Placement, Company
 from datetime import datetime, timezone
+from werkzeug.utils import secure_filename
+from sqlalchemy import func
 
 student = Blueprint("student", __name__)
+
+@student.route("/students/me/stats", methods=["GET"])
+@authenticate(token_auth, role=["student"])
+@response(StudentStatsSchema())
+def get_student_stats_self():
+    student = token_auth.current_user().student
+    return {
+        "num_applications": db.session.scalar(db.select(func.count()).select_from(Student).filter(Student.id == student.id))
+    }
 
 @student.route("/students/me", methods=["GET"])
 @authenticate(token_auth, role=["student"])
@@ -17,7 +28,7 @@ def get_student_self():
 
 @student.route("/students/me", methods=["PUT"])
 @authenticate(token_auth, role=["student"])
-@body(StudentSchema(load_instance=False))
+@body(StudentSchema(load_instance=False), location="form")
 @response(StudentSchema())
 def update_student_self(data):
     student = token_auth.current_user().student
@@ -75,3 +86,31 @@ def withdraw_application(id):
     application.deleted_at = datetime.now(timezone.utc)
     db.session.commit()
     return application
+
+@student.route("/placements/<int:id>/accept", methods=["POST"])
+@authenticate(token_auth, role=["student"])
+@response(PlacementSchema())
+def accept_placement(id):
+    """Accept a pending placement offer."""
+    placement = db.get_or_404(Placement, id)
+    if token_auth.current_user().student != placement.application.student:
+        abort(403)
+    if placement.status != "pending":
+        abort(403)
+    placement.status = "accepted"
+    db.session.commit()
+    return placement
+
+@student.route("/placements/<int:id>/reject", methods=["POST"])
+@authenticate(token_auth, role=["student"])
+@response(PlacementSchema())
+def reject_placement(id):
+    """Reject a pending placement offer."""
+    placement = db.get_or_404(Placement, id)
+    if token_auth.current_user().student != placement.student:
+        abort(403)
+    if placement.status != "pending":
+        abort(403)
+    placement.status = "rejected"
+    db.session.commit()
+    return placement
