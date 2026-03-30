@@ -1,12 +1,38 @@
 from flask import Blueprint, abort
-from api.app import db
 from apifairy import authenticate, body, response, other_responses, arguments
-from api.auth import token_auth
-from api.schemas import UserSchema, EmptySchema, RegisterSchema, StudentSchema, DepartmentSchema, BranchSchema, UpdateUserSchema, IndustrySchema, CompanySchema, PositionSchema, paginate_query, ListQueryArgsSchema, PaginatedCollection, ApplicationSchema, StatsSchema
-from api.models import User, Role, Department, Branch, Student, Industry, Position, Application, Placement, Company
 from sqlalchemy import func
+from datetime import datetime
+from celery.result import AsyncResult
+from api.app import db, cache
+from api.auth import token_auth
+from api.schemas import StudentSchema, CompanySchema, paginate_query, ListQueryArgsSchema, PaginatedCollection, ApplicationSchema, StatsSchema
+from api.models import Student, Position, Application, Placement, Company
+from api.tasks import add_together
 
 admin = Blueprint("admin", __name__)
+
+@admin.route("/cache_test", methods=["GET"])
+@authenticate(token_auth, role=["admin"])
+@cache.cached(timeout=15)
+def cache_test():
+    """Quickly check whether caching is working properly or not."""
+    return { "time": datetime.now() }, 200
+
+@admin.route("/celery_test", methods=["GET"])
+@authenticate(token_auth, role=["admin"])
+def admin_celery_test():
+    result = add_together.delay(5, 10)
+    return { "result_id": result.id }, 200
+
+@admin.route("/result/<id>", methods=["GET"])
+@authenticate(token_auth, role=["admin"])
+def task_result(id: str) -> dict[str, object]:
+    result = AsyncResult(id)
+    return {
+        "ready": result.ready(),
+        "status": result.state,
+        "result": result.result if result.ready() else None,
+    }
 
 @admin.route("/stats", methods=["GET"])
 @authenticate(token_auth, role=["admin"])
