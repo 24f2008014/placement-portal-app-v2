@@ -6,6 +6,8 @@ from flask_marshmallow import Marshmallow
 from flask_cors import CORS
 from flask_mail import Mail
 from apifairy import APIFairy
+from flask_caching import Cache
+from celery import Celery, Task
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -13,6 +15,20 @@ ma = Marshmallow() # Initialize AFTER flask-sqlalchemy
 cors = CORS()
 mail = Mail()
 apifairy = APIFairy()
+cache = Cache()
+
+# From the Flask docs.
+def celery_init_app(app: Flask) -> Celery:
+    class FlaskTask(Task):
+        def __call__(self, *args: object, **kwargs: object) -> object:
+            with app.app_context():
+                return self.run(*args, **kwargs)
+
+    celery_app = Celery(app.name, task_cls=FlaskTask)
+    celery_app.config_from_object(app.config, namespace="CELERY")
+    celery_app.set_default()
+    app.extensions["celery"] = celery_app
+    return celery_app
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -27,6 +43,8 @@ def create_app(config_class=Config):
     cors.init_app(app, supports_credentials=True) # Need this for accepting cross-origin cookies. Injects the Access-Control-Allow-Credentials header in responses.
     mail.init_app(app)
     apifairy.init_app(app)
+    cache.init_app(app)
+    celery_init_app(app)
 
     # Error handlers for both Flask and apifairy (ADD: SQLAlchemy integrity errors)
     from api.errors import errors
