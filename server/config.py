@@ -12,6 +12,14 @@ class Config:
     UPLOAD_FOLDER = "uploads/resumes"
     MAX_FILE_SIZE = 2 * 1024 * 1024 # 2 MB
 
+    CACHE_TYPE = "RedisCache"
+    CACHE_DEFAULT_TIMEOUT = 300
+    CACHE_REDIS_HOST = "localhost"
+
+    CELERY_BROKER_URL = "redis://localhost:6379/0"
+    CELERY_RESULT_BACKEND = "redis://localhost"
+    CELERY_TASK_IGNORE_RESULT = True
+
     MAIL_SERVER = os.environ.get("MAIL_SERVER", "localhost")
     MAIL_PORT = os.environ.get("MAIL_PORT", 25)
     MAIL_USERNAME = os.environ.get("MAIL_USERNAME")
