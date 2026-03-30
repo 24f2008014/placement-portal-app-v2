@@ -2,7 +2,7 @@ from flask import Blueprint, abort, send_from_directory, current_app
 from api.app import db
 from apifairy import authenticate, body, response, other_responses, arguments
 from api.auth import token_auth
-from api.schemas import UserSchema, EmptySchema, RegisterSchema, StudentSchema, DepartmentSchema, BranchSchema, UpdateUserSchema, IndustrySchema, CompanySchema, PositionSchema, paginate_query, ListQueryArgsSchema, PaginatedCollection, ApplicationSchema, PlacementSchema
+from api.schemas import UserSchema, RegisterSchema, StudentSchema, DepartmentSchema, BranchSchema, UpdateUserSchema, IndustrySchema, CompanySchema, PositionSchema, paginate_query, ListQueryArgsSchema, PaginatedCollection, ApplicationSchema, PlacementSchema
 from api.models import User, Role, Department, Branch, Student, Industry, Position, Application, Placement, Company
 
 main = Blueprint("main", __name__)
@@ -15,7 +15,7 @@ def index():
 @authenticate(token_auth)
 @response(UserSchema())
 def get_user():
-    """Returns a user's details."""
+    """Returns the current user."""
     return token_auth.current_user()
 
 @main.route("/users/me", methods=["PUT"])
