@@ -17,6 +17,9 @@ import PositionView from "@/views/PositionView.vue";
 import StudentView from "@/views/StudentView.vue";
 import ApplicationView from "@/views/ApplicationView.vue";
 import PlacementView from "@/views/PlacementView.vue";
+import StudentsView from "@/views/StudentsView.vue";
+import PositionsView from "@/views/PositionsView.vue";
+import SearchView from "@/views/SearchView.vue";
 
 const routes = [
   {
@@ -106,10 +109,28 @@ const routes = [
         meta: { title: "Companies", requiresAuth: true, roleRequired: ["admin", "student"] }
       },
       {
+        path: "/students",
+        name: "students",
+        component: StudentsView,
+        meta: { title: "Students", requiresAuth: true, roleRequired: ["admin"] }
+      },
+      {
+        path: "/positions",
+        name: "positions",
+        component: PositionsView,
+        meta: { title: "Positions", requiresAuth: true, roleRequired: ["admin", "student"] }
+      },   
+      {
         path: "/placements/:id",
         name: "placement",
         component: PlacementView,
         meta: { title: "Placement", requiresAuth: true }
+      },
+      {
+        path: "/search",
+        name: "search",
+        component: SearchView,
+        meta: { title: "Search", requiresAuth: true, roleRequired: ["admin"] }
       },
       {
         path: "/:pathMatch(.*)*",
