@@ -2,8 +2,6 @@
 import { onMounted, ref } from "vue";
 import { api } from "@/utils/api";
 import { useRouter, useRoute } from "vue-router";
-import PaginatedTable from "@/components/PaginatedTable.vue";
-import PositionViewForm from "@/components/PositionViewForm.vue";
 import { useAuthStore } from "@/stores/auth";
 import * as bootstrap from "bootstrap";
 import { useAlertStore } from "@/stores/alert";
@@ -30,44 +28,32 @@ async function getApplication() {
         loading.value = true;
         const response = await api.get(`/applications/${route.params.id}`);
         application.value = response.data;
-        console.log(response.data)
-    }
-    catch (error) {
-        console.log(error);
-    }
-    finally {
         loading.value = false;
+    } catch (error) {
+        console.error(error);
     }
-};
+}
 
 async function withdrawApplication() {
     try {
-        const formData = { status: "withdrawn" };
-        const response = await api.patch(`/positions/${route.params.id}`, formData);
+        const response = await api.patch(`/positions/${route.params.id}`, { status: "withdrawn" });
         application.value = response.data;
-        const withdrawApplicationModal = document.getElementById("withdrawApplicationModal");
-        const withdrawApplicationModalInstance = bootstrap.Modal.getInstance(withdrawApplicationModal);
-        withdrawApplicationModalInstance.hide();
+        bootstrap.Modal.getInstance(document.getElementById("withdrawApplicationModal")).hide();
         alert.addAlert(`Successfully withdrew your application (#${route.params.id}).`, "success");
-    }
-    catch (error) {
-        console.log(error);
+    } catch (error) {
+        console.error(error);
         errors.value = flattenResponse(error.response.data.json.errors);
     }
-};
+}
 
 async function shortlistApplication() {
     try {
         const response = await api.post(`/applications/${route.params.id}/shortlist`, { interview_date: shortlistInterviewDate.value });
         application.value = response.data;
-        console.log(response.data)
-        const statusModal = document.getElementById("shortlistModal");
-        const statusModalInstance = bootstrap.Modal.getInstance(statusModal);
-        statusModalInstance.hide();
+        bootstrap.Modal.getInstance(document.getElementById("shortlistModal")).hide();
         alert.addAlert(`Successfully shortlisted application (#${route.params.id}).`, "success");
-    }
-    catch (error) {
-        console.log(error);
+    } catch (error) {
+        console.error(error);
         errors.value = flattenResponse(error.response.data);
     }
 }
@@ -76,13 +62,10 @@ async function rejectApplication() {
     try {
         const response = await api.post(`/applications/${route.params.id}/reject`);
         application.value = response.data;
-        const statusModal = document.getElementById("rejectModal");
-        const statusModalInstance = bootstrap.Modal.getInstance(statusModal);
-        statusModalInstance.hide();
+        bootstrap.Modal.getInstance(document.getElementById("rejectModal")).hide();
         alert.addAlert(`Successfully rejected application (#${route.params.id}).`, "success");
-    }
-    catch (error) {
-        console.log(error);
+    } catch (error) {
+        console.error(error);
         errors.value = flattenResponse(error.response.data);
     }
 }
@@ -95,13 +78,10 @@ async function selectApplication() {
         };
         const response = await api.post(`/applications/${route.params.id}/select`, formData);
         application.value = response.data;
-        const statusModal = document.getElementById("selectModal");
-        const statusModalInstance = bootstrap.Modal.getInstance(statusModal);
-        statusModalInstance.hide();
+        bootstrap.Modal.getInstance(document.getElementById("selectModal")).hide();
         alert.addAlert(`Successfully selected application (#${route.params.id}).`, "success");
-    }
-    catch (error) {
-        console.log(error);
+    } catch (error) {
+        console.error(error);
         errors.value = flattenResponse(error.response.data);
     }
 }
@@ -118,25 +98,25 @@ onMounted(() => {
             <p class="lead text-muted">Application ID: #{{ route.params.id }}</p>
             <div class="row">
                 <div class="col d-flex gap-2">
-                    <button type="button" class="btn btn-primary btn-sm" @click='router.push({ "name": "company_positions" })'>
-                        <i class="bi bi-arrow-left me-2"></i>All Positions
-                    </button>
-                    <button type="button" class="btn btn-success btn-sm" @click='router.push({ "name": "student_dashboard" })'>
-                        <i class="bi bi-graph-up me-2"></i>Dashboard
-                    </button>
+                    <template v-if="!loading">
+                        <button type="button" class="btn btn-primary btn-sm" @click='router.push({ name: "position", params: { id: application.position_id } })'>
+                            <i class="bi bi-arrow-left me-2"></i>Position
+                        </button>
+                    </template>
                 </div>
             </div>
         </div>
     </div>
     <hr class="mb-4">
 
-    <p v-if="Object.keys(errors).length > 0" class="text-danger">{{ errors }}</p>
-
     <template v-if="!loading">
         <div class="row mb-4">
-            <h3>Student</h3>
-            <a @click="viewResume(application.student.resume_url)">{{ application.student.resume_url }}</a>
+            <h3>Application Details</h3>
+            <div class="col d-flex mt-2">
+                <button type="button" v-if="application.student.resume_url" class="btn btn-sm btn-success" @click="viewResume(application.student.resume_url)"><i class="bi bi-download me-2"></i>View Resume</button>
+            </div>
         </div>
+
         <div class="row mb-4">
             <div class="col">
                 <h6 class="text-primary-emphasis">Student Name</h6>
@@ -148,7 +128,7 @@ onMounted(() => {
                 <p>{{ application.student.roll_number }}</p>
             </div>
             <div class="col">
-                <h6 class="text-primary-emphasis">Role</h6>
+                <h6 class="text-primary-emphasis">Position Role</h6>
                 <p>{{ application.position.role }}</p>
                 <h6 class="text-primary-emphasis">Company</h6>
                 <p>{{ application.position.company.name }}</p>
@@ -162,60 +142,27 @@ onMounted(() => {
         </div>
         <hr class="mb-4">
 
-        <template v-if="auth.currentUser.role=='student'">
-            <div class="row mb-4">
-                <div class="col">
-                    <h3>Current Status: <code>{{ application.status }}</code></h3>
-                    <template v-if="application.status=='pending'">
-                        <p>Your application is currently <strong>pending</strong>. Please wait for the company to take a look at it.</p>
-                        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#withdrawApplicationModal"><i class="bi bi-x-lg me-2"></i>Withdraw Application</button>
-                    </template>
-                    <template v-else-if="application.status=='shortlisted'">
-                        <p>Your application has been shortlisted, and you have an interview scheduled. The company will get in touch with you via email soon to organize the interview. In case you have any further questions, here is their email address.</p>
-                        <p class="mb-0"><strong>Interview Date: </strong>{{ formatDate(application.interview_date) }}</p>
-                        <p class="mb-3"><strong>Company Email: </strong>{{ application.position.company.contact_email }}</p>
-                    </template>
-                    <template v-else-if="application.status=='selected'">
-                        <p>Your application has been <strong>selected</strong>. Congratulations! <RouterLink :to="{ name: 'placement', params: { 'id': application.placements[0].id } }">Click here</RouterLink> to view the linked placement offer.</p>
-                    </template>
-                    <p v-else-if="application.status=='rejected'">Unfortunately, your application has been<strong>rejected</strong>. Thank you for applying.</p>
-                    <p v-else-if="application.status=='withdrawn'">You have <strong>withdrawn</strong> your application.</p>
-                </div>
-
-                <div>
-                    <div class="modal fade" tabindex="-1" id="withdrawApplicationModal" aria-labelledby="withdrawApplicationModalTitle">
-                        <div class="modal-dialog">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="withdrawApplicationModalTitle">Change Status</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <p>Are you sure you want to <strong>withdraw</strong> your application (#{{ $route.params.id }})? This cannot be undone.</p>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                                    <button type="button" class="btn btn-danger btn-sm" @click="withdrawApplication">Withdraw</button>
-                                </div>
+        <div class="row mb-4">
+            <div class="col">
+                <h3>Current Status: <code>{{ application.status }}</code></h3>
+                <template v-if="application.status=='pending'">
+                    <p>This application is currently <strong>pending</strong> company review. The company may either shortlist the candidate for an interivew, or reject the application.</p>
+                    <button v-if="auth.currentUser.role=='student'" type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#withdrawApplicationModal"><i class="bi bi-x-lg me-2"></i>Withdraw Application</button>
+                    <template v-else-if="auth.currentUser.role=='company'">
+                        <div class="row">
+                            <div class="col d-flex gap-3">
+                                <button type="button" class="btn btn-sm btn-success me-2" data-bs-toggle="modal" data-bs-target="#shortlistModal"><i class="bi bi-check-lg me-2"></i>Shortlist</button>
+                                <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal"><i class="bi bi-x-lg me-2"></i>Reject</button>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-            <hr class="mb-4">
-        </template>
-
-        <template v-else-if="auth.currentUser.role=='company'">
-            <div class="row mb-4">
-                <div class="col">
-                    <h3>Current Status: <code>{{ application.status }}</code></h3>
-                    <template v-if="application.status=='pending'">
-                        <p>This application is <strong>pending</strong> further review. You can either shortlist the applicant for an interview, or reject their application.</p>
-                        <button type="button" class="btn btn-sm btn-success me-2" data-bs-toggle="modal" data-bs-target="#shortlistModal"><i class="bi bi-check-lg me-2"></i>Shortlist</button>
-                        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal"><i class="bi bi-x-lg me-2"></i>Reject</button>
                     </template>
-                    <template v-else-if="application.status=='shortlisted'">
-                        <p>This application has been <strong>shortlisted</strong>. You can either make them a placement offer, or reject their application.</p>
+                </template>
+
+                <template v-else-if="application.status=='shortlisted'">
+                    <p>This application has been <strong>shortlisted</strong>, and an interview has been scheduled. The company will get in touch with the applicant via email soon to organize the interview. In case of any further questions, here is the company's email address.</p>
+                    <p class="mb-0"><strong>Interview Date: </strong>{{ formatDate(application.interview_date) }}</p>
+                    <p class="mb-3"><strong>Company Email: </strong>{{ application.position.company.contact_email }}</p>
+                    <template v-if="auth.currentUser.role=='company'">
                         <div class="row">
                             <div class="col d-flex gap-3">
                                 <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#selectModal"><i class="bi bi-check-lg me-2"></i>Select</button>
@@ -223,56 +170,63 @@ onMounted(() => {
                             </div>
                         </div>
                     </template>
-                    <template v-else-if="application.status=='selected'">
-                        <p>This application has been <strong>selected</strong>. <RouterLink :to="{ name: 'placement', params: { 'id': application.placements[0].id } }">Click here</RouterLink> to view the linked placement offer.</p>
-                    </template>
-                    <p v-else-if="application.status=='rejected'">This application has been<strong>rejected</strong>.</p>
-                    <p v-else-if="application.status=='withdrawn'">The candidate has <strong>withdrawn</strong> their application.</p>
-                </div>
+                </template>
 
-                <Modal :title="'Shortlist Application'" :id="'shortlistModal'" :yesLabel="'Shortlist'" @confirm="shortlistApplication">
-                    <template #modal-body>
-                        <p>Would you like to <strong>shortlist</strong> this student's application (#{{ $route.params.id }}) for an interview?</p>
-                        <form>
-                            <div class="row mb-3">
-                                <div class="col">
-                                    <label for="shortlistInterviewDate" class="form-label"><strong>Interview date</strong></label>
-                                    <input class="form-control" type="datetime-local" :class="{ 'is-invalid': errors.interview_date }"id="shortlistInterviewDate" v-model="shortlistInterviewDate" required aria-describedby="inputDeadlineValidation" :min="minDate">
-                                    <div v-if="errors.interview_date" class="invalid-feedback" id="shortlistInterviewDateValidation">{{ errors.interview_date[0] }}</div>
-                                </div>
-                            </div>
-                        </form>
-                    </template>
-                </Modal>
+                <template v-else-if="application.status=='selected'">
+                    <p>This application has been <strong>selected</strong>. <RouterLink :to="{ name: 'placement', params: { 'id': application.placements[0].id } }">Click here</RouterLink> to view the linked placement offer.</p>
+                </template>
 
-                <Modal :title="'Reject Application'" :id="'rejectModal'" :yesLabel="'Reject'" @confirm="rejectApplication">
-                    <template #modal-body>
-                        <p>Are you sure you want to <strong>reject</strong> this student's application (#{{ $route.params.id }})? This cannot be undone.</p>
-                    </template>
-                </Modal>
+                <p v-else-if="application.status=='rejected'">This application has been<strong>rejected</strong>. Thank you for applying.</p>
 
-                <Modal :title="'Select Application'" :id="'selectModal'" :yesLabel="'Select'" @confirm="selectApplication">
-                    <template #modal-body>
-                        <p>Would you like to <strong>select</strong> this student's application (#{{ $route.params.id }}) and make them a placement offer?</p>
-                        <form>
-                            <div class="row mb-3">
-                                <div class="col">
-                                    <label for="selectJoiningDate" class="form-label"><strong>Joining Date</strong></label>
-                                    <input class="form-control" type="date" :class="{ 'is-invalid': errors.joining_date }"id="selectJoiningDate" v-model="selectJoiningDate" required aria-describedby="selectJoiningDateValidation" :min="minDate">
-                                    <div v-if="errors.joining_date" class="invalid-feedback" id="selectJoiningDateValidation">{{ errors.joining_date[0] }}</div>
-                                </div>
-                                <div class="col">
-                                    <label for="selectSalary" class="form-label"><strong>Salary Offer</strong></label>
-                                    <input class="form-control" type="number" :class="{ 'is-invalid': errors.salary }"id="selectSalary" v-model="selectSalary" required aria-describedby="selectSalaryValidation" min=0>
-                                    <div v-if="errors.salary" class="invalid-feedback" id="selectSalaryValidation">{{ errors.salary[0] }}</div>
-                                </div>
-                            </div>
-                        </form>
-                    </template>
-                </Modal>
+                <p v-else-if="application.status=='withdrawn'">This application has been <strong>withdrawn</strong> by the student.</p>
             </div>
-            <hr class="mb-4">
-        </template>
 
+            <Modal :title="'Change Status'" :id="'withdrawApplicationModal'" :yes-label="'Withdraw'" @confirm="withdrawApplication">
+                <template #modal-body>
+                    <p>Are you sure you want to <strong>withdraw</strong> your application (#{{ $route.params.id }})? This cannot be undone.</p>
+                </template>
+            </Modal>
+
+            <Modal :title="'Shortlist Application'" :id="'shortlistModal'" :yesLabel="'Shortlist'" @confirm="shortlistApplication">
+                <template #modal-body>
+                    <p>Would you like to <strong>shortlist</strong> this student's application (#{{ $route.params.id }}) for an interview?</p>
+                    <form>
+                        <div class="row mb-3">
+                            <div class="col">
+                                <label for="shortlistInterviewDate" class="form-label"><strong>Interview date</strong></label>
+                                <input class="form-control" type="datetime-local" :class="{ 'is-invalid': errors.interview_date }"id="shortlistInterviewDate" v-model="shortlistInterviewDate" required aria-describedby="inputDeadlineValidation" :min="minDate">
+                                <div v-if="errors.interview_date" class="invalid-feedback" id="shortlistInterviewDateValidation">{{ errors.interview_date[0] }}</div>
+                            </div>
+                        </div>
+                    </form>
+                </template>
+            </Modal>
+
+            <Modal :title="'Reject Application'" :id="'rejectModal'" :yesLabel="'Reject'" @confirm="rejectApplication">
+                <template #modal-body>
+                    <p>Are you sure you want to <strong>reject</strong> this student's application (#{{ $route.params.id }})? This cannot be undone.</p>
+                </template>
+            </Modal>
+
+            <Modal :title="'Select Application'" :id="'selectModal'" :yesLabel="'Select'" @confirm="selectApplication">
+                <template #modal-body>
+                    <p>Would you like to <strong>select</strong> this student's application (#{{ $route.params.id }}) and make them a placement offer?</p>
+                    <form>
+                        <div class="row mb-3">
+                            <div class="col">
+                                <label for="selectJoiningDate" class="form-label"><strong>Joining Date</strong></label>
+                                <input class="form-control" type="date" :class="{ 'is-invalid': errors.joining_date }"id="selectJoiningDate" v-model="selectJoiningDate" required aria-describedby="selectJoiningDateValidation" :min="minDate">
+                                <div v-if="errors.joining_date" class="invalid-feedback" id="selectJoiningDateValidation">{{ errors.joining_date[0] }}</div>
+                            </div>
+                            <div class="col">
+                                <label for="selectSalary" class="form-label"><strong>Salary Offer</strong></label>
+                                <input class="form-control" type="number" :class="{ 'is-invalid': errors.salary }"id="selectSalary" v-model="selectSalary" required aria-describedby="selectSalaryValidation" min=0>
+                                <div v-if="errors.salary" class="invalid-feedback" id="selectSalaryValidation">{{ errors.salary[0] }}</div>
+                            </div>
+                        </div>
+                    </form>
+                </template>
+            </Modal>            
+        </div>
     </template>
 </template>

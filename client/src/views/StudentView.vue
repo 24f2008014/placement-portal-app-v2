@@ -1,13 +1,14 @@
 <script setup>
 import { useAuthStore } from "@/stores/auth";
-import { ref, onMounted } from "vue";
+import { ref, onMounted, reactive } from "vue";
 import { api } from "@/utils/api";
 import PaginatedTable from "@/components/PaginatedTable.vue";
 import { useRoute, useRouter } from "vue-router";
-import { flattenResponse } from "@/utils/helpers";
-import { formatDate } from "@/utils/helpers";
+import { formatDate, formatDateNoTime } from "@/utils/helpers";
 import { useAlertStore } from "@/stores/alert";
 import * as bootstrap from "bootstrap";
+import Modal from "@/components/Modal.vue";
+import { viewResume } from "@/utils/helpers";
 
 const alert = useAlertStore();
 const router = useRouter();
@@ -22,53 +23,140 @@ async function getDepartments() {
     try {
         const response = await api.get("/departments");
         departments.value = response.data;
-        // console.log(departments.value);
+    } catch (error) {
+        console.error(error);
     }
-    catch (error) {
-        console.log(error);
-    }
-};
+}
 
 async function getStudent() {
     try {
         const response = await api.get(`/students/${route.params.id}`);
         student.value = response.data;
         loading.value = false;
-    }
-    catch (error) {
-        console.log(error);
+    } catch (error) {
+        console.error(error);
     }
 }
 
 async function changeStatus() {
     try {
         const newStatus = (student.value.status == "whitelisted") ? "blacklisted" : "whitelisted";
-        const formData = {
-            status: newStatus
-        };
-        const response = await api.patch(`/students/${route.params.id}`, formData);
+        const response = await api.patch(`/students/${route.params.id}`, { status: newStatus });
         student.value = response.data;
-        const statusModal = document.getElementById("StudentStatusModal");
-        const statusModalInstance = bootstrap.Modal.getInstance(statusModal);
-        statusModalInstance.hide();
-        alert.addAlert(`Successfully updated Student #${route.params.id}'s status'.`, "success");
+        bootstrap.Modal.getInstance(document.getElementById("StudentStatusModal")).hide();
+        alert.addAlert(`Successfully updated Student #${route.params.id}'s status.`, "success");
+    } catch (error) {
+        console.error(error);
     }
-    catch (error) {
-        console.log(error);
+}
+
+const applications_endpoint = `/students/${route.params.id}/applications`;
+const applications_route = "application";
+const applications_fields = {
+    "ID": {
+        name: "id",
+        filter: true,
+        label: "ID",
+        input: {
+            type: "number",
+            min: "1"
+        }
+    },
+    "Position ID": {
+        name: "position_id",
+        filter: false
+    },    
+    "Position": {
+        name: "position.role",
+        filter: false
+    },
+    "Company": {
+        name: "position.company.name",
+        filter: false  
+    },
+    "Created At": {
+        name: "created_at",
+        filter: false,
+        type: "date"
+    },
+    "Updated At": {
+        name: "updated_at",
+        filter: false,
+        type: "date"
+    },
+    "Status": {
+        name: "status",
+        filter: true,
+        label: "Status",
+        type: "select",
+        input: {
+            type: "select",
+            options: [
+                {label: "Pending", value: "pending"},
+                {label: "Shortlisted", value: "shortlisted"},
+                {label: "Selected", value: "selected"},
+                {label: "Rejected", value: "rejected"},
+                {label: "Withdrawn", value: "withdrawn"}
+            ]
+        }
     }
 };
 
-const applications_url = `/students/${route.params.id}/applications`
-const applications_route_name = "application"
-const applications_fields = {
-    "ID": {name: "id", filter: true, sort: true},
-    "Status": {name: "status", filter: false}
-}
+const placements_endpoint = `/students/${route.params.id}/placements`;
+const placements_route = "placement";
+const placements_fields = {
+    "ID": {
+        name: "id",
+        filter: true,
+        label: "ID",
+        input: {
+            type: "number",
+            min: "1"
+        }
+    },  
+    "Position": {
+        name: "application.position.role",
+        filter: false
+    },
+    "Company": {
+        name: "application.position.company.name",
+        filter: false  
+    },
+    "Salary": {
+        name: "salary",
+        filter: false
+    },
+    "Joining Date": {
+        name: "joining_date",
+        filter: false,
+        type: "date"
+    },  
+    "Created At": {
+        name: "created_at",
+        filter: false,
+        type: "date"
+    },
+    "Status": {
+        name: "status",
+        filter: true,
+        label: "Status",
+        type: "select",
+        input: {
+            type: "select",
+            options: [
+                {label: "Pending", value: "pending"},
+                {label: "Accepted", value: "accepted"},
+                {label: "Rejected", value: "rejected"},
+                {label: "Withdrawn", value: "withdrawn"}
+            ]
+        }
+    }
+};
 
 onMounted(() => {
     getDepartments();
     getStudent();
-})
+});
 </script>
 
 <template>
@@ -78,11 +166,11 @@ onMounted(() => {
             <p class="lead text-muted">Student ID: #{{ route.params.id }}</p>
             <div class="row">
                 <div class="col d-flex gap-2">
-                    <button type="button" class="btn btn-primary btn-sm" @click='router.push({ "name": "company_positions" })'>
+                    <button v-if="auth.currentUser.role=='admin'" type="button" class="btn btn-primary btn-sm" @click='router.push({ "name": "students" })'>
                         <i class="bi bi-arrow-left me-2"></i>All Students
                     </button>
-                    <button type="button" class="btn btn-success btn-sm" @click='router.push({ "name": "student_dashboard" })'>
-                        <i class="bi bi-graph-up me-2"></i>Dashboard
+                    <button v-else type="button" class="btn btn-primary btn-sm" @click='router.push({ "name": "company_positions" })'>
+                        <i class="bi bi-arrow-left me-2"></i>Your Positions
                     </button>
                 </div>
             </div>
@@ -91,12 +179,19 @@ onMounted(() => {
     <hr class="mb-4">
 
     <template v-if="!loading">
-        <div class="row mb-4">
+        <div class="row mb-3">
+            <h3>Student Details</h3>
+            <div class="col d-flex mt-2">
+                <button type="button" v-if="student.resume_url" class="btn btn-sm btn-success" @click="viewResume(student.resume_url)"><i class="bi bi-download me-2"></i>View Resume</button>
+            </div>
+        </div>
+
+        <div class="row mb-4 border rounded mx-0 p-3">
             <div class="col">
-                <h6 class="text-primary-emphasis">First Name</h6>
-                <p>{{ student.first_name }}</p>
-                <h6 class="text-primary-emphasis">Last Name</h6>
-                <p>{{ student.last_name }}</p>
+                <h6 class="text-primary-emphasis">Name</h6>
+                <p>{{ student.first_name }} {{ student.last_name }}</p>
+                <h6 class="text-primary-emphasis">Gender</h6>
+                <p>{{ student.gender }}</p>
             </div>
             <div class="col">
                 <h6 class="text-primary-emphasis">Roll No.</h6>
@@ -105,24 +200,30 @@ onMounted(() => {
                 <p>{{ student.user.email }}</p>
             </div>
             <div class="col">
+                <h6 class="text-primary-emphasis">Branch</h6>
+                <p>{{ student.branch.name }}</p>
                 <h6 class="text-primary-emphasis">Date of Birth</h6>
-                <p>{{ formatDate(student.date_of_birth) }}</p>
-                <h6 class="text-primary-emphasis">Gender</h6>
-                <p>{{ student.gender }}</p>
+                <p>{{ formatDateNoTime(student.date_of_birth) }}</p>
+            </div>
+            <div class="col">
+                <h6 class="text-primary-emphasis">Graduation Year</h6>
+                <p>{{ student.graduation_year }}</p>
+                <h6 class="text-primary-emphasis">Signup Date</h6>
+                <p>{{ formatDateNoTime(student.user.created_at) }}</p>                
             </div>
             <div class="col">
                 <h6 class="text-primary-emphasis">CGPA</h6>
                 <p>{{ student.cgpa }}</p>
-                <h6 class="text-primary-emphasis">Graduation Year</h6>
-                <p>{{ student.graduation_year }}</p>
-            </div>
-            <div class="col">
-                <h6 class="text-primary-emphasis">Branch</h6>
-                <p>{{ student.branch.name }}</p>
-                <h6 class="text-primary-emphasis">Resume</h6>
-                <p>{{ student.resume_url ? student.resume_url : "N/A" }}</p>
+                <h6 class="text-primary-emphasis">Status</h6>
+                <p>{{ student.status }}</p>
             </div>
         </div>
+        <div v-if="student.bio" class="row mb-4">
+            <hr class="mb-4">
+            <h3>Student Bio</h3>
+            <p>{{ student.bio }}</p>
+        </div>
+
         <template v-if="auth.currentUser.role=='admin'">
             <hr class="mb-4">
             <div class="row mb-4">
@@ -132,38 +233,33 @@ onMounted(() => {
                     <p v-else>This student is <strong>blacklisted</strong>. They cannot make new job applications.</p>
                     <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#StudentStatusModal"><i class="bi bi-wrench me-2"></i>Change Status</button>
                 </div>
-                <div class="col">
-                    <div class="modal fade" tabindex="-1" id="StudentStatusModal" aria-labelledby="StudentStatusModalTitle">
-                        <div class="modal-dialog">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="StudentStatusModalTitle">Change Status</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <p v-if="student.status=='whitelisted'">Are you sure you want to change Student #{{ $route.params.id }}'s status from <strong>whitelisted</strong> to <strong>blacklisted</strong>?</p>
-                                    <p v-else>Are you sure you want to change Student #{{ $route.params.id }}'s status from <strong>blacklisted</strong> to <strong>whitelisted</strong>?</p>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
-                                    <button type="button" class="btn btn-primary btn-sm" @click="changeStatus">Change Status</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <Modal :title="'Change Status'" :id="'StudentStatusModal'" :yes-label="'Confirm'" @confirm="changeStatus">
+                    <template #modal-body>
+                        <p v-if="student.status=='whitelisted'">Are you sure you want to change Student #{{ $route.params.id }}'s status from <strong>whitelisted</strong> to <strong>blacklisted</strong>?</p>
+                        <p v-else>Are you sure you want to change Student #{{ $route.params.id }}'s status from <strong>blacklisted</strong> to <strong>whitelisted</strong>?</p>                        
+                    </template>
+                </Modal>
             </div>
         </template>
     </template>
+
     <div class="row mb-4" v-else><p>Loading...</p></div>
     <hr class="mb-4">
 
     <div class="row mb-4" v-if="auth.currentUser.role=='admin'"">
         <div class="col">
-            <h3 class="mb-3">Applications Made</h3>
-            <div class="col" v-if="!loading">
-                <PaginatedTable :url="applications_url" :fields="applications_fields" :item_route_name="applications_route_name" />
-            </div>
+            <h3 class="mb-3">Applications</h3>
+            <template v-if="!loading">
+                <div class="col">
+                    <PaginatedTable :url="applications_endpoint" :fields="applications_fields" :item_route_name="applications_route" />
+                </div>
+                <hr class="mb-4">
+
+                <div class="col">
+                    <h3 class="mb-3">Placements</h3>
+                    <PaginatedTable :url="placements_endpoint" :fields="placements_fields" :item_route_name="placements_route" />
+                </div>
+            </template>
             <div v-else>Loading...</div>
         </div>
     </div>
