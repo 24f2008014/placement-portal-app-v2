@@ -1,19 +1,28 @@
-from flask import Blueprint, abort, request
+from flask import Blueprint, abort
 from api.app import db
 from apifairy import authenticate, body, response, other_responses, arguments
 from api.auth import token_auth
-from api.schemas import UserSchema, EmptySchema, RegisterSchema, StudentSchema, DepartmentSchema, BranchSchema, UpdateUserSchema, IndustrySchema, CompanySchema, PositionSchema, paginate_query, ListQueryArgsSchema, PaginatedCollection, ApplicationSchema, StudentStatsSchema, PlacementSchema
-from api.models import User, Role, Department, Branch, Student, Industry, Position, Application, Placement, Company
+from api.schemas import StudentSchema, paginate_query, ListQueryArgsSchema, PaginatedCollection, ApplicationSchema, StudentStatsSchema, PlacementSchema
+from api.models import Student, Position, Application, Placement
 from datetime import datetime, timezone
-from werkzeug.utils import secure_filename
 from sqlalchemy import func
+from api.tasks import export_applications_csv
 
 student = Blueprint("student", __name__)
+
+@student.route("/student/me/applications/export", methods=["GET"])
+@authenticate(token_auth, role=["student"])
+def export_applications():
+    """Export your applications in .csv format."""
+    student = token_auth.current_user().student
+    result = export_applications_csv.delay(student.id)
+    return { "result_id": result.id }, 200
 
 @student.route("/students/me/stats", methods=["GET"])
 @authenticate(token_auth, role=["student"])
 @response(StudentStatsSchema())
 def get_student_stats_self():
+    """Get student statistics for your dashboard."""
     student = token_auth.current_user().student
     return {
         "num_applications": db.session.scalar(db.select(func.count()).select_from(Student).filter(Student.id == student.id))
@@ -23,7 +32,7 @@ def get_student_stats_self():
 @authenticate(token_auth, role=["student"])
 @response(StudentSchema())
 def get_student_self():
-    """Returns a user's details."""
+    """Returns a student's details."""
     return token_auth.current_user().student
 
 @student.route("/students/me", methods=["PUT"])
@@ -31,6 +40,7 @@ def get_student_self():
 @body(StudentSchema(load_instance=False), location="form")
 @response(StudentSchema())
 def update_student_self(data):
+    """Update your student profile."""
     student = token_auth.current_user().student
     student.update(data)
     db.session.commit()
@@ -41,6 +51,7 @@ def update_student_self(data):
 @arguments(ListQueryArgsSchema())
 @response(PaginatedCollection(ApplicationSchema()))
 def get_applications_self(args):
+    """Get a list of applications you've made."""
     student = token_auth.current_user().student
     query = db.session.query(Application).filter(Application.student == student)
     items, pagination = paginate_query(
@@ -61,6 +72,7 @@ def get_applications_self(args):
 @authenticate(token_auth, role=["student"])
 @response(ApplicationSchema(), 201)
 def create_application(id):
+    """Create a new application for an open position."""
     student = token_auth.current_user().student
     position = db.get_or_404(Position, id)
     if position.status == "closed" or position.is_approved == False:
@@ -77,6 +89,7 @@ def create_application(id):
 @authenticate(token_auth, role=["student"])
 @response(ApplicationSchema())
 def withdraw_application(id):
+    """Withdraw an application you made."""
     application = db.get_or_404(Application, id)
     if token_auth.current_user().student != application.student:
         abort(403)
