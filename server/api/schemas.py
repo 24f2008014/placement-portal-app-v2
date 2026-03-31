@@ -148,7 +148,7 @@ class CompanySchema(ma.SQLAlchemyAutoSchema):
     id = auto_field(dump_only=True)
     user_id = auto_field(dump_only=True)
     industry = fields.Nested("IndustrySchema", only=("name",), dump_only=True)
-    user = fields.Nested(UserSchema, only=("email",), dump_only=True)
+    user = fields.Nested(UserSchema, only=("email", "created_at"), dump_only=True)
     
     @validates("name")
     def validate_name(self, value, **kwargs):
@@ -190,7 +190,7 @@ class StudentSchema(ma.SQLAlchemyAutoSchema):
     roll_number = auto_field(validate=validate.Length(min=1))
     gender = auto_field(validate=validate.OneOf(["male", "female", "other"]))
     branch = fields.Nested(BranchSchema, only=("name", "department_id",), dump_only=True)
-    user = fields.Nested(UserSchema, only=("email",), dump_only=True)
+    user = fields.Nested(UserSchema, only=("email", "created_at"), dump_only=True)
     resume = fields.Raw(load_only=True, required=False)
 
     @validates("roll_number")

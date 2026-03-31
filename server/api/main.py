@@ -187,9 +187,10 @@ def get_companies(args):
             "id": "equals",
             "name": "ilike",
             "status": "equals",
-            "contact_email": "ilike"
+            "contact_email": "ilike",
+            "location": "ilike"
         },
-        allowed_sort={"id", "status"},
+        allowed_sort={"id", "name", "location", "contact_email", "status"},
         endpoint="main.get_companies"
     )
     return { "pagination": pagination, "data": items }, 200
