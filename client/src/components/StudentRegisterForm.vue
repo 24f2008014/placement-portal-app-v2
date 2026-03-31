@@ -76,7 +76,6 @@ async function submitForm() {
         router.push({ name: "login" });
     }
     catch (error) {
-        console.log(error.response.data)
         if ("errors" in error.response.data) {
             errors.value = flattenResponse(error.response.data.errors.json)
         }

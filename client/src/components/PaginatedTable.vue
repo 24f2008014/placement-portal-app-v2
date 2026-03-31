@@ -2,7 +2,7 @@
 import { onMounted, ref, computed, reactive, watch, useId } from "vue";
 import { api } from "@/utils/api";
 import { useRouter } from "vue-router";
-import { flattenResponse } from "@/utils/helpers";
+import { flattenResponse, flattenResponsePrefixed } from "@/utils/helpers";
 import { formatDate } from "@/utils/helpers";
 
 const props = defineProps(["url", "fields", "item_route_name"]);
@@ -14,23 +14,23 @@ const filterDropdownId = useId();
 
 const hasPrevious = computed(() => {
     return pagination.value.prev !== null;
-})
+});
 
 const hasNext = computed(() => {
     return pagination.value.next !== null;
-}) 
+});
 
 const getPrevious = (() => {
     if (pagination.value.prev) {
         getPaginatedData(pagination.value.prev.split("/api")[1]);
     }
-})
+});
 
 const getNext = (() => {
     if (pagination.value.next) {
         getPaginatedData(pagination.value.next.split("/api")[1]);
     }
-})
+});
 
 const totalPages = computed(() => Math.ceil(pagination.value.total / pagination.value.limit));
 const currentPage = computed(() => (pagination.value.offset / pagination.value.limit) + 1);
@@ -60,20 +60,18 @@ async function getPaginatedData(url, params=null, filters=null) {
         }
     }
     try {
-        // console.log(fetchUrl);
         const response = await api.get(fetchUrl);
         paginatedData.value = response.data.data;
         pagination.value = response.data.pagination;
-    }
-    catch (error) {
-        console.log(error);
+    } catch (error) {
+        console.error(error);
         if ("errors" in error.response.data) {
-            errors.value = flattenResponse(error.response.data.errors.json)
+            errors.value = flattenResponse(error.response.data.errors.json);
         }
     }
 };
 
-watch(tableState, async (newState, oldState) => {
+watch(tableState, async (newState) => {
     getPaginatedData(props.url, newState, filters);
 });
 
@@ -84,36 +82,37 @@ function sort(col) {
         tableState.sort_by = col;
         tableState.sort_dir = "asc";
     }
-};
+}
 
 function sortClasses(col) {
     return {
         "active-sort": tableState.sort_by == col,
         "asc": tableState.sort_by == col && tableState.sort_dir == "asc",
         "desc": tableState.sort_by == col && tableState.sort_dir == "desc"
-    }
+    };
 }
 
 onMounted(() => {
     getPaginatedData(props.url, tableState, filters);
-})
+});
 </script>
 
 <template>
     <div class="row mb-2 align-items-center">
-        <div class="col">
-            <ul class="pagination">
-                <li class="page-item" :class="{ disabled: !hasPrevious }"><a class="page-link" href="#" @click="getPrevious">Previous</a></li>
-                <li class="page-item"><a class="page-link active" href="#">{{ currentPage }}</a></li>
+        <div class="col d-flex gap-3">
+            <ul class="pagination pagination-sm">
+                <li class="page-item" :class="{ disabled: !hasPrevious }"><a class="page-link" href="#" @click="getPrevious">Prev</a></li>
+                <li class="page-item active"><a class="page-link" href="#">{{ currentPage }}</a></li>
                 <li class="page-item" :class="{ disabled: !hasNext }"><a class="page-link" href="#" @click="getNext">Next</a></li>
             </ul>
+            <button class="btn btn-success btn-sm mb-3" data-bs-toggle="collapse" :data-bs-target="'#' + filterDropdownId"><i class="bi bi-filter me-2"></i>Filter</button>
         </div>
+
         <div class="col text-end">
             <p>Showing {{ startItem }}&ndash;{{ startItem + pagination.count - 1 }} of {{ pagination.total }}</p>
         </div>        
     </div>
 
-    <button class="btn btn-primary btn-sm mb-3" data-bs-toggle="collapse" :data-bs-target="'#' + filterDropdownId">Filter</button>
     <div class="row mb-3 collapse" :id="filterDropdownId">
         <div class="col">
             <form class="p-3 border rounded shadow-sm" @submit.prevent="getPaginatedData(props.url, tableState, filters)">
@@ -133,10 +132,11 @@ onMounted(() => {
                         </div>
                     </template>
                 </div>
+
                 <div class="row">
                     <div class="col d-flex gap-3">
-                        <button type="submit" class="btn btn-success btn-sm">Submit</button>
-                        <button type="button" class="btn btn-secondary btn-sm" @click="clearFilters">Reset</button>
+                        <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-check-lg me-2"></i>Apply</button>
+                        <button type="button" class="btn btn-secondary btn-sm" @click="clearFilters"><i class="bi bi-arrow-counterclockwise me-2"></i>Reset</button>
                     </div>
                 </div>
             </form>
@@ -157,10 +157,10 @@ onMounted(() => {
             >
                  <td v-for="f in Object.values(props.fields)">
                     <template v-if="f.type=='date'">
-                        {{ formatDate(flattenResponse(i)[f.name]) }}    
+                        {{ formatDate(flattenResponsePrefixed(i)[f.name]) }}    
                     </template>
                     <template v-else>
-                        {{ flattenResponse(i)[f.name] }}
+                        {{ flattenResponsePrefixed(i)[f.name] }}
                     </template>
                 </td>
             </tr>
