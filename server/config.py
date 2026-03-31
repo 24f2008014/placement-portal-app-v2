@@ -10,6 +10,7 @@ class Config:
     REFRESH_TOKEN_DAYS = int(os.environ.get("REFRESH_TOKEN_DAYS", 7))
 
     UPLOAD_FOLDER = "uploads/resumes"
+    TEMP_FOLDER = "temp"
     MAX_FILE_SIZE = 2 * 1024 * 1024 # 2 MB
 
     CACHE_TYPE = "RedisCache"
