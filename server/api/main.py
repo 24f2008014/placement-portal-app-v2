@@ -4,12 +4,32 @@ from apifairy import authenticate, body, response, other_responses, arguments
 from api.auth import token_auth
 from api.schemas import UserSchema, RegisterSchema, StudentSchema, DepartmentSchema, BranchSchema, UpdateUserSchema, IndustrySchema, CompanySchema, PositionSchema, paginate_query, ListQueryArgsSchema, PaginatedCollection, ApplicationSchema, PlacementSchema
 from api.models import User, Role, Department, Branch, Student, Industry, Position, Application, Placement, Company
+from celery.result import AsyncResult
 
 main = Blueprint("main", __name__)
 
 @main.route("/")
 def index():
     return "Hello!"
+
+@main.route("/result/<id>", methods=["GET"])
+@authenticate(token_auth)
+def task_result(id):
+    result = AsyncResult(id)
+    return {
+        "ready": result.ready(),
+        "status": result.state,
+        "result": result.result if result.ready() else None,
+    }
+
+@main.route("/temp/<filename>", methods=["GET"])
+@authenticate(token_auth, role=["student"])
+def get_file(filename):
+    """Get a file."""
+    return send_from_directory(
+        os.path.join(os.path.dirname(os.getcwd()), "server", current_app.config["TEMP_FOLDER"]),
+        filename
+    )
 
 @main.route("/users/me", methods=["GET"])
 @authenticate(token_auth)
