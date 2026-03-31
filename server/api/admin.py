@@ -2,7 +2,6 @@ from flask import Blueprint, abort
 from apifairy import authenticate, body, response, other_responses, arguments
 from sqlalchemy import func
 from datetime import datetime
-from celery.result import AsyncResult
 from api.app import db, cache
 from api.auth import token_auth
 from api.schemas import StudentSchema, CompanySchema, paginate_query, ListQueryArgsSchema, PaginatedCollection, ApplicationSchema, StatsSchema
@@ -23,16 +22,6 @@ def cache_test():
 def admin_celery_test():
     result = add_together.delay(5, 10)
     return { "result_id": result.id }, 200
-
-@admin.route("/result/<id>", methods=["GET"])
-@authenticate(token_auth, role=["admin"])
-def task_result(id: str) -> dict[str, object]:
-    result = AsyncResult(id)
-    return {
-        "ready": result.ready(),
-        "status": result.state,
-        "result": result.result if result.ready() else None,
-    }
 
 @admin.route("/stats", methods=["GET"])
 @authenticate(token_auth, role=["admin"])
