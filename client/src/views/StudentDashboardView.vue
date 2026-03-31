@@ -3,7 +3,9 @@ import { useAuthStore } from "@/stores/auth";
 import { ref, onMounted } from "vue";
 import PaginatedTable from "@/components/PaginatedTable.vue";
 import { api } from "@/utils/api";
+import { useTaskStore } from "@/stores/tasks";
 
+const taskStore = useTaskStore();
 const loading = ref(true);
 const errors = ref({});
 const auth = useAuthStore();
@@ -39,7 +41,7 @@ async function getStats() {
         stats.value = response.data;
     }
     catch (error) {
-        console.log(error);
+        console.error(error);
     }
 }
 
@@ -49,12 +51,19 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="row">
+    <div class="row mb-2">
         <h6 class="display-6">Student Dashboard</h6>
         <p class="lead text-muted">Welcome back, {{ auth.currentUser.name }}!</p>
         <p>{{ stats }}</p>
     </div>
+
+    <div class="row d-flex">
+        <div class="col">
+            <button @click="taskStore.exportCsv" type="button" class="btn btn-sm btn-success mb-3"><i class="bi bi-download me-2"></i>Download Application History</button>
+        </div>
+    </div>
     <hr>
+
     <div class="row justify-content-center">
         <div class="col">
             <h4 class="mb-3">Your Applications</h4>
@@ -62,6 +71,7 @@ onMounted(() => {
         </div>
     </div>
     <hr>
+
     <div class="row justify-content-center">
         <div class="col">
             <h4 class="mb-3">Open Positions</h4>
