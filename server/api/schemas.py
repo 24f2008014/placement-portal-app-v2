@@ -5,7 +5,7 @@ from api.auth import token_auth
 from api.models import User, Student, Department, Branch, Industry, Company, Position, Application, Placement
 from marshmallow_oneofschema import OneOfSchema
 from datetime import datetime
-from sqlalchemy import func, asc, desc, select
+from sqlalchemy import func, asc, desc, select, text
 import json
 from werkzeug.exceptions import BadRequest
 from flask import request, url_for, current_app
@@ -32,8 +32,11 @@ def paginate_query(query, model, args, allowed_filters, allowed_sort, endpoint):
                 query = query.filter(getattr(model, k) == v)
             elif allowed_filters[k] == "ilike":
                 query = query.filter(getattr(model, k).ilike(f"%{v}%"))
-            # elif allowed_filters[k] == "ilike_relationship":
-            #     query = query.filter(getattr(getattr(model, str.split(k, ".")[0]), str.split(k, ".")[1]).ilike(f"%{v}%"))
+            elif allowed_filters[k] == "ilike_relationship":
+                rel_name, rel_attr = str.split(k, ".")
+                query = query.filter(
+                    getattr(getattr(model, rel_name).mapper.class_, rel_attr).ilike(f"%{v}%")
+                )
     
     # Total number of records
     total = int(db.session.scalar(select(func.count()).select_from(query.subquery())))
@@ -267,10 +270,10 @@ class PositionSchema(ma.SQLAlchemyAutoSchema):
     company = fields.Nested(CompanySchema, dump_only=True)
     departments = fields.Nested(DepartmentSchema, many=True, dump_only=True)
     department_ids = fields.List(fields.Integer(), load_only=True)
-    num_applications = fields.Method("get_num_applications", dump_only=True)
+    # num_applications = fields.Method("get_num_applications", dump_only=True)
 
-    def get_num_applications(self, obj):
-        return len(obj.applications)
+    # def get_num_applications(self, obj):
+    #     return len(obj.applications)
 
     @validates("deadline")
     def validate_deadline(self, value, **kwargs):
@@ -301,6 +304,11 @@ class ApplicationSchema(ma.SQLAlchemyAutoSchema):
     position = fields.Nested(PositionSchema, only=("id", "role", "company.name", "company.contact_email"), dump_only=True)
     placements = fields.Nested("PlacementSchema", only=("id", "status"), many=True)
 
+    @validates("interview_date")
+    def validate_interview_date(self, value, **kwargs):
+        if value < datetime.now():
+            raise ValidationError("Interview date cannot be in the past.")
+
 class PlacementSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Placement
@@ -327,3 +335,10 @@ class StatsSchema(ma.Schema):
 
 class StudentStatsSchema(ma.Schema):
     num_applications = fields.Integer()
+    upcoming_interviews = fields.Nested(ApplicationSchema, many=True, dump_only=True)
+
+class CompanyStatsSchema(ma.Schema):
+    num_positions = fields.Integer()
+    num_applications = fields.Integer()
+    num_placements = fields.Integer()
+    upcoming_interviews = fields.Nested(ApplicationSchema, many=True, dump_only=True)

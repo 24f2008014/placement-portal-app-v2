@@ -1,7 +1,7 @@
 from flask import current_app
 from api.app import db
-from sqlalchemy import String, Integer, ForeignKey, Column, Float, Boolean, CheckConstraint
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import String, Integer, ForeignKey, Column, Float, Boolean, CheckConstraint, func, select, text
+from sqlalchemy.orm import Mapped, mapped_column, relationship, column_property
 from typing import Optional, List
 from werkzeug.security import generate_password_hash, check_password_hash
 from zoneinfo import ZoneInfo
@@ -113,6 +113,14 @@ class Company(Updateable, db.Model):
     positions: Mapped[List["Position"]] = relationship(back_populates="company")
     user: Mapped["User"] = relationship(back_populates="company")
     industry: Mapped["Industry"] = relationship(back_populates="companies")
+    open_position_count = column_property(
+        select(func.count())
+        .select_from(text("Position"))
+        .where(text("Position.company_id") == id)
+        .where(text("Position.status == 'open'"))
+        .correlate_except(text("Position"))
+        .scalar_subquery()
+    )
 
 class Student(Updateable, db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -131,6 +139,13 @@ class Student(Updateable, db.Model):
     applications: Mapped[List["Application"]] = relationship(back_populates="student")
     user: Mapped["User"] = relationship(back_populates="student")
     branch: Mapped["Branch"] = relationship(back_populates="students")
+    application_count = column_property(
+        db.select(func.count())
+        .select_from(text("Application"))
+        .where(text("Application.student_id") == id)
+        .correlate_except(text("Application"))
+        .scalar_subquery()
+    )
 
 class Position(Updateable, TimeConversionMixin, db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -149,6 +164,13 @@ class Position(Updateable, TimeConversionMixin, db.Model):
     company: Mapped["Company"] = relationship(back_populates="positions")
     applications: Mapped[List["Application"]] = relationship(back_populates="position")
     departments: Mapped[List["Department"]] = relationship(secondary="position_departments", back_populates="positions")
+    application_count = column_property(
+        db.select(func.count())
+        .select_from(text("Application"))
+        .where(text("Application.position_id") == id)
+        .correlate_except(text("Application"))
+        .scalar_subquery()
+    )
 
 position_departments = db.Table(
     "position_departments",
