@@ -32,7 +32,7 @@ const auth = useAuthStore();
 
                 <ul class="ms-auto navbar-nav">
                     <template v-if="auth.isAuthenticated">
-                        <li class="nav-item my-auto me-4"><RouterLink :to="{ name: 'search' }" class="nav-link"><i class="bi bi-search me-2"></i>Search</RouterLink></li>
+                        <!-- <li class="nav-item my-auto me-4"><RouterLink :to="{ name: 'search' }" class="nav-link"><i class="bi bi-search me-2"></i>Search</RouterLink></li> -->
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"><i class="bi bi-person-circle fs-4 pe-1"></i></a>
                             <ul class="dropdown-menu">

@@ -153,6 +153,9 @@ const placements_fields = {
     }
 };
 
+const company_applications_endpoint = "/companies/me/applications";
+const company_applications_filters = {student_id: `${route.params.id}`};
+
 onMounted(() => {
     getDepartments();
     getStudent();
@@ -183,6 +186,7 @@ onMounted(() => {
             <h3>Student Details</h3>
             <div class="col d-flex mt-2">
                 <button type="button" v-if="student.resume_url" class="btn btn-sm btn-success" @click="viewResume(student.resume_url)"><i class="bi bi-download me-2"></i>View Resume</button>
+                <button type="button" v-else class="btn btn-sm btn-success" disabled><i class="bi bi-download me-2"></i>View Resume (N/A)</button>                
             </div>
         </div>
 
@@ -263,4 +267,16 @@ onMounted(() => {
             <div v-else>Loading...</div>
         </div>
     </div>
+
+    <div class="row mb-4" v-if="auth.currentUser.role=='company'"">
+        <div class="col">
+            <h3 class="mb-3">Applications</h3>
+            <template v-if="!loading">
+                <div class="col">
+                    <PaginatedTable :url="company_applications_endpoint" :fields="applications_fields" :item_route_name="applications_route" />
+                </div>
+            </template>
+            <div v-else>Loading...</div>
+        </div>
+    </div>    
 </template>
