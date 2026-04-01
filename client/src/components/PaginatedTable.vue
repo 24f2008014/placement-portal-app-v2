@@ -63,6 +63,7 @@ async function getPaginatedData(url, params=null, filters=null) {
         const response = await api.get(fetchUrl);
         paginatedData.value = response.data.data;
         pagination.value = response.data.pagination;
+        // console.log(response.data.data);
     } catch (error) {
         console.error(error);
         if ("errors" in error.response.data) {
@@ -157,7 +158,7 @@ onMounted(() => {
             >
                  <td v-for="f in Object.values(props.fields)">
                     <template v-if="f.type=='date'">
-                        {{ formatDate(flattenResponsePrefixed(i)[f.name]) }}    
+                        {{ i[f.name] ? formatDate(flattenResponsePrefixed(i)[f.name]) : "N/A" }}
                     </template>
                     <template v-else>
                         {{ flattenResponsePrefixed(i)[f.name] }}
