@@ -22,6 +22,7 @@ const selectJoiningDate = ref(null);
 const selectSalary = ref(null);
 const now = new Date();
 const minDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
+const rejectFeedback = ref(null);
 
 async function getApplication() {
     try {
@@ -36,13 +37,13 @@ async function getApplication() {
 
 async function withdrawApplication() {
     try {
-        const response = await api.patch(`/positions/${route.params.id}`, { status: "withdrawn" });
+        const response = await api.post(`/applications/${route.params.id}/withdraw`);
         application.value = response.data;
         bootstrap.Modal.getInstance(document.getElementById("withdrawApplicationModal")).hide();
         alert.addAlert(`Successfully withdrew your application (#${route.params.id}).`, "success");
     } catch (error) {
         console.error(error);
-        errors.value = flattenResponse(error.response.data.json.errors);
+        // errors.value = flattenResponse(error.response.data.json.errors);
     }
 }
 
@@ -60,7 +61,7 @@ async function shortlistApplication() {
 
 async function rejectApplication() {
     try {
-        const response = await api.post(`/applications/${route.params.id}/reject`);
+        const response = await api.post(`/applications/${route.params.id}/reject`, { feedback: rejectFeedback.value });
         application.value = response.data;
         bootstrap.Modal.getInstance(document.getElementById("rejectModal")).hide();
         alert.addAlert(`Successfully rejected application (#${route.params.id}).`, "success");
@@ -112,23 +113,23 @@ onMounted(() => {
     <template v-if="!loading">
         <div class="row mb-4">
             <h3>Application Details</h3>
-            <div class="col d-flex mt-2">
-                <button type="button" v-if="application.student.resume_url" class="btn btn-sm btn-success" @click="viewResume(application.student.resume_url)"><i class="bi bi-download me-2"></i>View Resume</button>
-            </div>
+            <template v-if="auth.currentUser.role!='student'">
+                <div class="col d-flex mt-2 gap-2">
+                    <button type="button" class="btn btn-sm btn-primary" @click="router.push({ name: 'student', params: { id: application.student_id } })"><i class="bi bi-arrow-left me-2"></i>View Student</button>
+                    <button v-if="application.student.resume_url" type="button" class="btn btn-sm btn-success" @click="viewResume(application.student.resume_url)"><i class="bi bi-download me-2"></i>View Resume</button>
+                </div>
+            </template>
         </div>
 
         <div class="row mb-4">
             <div class="col">
                 <h6 class="text-primary-emphasis">Student Name</h6>
-                <p>
-                    {{ application.student.first_name + " " + application.student.last_name }}
-                    <RouterLink v-if="auth.currentUser.role!='student'" :to="{name: 'student', params: {'id': application.student_id}}">(click to view)</RouterLink>
-                </p>
+                <p>{{ application.student.first_name + " " + application.student.last_name }}</p>
                 <h6 class="text-primary-emphasis">Student Roll No.</h6>
                 <p>{{ application.student.roll_number }}</p>
             </div>
             <div class="col">
-                <h6 class="text-primary-emphasis">Position Role</h6>
+                <h6 class="text-primary-emphasis">Position</h6>
                 <p>{{ application.position.role }}</p>
                 <h6 class="text-primary-emphasis">Company</h6>
                 <p>{{ application.position.company.name }}</p>
@@ -146,11 +147,11 @@ onMounted(() => {
             <div class="col">
                 <h3>Current Status: <code>{{ application.status }}</code></h3>
                 <template v-if="application.status=='pending'">
-                    <p>This application is currently <strong>pending</strong> company review. The company may either shortlist the candidate for an interivew, or reject the application.</p>
+                    <p>This application is currently <strong>pending</strong> company review. The company may either shortlist the candidate for an interview, or reject the application.</p>
                     <button v-if="auth.currentUser.role=='student'" type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#withdrawApplicationModal"><i class="bi bi-x-lg me-2"></i>Withdraw Application</button>
                     <template v-else-if="auth.currentUser.role=='company'">
                         <div class="row">
-                            <div class="col d-flex gap-3">
+                            <div class="col d-flex gap-2">
                                 <button type="button" class="btn btn-sm btn-success me-2" data-bs-toggle="modal" data-bs-target="#shortlistModal"><i class="bi bi-check-lg me-2"></i>Shortlist</button>
                                 <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal"><i class="bi bi-x-lg me-2"></i>Reject</button>
                             </div>
@@ -176,7 +177,10 @@ onMounted(() => {
                     <p>This application has been <strong>selected</strong>. <RouterLink :to="{ name: 'placement', params: { 'id': application.placements[0].id } }">Click here</RouterLink> to view the linked placement offer.</p>
                 </template>
 
-                <p v-else-if="application.status=='rejected'">This application has been<strong>rejected</strong>. Thank you for applying.</p>
+                <template v-else-if="application.status=='rejected'">
+                    <p class="mb-2">This application has been <strong>rejected</strong> by the company.</p>
+                    <p><strong>Feedback: </strong>{{ application.feedback }}</p>
+                </template>
 
                 <p v-else-if="application.status=='withdrawn'">This application has been <strong>withdrawn</strong> by the student.</p>
             </div>
@@ -194,7 +198,7 @@ onMounted(() => {
                         <div class="row mb-3">
                             <div class="col">
                                 <label for="shortlistInterviewDate" class="form-label"><strong>Interview date</strong></label>
-                                <input class="form-control" type="datetime-local" :class="{ 'is-invalid': errors.interview_date }"id="shortlistInterviewDate" v-model="shortlistInterviewDate" required aria-describedby="inputDeadlineValidation" :min="minDate">
+                                <input class="form-control" type="datetime-local" :class="{ 'is-invalid': errors.interview_date } "id="shortlistInterviewDate" v-model="shortlistInterviewDate" required aria-describedby="inputDeadlineValidation" :min="minDate">
                                 <div v-if="errors.interview_date" class="invalid-feedback" id="shortlistInterviewDateValidation">{{ errors.interview_date[0] }}</div>
                             </div>
                         </div>
@@ -205,6 +209,15 @@ onMounted(() => {
             <Modal :title="'Reject Application'" :id="'rejectModal'" :yesLabel="'Reject'" @confirm="rejectApplication">
                 <template #modal-body>
                     <p>Are you sure you want to <strong>reject</strong> this student's application (#{{ $route.params.id }})? This cannot be undone.</p>
+                    <form>
+                        <div class="row mb-3">
+                            <div class="col">
+                                <label for="rejectFeedback" class="form-label"><strong>Your Feedback</strong></label>
+                                <input class="form-control" type="text" :class="{ 'is-invalid': errors.feedback }" id="rejectFeedback" v-model="rejectFeedback" required aria-describedby="rejectFeedbackValidation">
+                                <div v-if="errors.feedback" class="invalid-feedback" id="rejectFeedbackValidation">{{ errors.feedback[0] }}</div>
+                            </div>
+                        </div>
+                    </form>                    
                 </template>
             </Modal>
 
@@ -226,7 +239,7 @@ onMounted(() => {
                         </div>
                     </form>
                 </template>
-            </Modal>            
+            </Modal>
         </div>
     </template>
 </template>

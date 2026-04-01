@@ -35,18 +35,6 @@ const applications_fields = {
         name: "student_id",
         filter: false
     },
-    "Position ID": {
-        name: "position_id",
-        filter: false
-    },    
-    "Position": {
-        name: "position.role",
-        filter: false
-    },
-    "Company": {
-        name: "position.company.name",
-        filter: false  
-    },
     "Created At": {
         name: "created_at",
         filter: false,
@@ -81,6 +69,7 @@ async function getPosition() {
         const response = await api.get(`/positions/${route.params.id}`);
         position.value = response.data;
         loading.value = false;
+        // console.log(response.data);
     } catch (error) {
         console.error(error);
     }
@@ -113,7 +102,7 @@ async function changeStatus() {
 async function getStudentApplication() {
     try {
         applicationLoading.value = true;
-        const response = await api.get(`/students/me/applications?filters={"position_id":"${route.params.id}"}`);
+        const response = await api.get(`/students/me/applications?sort_by=created_at&sort_dir=desc&filters={"position_id":"${route.params.id}"}`);
         studentApplication.value = response.data.data;
         applicationLoading.value = false;
     } catch (error) {
@@ -126,7 +115,7 @@ async function postApplication() {
         const response = await api.post(`/positions/${route.params.id}/applications`, null);
         const application_id = response.data.id;
         alert.addAlert("Application created!", "success");
-        router.push({ name: `/applications/${application_id}` });
+        router.push({ name: "application", params: { id: application_id } });
     } catch (error) {
         console.error(error);
     }
@@ -152,6 +141,13 @@ onMounted(() => {
                     </button>
                 </div>
             </div>
+            <div class="row" v-if="auth.currentUser.role=='company' && !loading">
+                <div class="col d-flex gap-2">
+                    <button type="button" class="btn btn-primary btn-sm" @click='router.push({ name: "company_positions" })'>
+                        <i class="bi bi-arrow-left me-2"></i>Your Positions
+                    </button>
+                </div>
+            </div>            
         </div>
     </div>
     <hr class="mb-4">
@@ -165,16 +161,18 @@ onMounted(() => {
         </div>
         <hr class="mb-4">
 
-        <div class="row mb-4">
-            <div class="col">
-                <h3 class="mb-3">About the Company</h3>
-                <p>{{ position.company.description }}</p>
-                <p><RouterLink :to='{ name: "company", params: { "id": position.company_id } }'>Click here to learn more about {{ position.company.name }}.</RouterLink></p>
+        <template v-if="auth.currentUser.role!='company'">
+            <div class="row mb-4">
+                <div class="col">
+                    <h3 class="mb-3">About the Company</h3>
+                    <p>{{ position.company.description }}</p>
+                    <p><RouterLink :to='{ name: "company", params: { "id": position.company_id } }'>Click here to learn more about {{ position.company.name }}.</RouterLink></p>
+                </div>
             </div>
-        </div>
+            <hr class="mb-4">
+        </template>
 
         <template v-if="auth.currentUser.role=='company'">
-            <hr class="mb-4">
             <div class="row mb-4">
                 <div class="col">
                     <h3>Current Status: <code>{{ position.status }}</code></h3>
@@ -190,10 +188,10 @@ onMounted(() => {
                     </template>
                 </Modal>
             </div>
+            <hr class="mb-4">
         </template>
 
         <template v-else-if="auth.currentUser.role=='admin'">
-            <hr class="mb-4">
             <div class="row mb-4">
                 <div class="col">
                     <h3>Approval Status: <code>{{ position.is_approved }}</code></h3>
@@ -208,10 +206,10 @@ onMounted(() => {
                     </template>
                 </Modal>
             </div>
+            <hr class="mb-4">
         </template>
     </template>
     <div v-else><p>Loading...</p></div>
-    <hr class="mb-4">
 
     <template v-if="auth.currentUser.role!='student'">
         <div class="row">
@@ -225,14 +223,14 @@ onMounted(() => {
     <template v-if="auth.currentUser.role=='student'">
         <div class="row mb-4">
             <div class="col" v-if="!applicationLoading">
-                <h3 class="mb-4">Your Application</h3>
-                <template v-if="!studentApplication">
-                    <p class="lead">You haven't applied for this role yet. Would you like to submit an application?</p>
-                    <button type="button" class="btn btn-sm btn-success" @click="postApplication">Apply</button>
+                <h3 class="mb-3">Your Application</h3>
+                <template v-if="studentApplication.length == 0 || studentApplication[0].status=='withdrawn'">
+                    <p>You don't have any pending applications for this position. Would you like to submit an application?</p>
+                    <button type="button" class="btn btn-success" @click="postApplication">Apply</button>
                 </template>
                 <template v-else>
                     <p>You have already applied to this position. Click the button below to view your application.</p>
-                    <button type="button" class="btn btn-sm btn-primary" @click='router.push({name: "application", params: {"id": studentApplication[0].id}})'>View Application</button>
+                    <button type="button" class="btn btn-primary" @click='router.push({name: "application", params: {"id": studentApplication[0].id}})'>View Application</button>
                 </template>
             </div>
             <div class="col" v-else><p>Loading...</p></div>
