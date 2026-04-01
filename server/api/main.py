@@ -188,9 +188,11 @@ def get_companies(args):
             "name": "ilike",
             "status": "equals",
             "contact_email": "ilike",
-            "location": "ilike"
+            "location": "ilike",
+            "open_position_count": "gt",
+            "industry.name": "ilike_relationship"
         },
-        allowed_sort={"id", "name", "location", "contact_email", "status"},
+        allowed_sort={"id", "name", "location", "contact_email", "open_position_count", "status", "industry.name"},
         endpoint="main.get_companies"
     )
     return { "pagination": pagination, "data": items }, 200
@@ -227,7 +229,7 @@ import os
 def get_resume(filename):
     """Get a resume."""
     if token_auth.current_user().student\
-        and db.session.scalar(db.select(Student).filter(Student.resume_url == filename)) == token_auth.current_user().student:
+        and db.session.scalar(db.select(Student).filter(Student.resume_url == filename)) != token_auth.current_user().student:
         abort(403)
     return send_from_directory(
         os.path.join(os.path.dirname(os.getcwd()), "server", current_app.config["UPLOAD_FOLDER"]),

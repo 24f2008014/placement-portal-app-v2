@@ -2,11 +2,37 @@ from flask import Blueprint, abort
 from api.app import db
 from apifairy import authenticate, body, response, other_responses, arguments
 from api.auth import token_auth
-from api.schemas import UserSchema, EmptySchema, RegisterSchema, StudentSchema, DepartmentSchema, BranchSchema, UpdateUserSchema, IndustrySchema, CompanySchema, PositionSchema, paginate_query, ListQueryArgsSchema, PaginatedCollection, ApplicationSchema, PlacementSchema
-from api.models import User, Role, Department, Branch, Student, Industry, Position, Application, Placement
+from api.schemas import CompanySchema, PositionSchema, paginate_query, ListQueryArgsSchema, PaginatedCollection, ApplicationSchema, PlacementSchema, CompanyStatsSchema
+from api.models import Student, Position, Application, Placement, Company
 from datetime import datetime, timezone
+from sqlalchemy import func
 
 company = Blueprint("company", __name__)
+
+@company.route("/companies/me/stats", methods=["GET"])
+@authenticate(token_auth, role=["company"])
+@response(CompanyStatsSchema())
+def get_company_stats():
+    """Get stats for the admin dashboard."""
+    company = token_auth.current_user().company
+    num_positions = db.session.scalar(db.select(func.count()).select_from(Position).where(Position.company == company))
+    num_applications = db.session.scalar(db.select(func.count()).select_from(Application).join(Position).where(Position.company == company))
+    num_placements = db.session.scalar(db.select(func.count()).select_from(Placement).join(Application).join(Position).where(Position.company == company))
+    upcoming_interviews = db.session.scalars(
+        db.select(Application)
+        .join(Position)
+        .filter(
+            Position.company == company,
+            Application.status == "shortlisted",
+            Application.interview_date > datetime.now()
+        )
+    )
+    return {
+        "num_positions": num_positions,
+        "num_applications": num_applications,
+        "num_placements": num_placements,
+        "upcoming_interviews": upcoming_interviews
+    }
 
 @company.route("/positions", methods=["POST"])
 @authenticate(token_auth, role=["company"])
@@ -49,10 +75,56 @@ def get_company_positions(args):
         args=args,
         allowed_filters={
             "id": "equals",
-            "role": "ilike"
+            "role": "ilike",
+            "salary_min": "gt",
+            "salary_max": "gt",
+            "application_count": "gt"
         },
-        allowed_sort={"id"},
+        allowed_sort={"id", "role", "salary_min", "salary_max", "min_cgpa", "deadline", "status", "application_count"},
         endpoint="company.get_positions_self"
+    )
+    return { "pagination": pagination, "data": items }, 200
+
+@company.route("/companies/me/applications", methods=["GET"])
+@authenticate(token_auth, role=["company"])
+@arguments(ListQueryArgsSchema())
+@response(PaginatedCollection(ApplicationSchema()))
+def get_company_applications(args):
+    """Get all applications made for your company."""
+    company = token_auth.current_user().company
+    query = db.session.query(Application).join(Position).filter(Position.company == company)
+    items, pagination = paginate_query(
+        query=query,
+        model=Application,
+        args=args,
+        allowed_filters={
+            "id": "equals",
+            "student_id": "equals",
+            "status": "equals"
+        },
+        allowed_sort={"id", "student_id", "status"},
+        endpoint="company.get_positions_self"
+    )
+    return { "pagination": pagination, "data": items }, 200
+
+@company.route("/companies/me/placements", methods=["GET"])
+@authenticate(token_auth, role=["company"])
+@arguments(ListQueryArgsSchema())
+@response(PaginatedCollection(PlacementSchema()))
+def get_company_placements_self(args):
+    """Get all placements made by your company."""
+    company = token_auth.current_user().company
+    query = db.session.query(Placement).join(Application).join(Position).filter(Position.company == company)
+    items, pagination = paginate_query(
+        query=query,
+        model=Placement,
+        args=args,
+        allowed_filters={
+            "id": "equals",
+            "status": "equals"
+        },
+        allowed_sort={"id", "status"},
+        endpoint="company.get_company_placements_self"
     )
     return { "pagination": pagination, "data": items }, 200
 
@@ -83,7 +155,7 @@ def shortlist_application(data, id):
     application = db.get_or_404(Application, id)
     if token_auth.current_user().company != application.position.company:
         abort(403)
-    if application.status == "withdrawn" or application.position.status == "closed":
+    if application.status != "pending":
         abort(403)
     application.status = "shortlisted"
     application.update(data)
@@ -100,7 +172,7 @@ def select_application(data, id):
     application = db.get_or_404(Application, id)
     if token_auth.current_user().company != application.position.company:
         abort(403)
-    if application.status == "withdrawn" or application.position.status == "closed":
+    if application.status != "shortlisted":
         abort(403)
     application.status = "selected"
     application.updated_at = datetime.now(timezone.utc)
@@ -111,15 +183,18 @@ def select_application(data, id):
 
 @company.route("/applications/<int:id>/reject", methods=["POST"])
 @authenticate(token_auth, role=["company"])
+@body(ApplicationSchema(only=("feedback",), partial=True, load_instance=False))
 @response(ApplicationSchema())
-def reject_application(id):
+def reject_application(data, id):
     """Reject an application."""
     application = db.get_or_404(Application, id)
     if token_auth.current_user().company != application.position.company:
         abort(403)
-    if application.status == "withdrawn" or application.position.status == "closed" or application.placements:
+    if application.status in ["selected", "rejected", "withdrawn"]:
         abort(403)
+    application.update(data)
     application.status = "rejected"
+    application.updated_at = datetime.now(timezone.utc)
     db.session.commit()
     return application
 

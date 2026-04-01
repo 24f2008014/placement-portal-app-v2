@@ -24,8 +24,17 @@ def export_applications():
 def get_student_stats_self():
     """Get student statistics for your dashboard."""
     student = token_auth.current_user().student
+    upcoming_interviews = db.session.scalars(
+        db.select(Application)
+        .filter(
+            Application.student_id == student.id,
+            Application.status == "shortlisted",
+            Application.interview_date > datetime.now()
+        )
+    )    
     return {
-        "num_applications": db.session.scalar(db.select(func.count()).select_from(Student).filter(Student.id == student.id))
+        "num_applications": db.session.scalar(db.select(func.count()).select_from(Application).filter(Application.student_id == student.id)),
+        "upcoming_interviews": upcoming_interviews
     }
 
 @student.route("/students/me", methods=["GET"])
@@ -63,7 +72,7 @@ def get_applications_self(args):
             "position_id": "equals",
             "status": "equals",
         },
-        allowed_sort={"id", "position_id", "status", "interview_date"},
+        allowed_sort={"id", "position_id", "status", "interview_date", "created_at"},
         endpoint="student.get_applications_self"
     )
     return { "pagination": pagination, "data": items }, 200
@@ -75,9 +84,17 @@ def create_application(id):
     """Create a new application for an open position."""
     student = token_auth.current_user().student
     position = db.get_or_404(Position, id)
-    if position.status == "closed" or position.is_approved == False:
+    if position.status == "closed" or position.is_approved == False or datetime.now() > position.deadline:
         abort(403)
-    existing_application = db.session.scalar(db.select(Application).filter(Application.student == student))
+    existing_application = db.session.scalar(
+        db.select(Application)
+        .join(Position)
+        .filter(
+            Application.student == student,
+            Application.position_id == id,
+            Application.status != "withdrawn"
+        )
+    )
     if existing_application is not None:
         abort(403)
     application = Application(student=student, position=position)
@@ -90,10 +107,11 @@ def create_application(id):
 @response(ApplicationSchema())
 def withdraw_application(id):
     """Withdraw an application you made."""
+    # Withdraw if: pending
     application = db.get_or_404(Application, id)
     if token_auth.current_user().student != application.student:
         abort(403)
-    if application.status == "withdrawn" or application.position.status == "closed" or application.placements:
+    if application.status != "pending":
         abort(403)
     application.status = "withdrawn"
     application.deleted_at = datetime.now(timezone.utc)
