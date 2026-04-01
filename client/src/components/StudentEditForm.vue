@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, computed, handleError } from "vue";
+import { onMounted, ref, computed } from "vue";
 import { api } from "@/utils/api";
 import { useAlertStore } from "@/stores/alert";
 import { markRequiredFields, flattenResponse } from "@/utils/helpers";
@@ -15,6 +15,7 @@ const inputDepartment = ref();
 const inputBranch = ref();
 const inputGraduationYear = ref();
 const inputCgpa = ref();
+const inputBio = ref();
 const inputResume = ref();
 const resumeUrl = ref();
 const departments = ref("");
@@ -36,21 +37,19 @@ async function getDepartments() {
     try {
         const response = await api.get("/departments");
         departments.value = response.data;
+    } catch (error) {
+        console.error(error);
     }
-    catch (error) {
-        console.log(error);
-    }
-};
+}
 
 async function getBranches() {
     try {
         const response = await api.get("/branches");
         branches.value = response.data;
+    } catch (error) {
+        console.error(error);
     }
-    catch (error) {
-        console.log(error);
-    }
-};
+}
 
 async function getDetails() {
     try {
@@ -65,10 +64,10 @@ async function getDetails() {
         inputBranch.value = response.data.branch_id;
         inputGraduationYear.value = response.data.graduation_year;
         inputCgpa.value = response.data.cgpa;
+        inputBio.value = response.data.bio;
         resumeUrl.value = response.data.resume_url;
-    }
-    catch (error) {
-        console.log(error);
+    } catch (error) {
+        console.error(error);
     }
 }
 
@@ -84,24 +83,24 @@ async function submitForm() {
         formData.append("branch_id", inputBranch.value);
         formData.append("graduation_year", inputGraduationYear.value);
         formData.append("cgpa", inputCgpa.value);
+        formData.append("bio", inputBio.value);
         if (inputResume.value) {
             formData.append("resume", inputResume.value);
         }
         const response = await api.put("/students/me", formData, { headers: { "Content-Type": "multipart/form-data" } });
         updateSuccessful.value = true;
         alert.addAlert("Successfully updated your profile.", "success");
-    }
-    catch (error) {
-        console.log(error.response.data)
+    } catch (error) {
+        console.error(error.response.data)
         if ("errors" in error.response.data) {
-            errors.value = flattenResponse(error.response.data.errors.json)
+            errors.value = flattenResponse(error.response.data.errors.json);
         }
     }
-};
+}
 
 function handleFileUpload(event) {
     inputResume.value = event.target.files[0];
-};
+}
 
 async function viewResume() {
     try {
@@ -109,11 +108,10 @@ async function viewResume() {
         const blob = new Blob([response.data], {type: "application/pdf"})
         const objectURL = URL.createObjectURL(blob);
         window.open(objectURL, "_blank");
+    } catch (error) {
+        console.error(error);
     }
-    catch (error) {
-        console.log(error);
-    }
-};
+}
 
 onMounted(() => {
     getDepartments();
@@ -129,19 +127,19 @@ onMounted(() => {
     <p v-if="updateSuccessful" class="text-success">Successfully updated your profile.</p>
     <form class="border px-3 py-3 needs-validation" @submit.prevent="submitForm">
         <div class="mb-3">
-            <label for="inputRollNumber" class="form-label">Roll number</label>
+            <label for="inputRollNumber" class="form-label">Roll Number</label>
             <input type="text" class="form-control" :class="{ 'is-invalid': errors.roll_number }" id="inputRollNumber" v-model="inputRollNumber" required aria-describedby="inputRollNumberValidation">
             <div v-if="errors.roll_number" class="invalid-feedback" id="inputRollNumberValidation">{{ errors.roll_number[0] }}</div>
         </div>
 
         <div class="row mb-3">
             <div class="col">
-                <label for="inputFirstName" class="form-label">First name</label>
+                <label for="inputFirstName" class="form-label">First Name</label>
                 <input type="text" class="form-control" :class="{ 'is-invalid': errors.first_name }" id="inputFirstName" v-model="inputFirstName" required aria-describedby="inputFirstNameValidation">
                 <div v-if="errors.first_name" class="invalid-feedback" id="inputFirstNameValidation">{{ errors.first_name[0] }}</div>
             </div>
             <div class="col">
-                <label for="inputLastName" class="form-label">Last name</label>
+                <label for="inputLastName" class="form-label">Last Name</label>
                 <input type="text" class="form-control" :class="{ 'is-invalid': errors.last_name }" id="inputLastName" v-model="inputLastName" required aria-describedby="inputFirstNameValidation">
                 <div v-if="errors.last_name" class="invalid-feedback" id="inputLastNameValidation">{{ errors.last_name[0] }}</div>
             </div>
@@ -149,7 +147,7 @@ onMounted(() => {
 
         <div class="row mb-3">
             <div class="col">
-                <label for="inputDateOfBirth" class="form-label">Date of birth</label>
+                <label for="inputDateOfBirth" class="form-label">Date of Birth</label>
                 <input type="date" class="form-control" :class="{ 'is-invalid': errors.date_of_birth }" id="inputDateOfBirth" v-model="inputDateOfBirth" min="1900-01-01" max="2026-01-01" aria-describedby="inputDateOfBirthValidation">
                 <div v-if="errors.date_of_birth" class="invalid-feedback" id="inputDateOfBirthValidation">{{ errors.date_of_birth[0] }}</div>
             </div>
@@ -190,8 +188,8 @@ onMounted(() => {
 
         <div class="row mb-3">
             <div class="col">
-                <label for="inputGraduationYear" class="form-label">Graduation year</label>
-                <input class="form-control" type="number" min="2000" max="2099" :class="{ 'is-invalid': errors.graduation_year }"id="inputGraduationYear" v-model="inputGraduationYear" required aria-describedby="inputGraduationYearValidation">
+                <label for="inputGraduationYear" class="form-label">Graduation Year</label>
+                <input class="form-control" type="number" min="2000" max="2099" :class="{ 'is-invalid': errors.graduation_year }" id="inputGraduationYear" v-model="inputGraduationYear" required aria-describedby="inputGraduationYearValidation">
                 <div v-if="errors.graduation_year" class="invalid-feedback" id="inputGraduationYearValidation">{{ errors.graduation_year[0] }}</div>
             </div>
             <div class="col">
@@ -201,8 +199,16 @@ onMounted(() => {
             </div>
         </div>
 
+        <div class="row mb-3">
+            <div class="col">
+                <label for="inputBio" class="form-label">Bio</label>
+                <textarea class="form-control" :class="{ 'is-invalid': errors.bio }" id="inputBio" v-model="inputBio" aria-describedby="inputBioValidation" placeholder="Optionally, write a few lines about yourself." style="height: 100px;" />
+                <div v-if="errors.bio" class="invalid-feedback" id="inputBioValidation">{{ errors.bio[0] }}</div>
+            </div>
+        </div>
+
         <div class="mb-3">
-            <label for="inputResume" class="form-label">Upload resume (PDF)
+            <label for="inputResume" class="form-label">Upload Resume (.pdf)
             </label>
             <p v-if="resumeUrl"><a @click="viewResume" style="color: lightblue; cursor: pointer">View Existing ({{ resumeUrl }})</a></p>
             <input class="form-control" type="file" id="inputResume" accept=".pdf" @change="handleFileUpload">
