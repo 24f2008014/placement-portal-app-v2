@@ -32,10 +32,8 @@ async function changeStatus() {
         const newStatus = (company.value.status == "whitelisted") ? "blacklisted" : "whitelisted";
         const response = await api.patch(`/companies/${route.params.id}`, { status: newStatus });
         company.value = response.data;
-        const statusModal = document.getElementById("CompanyStatusModal");
-        const statusModalInstance = bootstrap.Modal.getInstance(statusModal);
-        statusModalInstance.hide();
-        alert.addAlert(`Successfully updated Company #${route.params.id}'s status'.`, "success");
+        bootstrap.Modal.getInstance(document.getElementById("CompanyStatusModal")).hide();
+        alert.addAlert(`Successfully updated Company #${route.params.id}'s status.`, "success");
     } catch (error) {
         console.error(error);
     }
@@ -114,7 +112,7 @@ const positions_fields = {
 
 onMounted(() => {
     getCompany();
-})
+});
 </script>
 
 <template>
@@ -131,9 +129,9 @@ onMounted(() => {
             </div>
         </div>
     </div>
-    <hr class="mb-4">
 
     <template v-if="!loading">
+        <hr class="mb-4">
         <div class="row mb-4">
             <div class="col">
                 <h6 class="text-primary-emphasis">Name</h6>
@@ -160,6 +158,7 @@ onMounted(() => {
                 <p>{{ company.status }}</p>
             </div>     
         </div>
+
         <template v-if="company.description">
             <hr class="mb-4">
             <div class="row mb-4">
@@ -168,37 +167,38 @@ onMounted(() => {
             </div>
         </template>
 
-        <template v-if="auth.currentUser.role=='admin'">
-            <hr class="mb-4">
-            <div class="row mb-4">
-                <div class="col">
-                    <h3>Current Status: <code>{{ company.status }}</code></h3>
-                    <p v-if="company.status=='pending'">This company's status is <strong>pending</strong>. They need admin approval before they can list new positions.</p>
-                    <p v-else-if="company.status=='blacklisted'">This company is <strong>blacklisted</strong>. They cannot make new job listings.</p>
-                    <p v-else>This company is <strong>whitelisted</strong>. They can freely list new positions.</p>
-                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#CompanyStatusModal"><i class="bi bi-wrench me-2"></i>Change Status</button>
-                </div>
+        <hr class="mb-4">
+        <div class="row mb-4">
+            <div class="col">
+                <h3>Current Status: <code>{{ company.status }}</code></h3>
+                <p v-if="company.status=='pending'">This company's status is <code class="text-warning fw-bold">pending</code>. They need admin approval before they can list new positions.</p>
+                <p v-else-if="company.status=='blacklisted'">This company is <code class="text-danger fw-bold">blacklisted</code>. They cannot list new positions.</p>
+                <p v-else>This company is <code class="text-success fw-bold">whitelisted</code>. They can freely list new positions.</p>
 
-                <Modal :title="'Change Status'" :id="'CompanyStatusModal'" :yes-label="'Change'" @confirm="changeStatus">
-                    <template #modal-body>
-                        <p v-if="company.status=='pending'">Are you sure you want to change Company #{{ $route.params.id }}'s status from <strong>pending</strong> to <strong>whitelisted</strong>?</p>
-                        <p v-else-if="company.status=='blacklisted'">Are you sure you want to change Company #{{ $route.params.id }}'s status from <strong>blacklisted</strong> to <strong>whitelisted</strong>?</p>
-                        <p v-else>Are you sure you want to change Company #{{ $route.params.id }}'s status from <strong>whitelisted</strong> to <strong>blacklisted</strong>?</p>
-                    </template>
-                </Modal>
+                <template v-if="auth.currentUser.role=='admin'">
+                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#CompanyStatusModal"><i class="bi bi-gear-fill me-2"></i>Change Status</button>
+                    <Modal :title="'Change Status'" :id="'CompanyStatusModal'" :yes-label="'Change'" @confirm="changeStatus">
+                        <template #modal-body>
+                            <p v-if="company.status=='pending'">Are you sure you want to change Company #{{ $route.params.id }}'s status from <strong>pending</strong> to <strong>whitelisted</strong>? They will be able to list new positions they're hiring for.</p>
+                            <p v-else-if="company.status=='blacklisted'">Are you sure you want to change Company #{{ $route.params.id }}'s status from <strong>blacklisted</strong> to <strong>whitelisted</strong>? They will again be able to list new positions they're hiring for.</p>
+                            <p v-else>Are you sure you want to change Company #{{ $route.params.id }}'s status from <strong>whitelisted</strong> to <strong>blacklisted</strong>? This will not close their existing positions, but will prevent them from opening new ones.</p>
+                        </template>
+                    </Modal>
+                </template>
+            </div>
+        </div>
+
+        <template v-if="company.status=='whitelisted' || auth.currentUser.role=='admin'">
+            <hr class="mb-4">
+            <div class="row-mb-4">
+                <div class="col">
+                    <h3 class="mb-3">Positions</h3>
+                    <div class="col">
+                        <PaginatedTable :url="positions_endpoint" :fields="positions_fields" :item_route_name="positions_route" />
+                    </div>
+                </div>
             </div>
         </template>
     </template>
     <div class="row mb-4" v-else><p>Loading...</p></div>
-    <hr class="mb-4">
-
-    <div class="row mb-4">
-        <div class="col">
-            <h3 class="mb-3">Positions</h3>
-            <div class="col" v-if="!loading">
-                <PaginatedTable :url="positions_endpoint" :fields="positions_fields" :item_route_name="positions_route" />
-            </div>
-            <div v-else>Loading...</div>
-        </div>
-    </div>
 </template>

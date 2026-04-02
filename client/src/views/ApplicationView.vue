@@ -97,13 +97,9 @@ onMounted(() => {
         <div class="col mb-3">
             <h6 class="display-6">View Application</h6>
             <p class="lead text-muted">Application ID: #{{ route.params.id }}</p>
-            <div class="row">
+            <div v-if="!loading" class="row">
                 <div class="col d-flex gap-2">
-                    <template v-if="!loading">
-                        <button type="button" class="btn btn-primary btn-sm" @click='router.push({ name: "position", params: { id: application.position_id } })'>
-                            <i class="bi bi-arrow-left me-2"></i>Position
-                        </button>
-                    </template>
+                    <button type="button" class="btn btn-primary btn-sm" @click='router.push({ name: "position", params: { id: application.position_id } })'><i class="bi bi-arrow-left me-2"></i>Position</button>
                 </div>
             </div>
         </div>
@@ -115,7 +111,7 @@ onMounted(() => {
             <h3>Application Details</h3>
             <template v-if="auth.currentUser.role!='student'">
                 <div class="col d-flex mt-2 gap-2">
-                    <button type="button" class="btn btn-sm btn-primary" @click="router.push({ name: 'student', params: { id: application.student_id } })"><i class="bi bi-arrow-left me-2"></i>View Student</button>
+                    <button type="button" class="btn btn-sm btn-primary" @click="router.push({ name: 'student', params: { id: application.student_id } })"><i class="bi bi-box-arrow-up-right me-2"></i>View Student</button>
                     <button v-if="application.student.resume_url" type="button" class="btn btn-sm btn-success" @click="viewResume(application.student.resume_url)"><i class="bi bi-download me-2"></i>View Resume</button>
                 </div>
             </template>
@@ -179,7 +175,7 @@ onMounted(() => {
 
                 <template v-else-if="application.status=='rejected'">
                     <p class="mb-2">This application has been <strong>rejected</strong> by the company.</p>
-                    <p><strong>Feedback: </strong>{{ application.feedback }}</p>
+                    <p><strong>Feedback: </strong>{{ application.feedback ? application.feedback : "N/A" }}</p>
                 </template>
 
                 <p v-else-if="application.status=='withdrawn'">This application has been <strong>withdrawn</strong> by the student.</p>

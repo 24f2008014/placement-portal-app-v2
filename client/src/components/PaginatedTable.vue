@@ -120,6 +120,7 @@ onMounted(() => {
                     <template v-for="f in Object.values(props.fields)">
                         <div class="col" v-if="f.filter==true">
                             <label :for="f.name" class="form-label">{{ f.label }}</label>
+
                             <template v-if="f.type=='select'">
                                 <select class="form-select" :id="f.name" v-model="filters[f.name]">
                                     <option value="" selected>...</option>
@@ -128,6 +129,7 @@ onMounted(() => {
                                     </template>
                                 </select>
                             </template>
+
                             <input v-else v-bind="f.input" class="form-control" :id="f.name" v-model="filters[f.name]">
                         </div>
                     </template>

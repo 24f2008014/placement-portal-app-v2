@@ -91,9 +91,9 @@ async function submitForm() {
         updateSuccessful.value = true;
         alert.addAlert("Successfully updated your profile.", "success");
     } catch (error) {
-        console.error(error.response.data)
+        console.error(error.response.data);
         if ("errors" in error.response.data) {
-            errors.value = flattenResponse(error.response.data.errors.json);
+            errors.value = flattenResponse(error.response.data.errors.form);
         }
     }
 }
@@ -122,9 +122,6 @@ onMounted(() => {
 </script>
 
 <template>
-    <h3 class="display-6">Your Profile</h3>
-    <hr class="mb-4">
-    <p v-if="updateSuccessful" class="text-success">Successfully updated your profile.</p>
     <form class="border px-3 py-3 needs-validation" @submit.prevent="submitForm">
         <div class="mb-3">
             <label for="inputRollNumber" class="form-label">Roll Number</label>
@@ -214,6 +211,6 @@ onMounted(() => {
             <input class="form-control" type="file" id="inputResume" accept=".pdf" @change="handleFileUpload">
         </div>
 
-        <button type="submit" class="btn btn-primary mb-3">Submit</button>
+        <button type="submit" class="btn btn-primary mb-2">Update</button>
     </form>
 </template>

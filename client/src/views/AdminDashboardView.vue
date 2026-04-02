@@ -348,109 +348,88 @@ onMounted(() => {
     </div>
     <hr class="mb-4">
 
-    <div v-if="!loading" class="row">
-        <div class="col">
-        <ul class="nav nav-tabs" id="myTab" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="students-tab" data-bs-toggle="tab" data-bs-target="#students-tab-pane" type="button" role="tab" aria-controls="students-tab-pane" aria-selected="true">Students ({{ stats.num_students }})</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="companies-tab" data-bs-toggle="tab" data-bs-target="#companies-tab-pane" type="button" role="tab" aria-controls="companies-tab-pane" aria-selected="false">Companies ({{ stats.num_students }})</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="positions-tab" data-bs-toggle="tab" data-bs-target="#positions-tab-pane" type="button" role="tab" aria-controls="positions-tab-pane" aria-selected="false">Positions ({{ stats.num_positions }})</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="applications-tab" data-bs-toggle="tab" data-bs-target="#applications-tab-pane" type="button" role="tab" aria-controls="applications-tab-pane" aria-selected="false">Applications ({{ stats.num_applications }})</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="placements-tab" data-bs-toggle="tab" data-bs-target="#placements-tab-pane" type="button" role="tab" aria-controls="placements-tab-pane" aria-selected="false">Placements ({{ stats.num_placements }})</button>
-            </li>
-        </ul>
+    <template v-if="!loading">
+        <div class="row">
+            <div class="col">
+                <ul>
+                    <template v-if="stats.num_companies_pending > 0">
+                        <li><strong>Companies pending approval</strong> ({{ stats.num_companies_pending }}):</li>
+                        <ul>
+                            <li v-for="c in stats.companies_pending.slice(0, 10)">
+                                <RouterLink :to="{name: 'company', params: { id: c.id } }">{{ c.name }} (#{{ c.id }})</RouterLink>
+                            </li>
+                        </ul>
+                    </template>
+                    <li v-else><strong>Companies pending approval:</strong> None</li>
+                </ul>
+            </div>
         </div>
-        <div class="tab-content" id="myTabContent">
-            <div class="tab-pane fade show active" id="students-tab-pane" role="tabpanel" aria-labelledby="students-tab" tabindex="0">
-                <div class="row mt-3">
-                    <div class="col">
-                        <h4 class="mb-3">Students</h4>
-                        <PaginatedTable :url="students_endpoint" :fields="students_fields" :item_route_name="students_route" />
+
+        <div class="row">
+            <div class="col">
+                <ul class="nav nav-tabs" id="myTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="students-tab" data-bs-toggle="tab" data-bs-target="#students-tab-pane" type="button" role="tab" aria-controls="students-tab-pane" aria-selected="true">Students ({{ stats.num_students }})</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="companies-tab" data-bs-toggle="tab" data-bs-target="#companies-tab-pane" type="button" role="tab" aria-controls="companies-tab-pane" aria-selected="false">Companies ({{ stats.num_students }})</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="positions-tab" data-bs-toggle="tab" data-bs-target="#positions-tab-pane" type="button" role="tab" aria-controls="positions-tab-pane" aria-selected="false">Positions ({{ stats.num_positions }})</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="applications-tab" data-bs-toggle="tab" data-bs-target="#applications-tab-pane" type="button" role="tab" aria-controls="applications-tab-pane" aria-selected="false">Applications ({{ stats.num_applications }})</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="placements-tab" data-bs-toggle="tab" data-bs-target="#placements-tab-pane" type="button" role="tab" aria-controls="placements-tab-pane" aria-selected="false">Placements ({{ stats.num_placements }})</button>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="tab-content" id="myTabContent">
+                <div class="tab-pane fade show active" id="students-tab-pane" role="tabpanel" aria-labelledby="students-tab" tabindex="0">
+                    <div class="row mt-3">
+                        <div class="col">
+                            <h4 class="mb-3">Students</h4>
+                            <PaginatedTable :url="students_endpoint" :fields="students_fields" :item_route_name="students_route" />
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="companies-tab-pane" role="tabpanel" aria-labelledby="companies-tab" tabindex="0">
+                    <div class="row mt-3">
+                        <div class="col">
+                            <h4 class="mb-3">Companies</h4>
+                            <PaginatedTable :url="companies_endpoint" :fields="companies_fields" :item_route_name="companies_route" />
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="positions-tab-pane" role="tabpanel" aria-labelledby="positions-tab" tabindex="0">
+                    <div class="row mt-3">
+                        <div class="col">
+                            <h4 class="mb-3">Positions</h4>
+                            <PaginatedTable :url="positions_endpoint" :fields="positions_fields" :item_route_name="positions_route" />
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="applications-tab-pane" role="tabpanel" aria-labelledby="applications-tab" tabindex="0">
+                    <div class="row mt-3">
+                        <div class="col">
+                            <h4 class="mb-3">Applications</h4>
+                            <PaginatedTable :url="applications_endpoint" :fields="applications_fields" :item_route_name="applications_route" />
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="placements-tab-pane" role="tabpanel" aria-labelledby="placements-tab" tabindex="0">
+                    <div class="row mt-3">
+                        <div class="col">
+                            <h4 class="mb-3">Placements</h4>
+                            <PaginatedTable :url="placements_endpoint" :fields="placements_fields" :item_route_name="placements_route" />
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="tab-pane fade" id="companies-tab-pane" role="tabpanel" aria-labelledby="companies-tab" tabindex="0">
-                <div class="row mt-3">
-                    <div class="col">
-                        <h4 class="mb-3">Companies</h4>
-                        <PaginatedTable :url="companies_endpoint" :fields="companies_fields" :item_route_name="companies_route" />
-                    </div>
-                </div>
-            </div>
-            <div class="tab-pane fade" id="positions-tab-pane" role="tabpanel" aria-labelledby="positions-tab" tabindex="0">
-                <div class="row mt-3">
-                    <div class="col">
-                        <h4 class="mb-3">Positions</h4>
-                        <PaginatedTable :url="positions_endpoint" :fields="positions_fields" :item_route_name="positions_route" />
-                    </div>
-                </div>
-            </div>
-            <div class="tab-pane fade" id="applications-tab-pane" role="tabpanel" aria-labelledby="applications-tab" tabindex="0">
-                <div class="row mt-3">
-                    <div class="col">
-                        <h4 class="mb-3">Applications</h4>
-                        <PaginatedTable :url="applications_endpoint" :fields="applications_fields" :item_route_name="applications_route" />
-                    </div>
-                </div>
-            </div>
-            <div class="tab-pane fade" id="placements-tab-pane" role="tabpanel" aria-labelledby="placements-tab" tabindex="0">
-                <div class="row mt-3">
-                    <div class="col">
-                        <h4 class="mb-3">Placements</h4>
-                        <PaginatedTable :url="placements_endpoint" :fields="placements_fields" :item_route_name="placements_route" />
-                    </div>
-                </div>
-            </div>            
         </div>
-    </div>
-    <div v-else>Loading...</div>
+    </template>
 
-    <!-- <hr class="mb-4">
-
-    <div class="row">
-        <div class="col">
-            <h4 class="mb-3">Students</h4>
-            <PaginatedTable :url="students_endpoint" :fields="students_fields" :item_route_name="students_route" />
-        </div>
-    </div>
-    <hr class="mb-4">
-
-    <div class="row">
-        <div class="col">
-            <h4 class="mb-3">Companies</h4>
-            <PaginatedTable :url="companies_endpoint" :fields="companies_fields" :item_route_name="companies_route" />
-        </div>
-    </div>
-    <hr class="mb-4">
-
-    <div class="row">
-        <div class="col">
-            <h4 class="mb-3">Positions</h4>
-            <PaginatedTable :url="positions_endpoint" :fields="positions_fields" :item_route_name="positions_route" />
-        </div>
-    </div>
-    <hr class="mb-4">
-
-    <div class="row">
-        <div class="col">
-            <h4 class="mb-3">Applications</h4>
-            <PaginatedTable :url="applications_endpoint" :fields="applications_fields" :item_route_name="applications_route" />
-        </div>
-    </div>
-    <hr class="mb-4">
-
-    <div class="row">
-        <div class="col">
-            <h4 class="mb-3">Placements</h4>
-            <PaginatedTable :url="placements_endpoint" :fields="placements_fields" :item_route_name="placements_route" />
-        </div>
-    </div> -->
+    <template v-else>Loading...</template>
 </template>
