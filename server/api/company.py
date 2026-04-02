@@ -45,6 +45,7 @@ def new_position(data):
     # position = Position(company=company, **data)
     position = data
     position.company = company
+    position.is_approved = False
     db.session.add(position)
     db.session.commit()
     return position
