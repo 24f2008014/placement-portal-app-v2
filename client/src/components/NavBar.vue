@@ -20,7 +20,7 @@ const auth = useAuthStore();
                     </template>
                     <template v-if="auth.currentUser.role=='company'">
                         <li class="nav-item"><RouterLink :to="{ name: 'company_dashboard' }" class="nav-link">Dashboard</RouterLink></li>
-                        <li class="nav-item"><RouterLink :to="{ name: 'company_positions' }" class="nav-link">Positions</RouterLink></li>
+                        <li class="nav-item"><RouterLink :to="{ name: 'company_positions' }" class="nav-link">New Position</RouterLink></li>
                     </template>
                     <template v-if="auth.currentUser.role=='admin'">
                         <li class="nav-item"><RouterLink :to="{ name: 'admin_dashboard' }" class="nav-link">Dashboard</RouterLink></li>
@@ -32,7 +32,6 @@ const auth = useAuthStore();
 
                 <ul class="ms-auto navbar-nav">
                     <template v-if="auth.isAuthenticated">
-                        <!-- <li class="nav-item my-auto me-4"><RouterLink :to="{ name: 'search' }" class="nav-link"><i class="bi bi-search me-2"></i>Search</RouterLink></li> -->
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"><i class="bi bi-person-circle fs-4 pe-1"></i></a>
                             <ul class="dropdown-menu">
@@ -43,6 +42,7 @@ const auth = useAuthStore();
                             </ul>
                         </li>
                     </template>
+                    
                     <template v-else>
                         <li class="nav-item"><RouterLink :to="{ name: 'register' }" class="nav-link">Register</RouterLink></li>
                         <li class="nav-item"><RouterLink :to="{ name: 'login' }" class="nav-link">Login</RouterLink></li>

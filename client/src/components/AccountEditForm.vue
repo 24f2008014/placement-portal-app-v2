@@ -9,7 +9,6 @@ const errors = ref({});
 const inputEmail = ref();
 const inputOldPassword = ref();
 const inputPassword = ref();
-const updateSuccessful = ref(false);
 
 async function getDetails() {
     try {
@@ -29,17 +28,17 @@ async function submitForm() {
             password: inputPassword.value,
         };
         const response = await api.put("/users/me", formData);
-        updateSuccessful.value = true;
         alert.addAlert("Account info updated.", "success");
         inputOldPassword.value = null;
         inputPassword.value = null;
     } catch (error) {
-        console.error(error.response.data)
+        console.error(error.response.data);
+        // alert.addAlert(error.response.data, "error");
         if ("errors" in error.response.data) {
             errors.value = flattenResponse(error.response.data.errors.json);
         }
     }
-};
+}
 
 onMounted(() => {
     getDetails();
@@ -48,30 +47,25 @@ onMounted(() => {
 </script>
 
 <template>
-    <h3 class="display-6">Account Details</h3>
-    <hr class="mb-4">
-
-    <p v-if="updateSuccessful" class="text-success">Successfully updated your account info.</p>
-
     <form class="border px-3 py-3 needs-validation body-bg-tertiary" @submit.prevent="submitForm">
         <div class="mb-3">
-            <label for="inputEmail" class="form-label">Email address</label>
+            <label for="inputEmail" class="form-label">Email Address</label>
             <input type="email" class="form-control" :class="{ 'is-invalid': errors.email }" id="inputEmail" v-model="inputEmail" required aria-describedby="inputEmailValidation">
             <div v-if="errors.email" class="invalid-feedback" id="inputEmailValidation">{{ errors.email[0] }}</div>
         </div>
 
         <div class="mb-3">
-            <label for="inputOldPassword" class="form-label">Old password</label>
+            <label for="inputOldPassword" class="form-label">Old Password</label>
             <input type="password" class="form-control" :class="{ 'is-invalid': errors.old_password }" id="inputOldPassword" v-model="inputOldPassword" required aria-describedby="inputOldPasswordValidation">
             <div v-if="errors.old_password" class="invalid-feedback" id="inputOldPasswordValidation">{{ errors.old_password[0] }}</div>
         </div>
 
         <div class="mb-3">
-            <label for="inputPassword" class="form-label">New password</label>
+            <label for="inputPassword" class="form-label">New Password</label>
             <input type="password" class="form-control" :class="{ 'is-invalid': errors.password }" id="inputPassword" v-model="inputPassword" required aria-describedby="inputPasswordValidation" minlength="6">
-            <div id="PasswordHelp" class="form-text">Must be at least 6 characters.</div>
+            <div id="PasswordHelp" class="form-text">Must have at least 6 characters.</div>
             <div v-if="errors.password" class="invalid-feedback" id="inputPasswordValidation">{{ errors.password[0] }}</div>
         </div>
-        <button type="submit" class="btn btn-primary mb-3">Submit</button>
+        <button type="submit" class="btn btn-sm btn-primary mb-2">Update</button>
     </form>
 </template>

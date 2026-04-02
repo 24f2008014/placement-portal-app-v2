@@ -93,6 +93,10 @@ const positions_fields = {
             type: "datetime-local"
         }
     },
+    "Application Count": {
+        name: "application_count",
+        filter: false
+    },
     "Status": {
         name: "status",
         filter: true,
