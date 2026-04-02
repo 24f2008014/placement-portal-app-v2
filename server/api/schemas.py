@@ -1,8 +1,8 @@
 from api import db, ma
-from marshmallow import validate, validates, validates_schema, ValidationError, fields, pre_load, post_load
+from marshmallow import validate, validates, validates_schema, ValidationError, fields, pre_load, post_load, pre_dump
 from marshmallow_sqlalchemy import SQLAlchemySchema, auto_field
 from api.auth import token_auth
-from api.models import User, Student, Department, Branch, Industry, Company, Position, Application, Placement
+from api.models import User, Student, Department, Branch, Industry, Company, Position, Application, Placement, Role
 from marshmallow_oneofschema import OneOfSchema
 from datetime import datetime
 from sqlalchemy import func, asc, desc, select, text
@@ -11,6 +11,19 @@ from werkzeug.exceptions import BadRequest
 from flask import request, url_for, current_app
 from werkzeug.utils import secure_filename
 import os
+from zoneinfo import ZoneInfo
+
+def to_local(dt: datetime):
+    utc_dt = dt.replace(tzinfo=ZoneInfo("UTC"))
+    localized_dt = utc_dt.astimezone(ZoneInfo("Asia/Kolkata"))
+    return localized_dt
+
+def to_utc(dt):
+    naive_dt = datetime.strptime(dt, '%Y-%m-%dT%H:%M')
+    localized_dt = naive_dt.replace(tzinfo=ZoneInfo("Asia/Kolkata"))
+    utc_dt = localized_dt.astimezone(ZoneInfo("UTC"))
+    # print(f"naive: {naive_dt}, localized: {localized_dt}, utc: {utc_dt}, final: {utc_dt.replace(tzinfo=None).isoformat()}")
+    return utc_dt.replace(tzinfo=None) # .isoformat() is a no no
 
 def paginate_query(query, model, args, allowed_filters, allowed_sort, endpoint):
     limit = int(args.get("limit", 10))
@@ -25,6 +38,7 @@ def paginate_query(query, model, args, allowed_filters, allowed_sort, endpoint):
             raise BadRequest("Bad filter.")
         if len(str(v)) > 0:
             if allowed_filters[k] == "gt":
+                print(k, v)
                 query = query.filter(getattr(model, k) >= v)
             elif allowed_filters[k] == "lt":
                 query = query.filter(getattr(model, k) <= v)
@@ -95,6 +109,12 @@ class ListQueryArgsSchema(ma.Schema):
                 data["filters"] = json.loads(f)
             except Exception:
                 data["filters"] = {}
+        
+        date_fields = ["created_at", "updated_at", "deleted_at", "deadline", "interview_date", "joining_date"]
+        for f in date_fields:
+            if f in data["filters"] and data["filters"][f]:
+                dt = to_utc(data["filters"][f])
+                data["filters"][f] = dt
         return data
 
 class PaginationSchema(ma.Schema):
@@ -122,6 +142,11 @@ class TokenSchema(ma.Schema):
     username = fields.String()
     roles = fields.List(fields.String())
 
+class RoleSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = Role
+        include_fk = True
+
 class UserSchema(ma.SQLAlchemySchema):
     class Meta:
         model = User
@@ -133,6 +158,15 @@ class UserSchema(ma.SQLAlchemySchema):
     password = fields.String(required=True, load_only=True, validate=validate.Length(min=6))
     created_at = ma.auto_field(dump_only=True)
     deleted_at = ma.auto_field()
+    roles = fields.Nested(RoleSchema, many=True)
+
+    @pre_dump
+    def dt_to_local(self, data, **kwargs):
+        if data.created_at:
+            data.created_at = to_local(data.created_at)
+        if data.deleted_at:
+            data.deleted_at = to_local(data.deleted_at)
+        return data    
 
 class UpdateUserSchema(UserSchema):
     old_password = fields.String(load_only=True, validate=validate.Length(min=6))
@@ -229,12 +263,6 @@ class ProfileOneOfSchema(OneOfSchema):
             return "student"
         elif isinstance(obj, Company):
             return "company"
-        
-    # def get_data_type(self, data):
-    #     try:
-    #         return data[self.type_field]
-    #     except Exception:
-    #         raise ValidationError(f"Missing field {self.type_field} in profile.")
 
 class RegisterSchema(ma.Schema):
     email = fields.Email(required=True)
@@ -245,14 +273,6 @@ class RegisterSchema(ma.Schema):
     def validate_email(self, value, **kwargs):
         if db.session.scalar(db.select(User).where(User.email == value)):
             raise ValidationError("Please use another email.")
-
-    # @validates_schema
-    # def validate_profile(self, data, **kwargs):
-    #     r = data.get("role")
-    #     profile = data.get("profile", {})
-    #     if r == "student":
-    #         # StudentSchema.load("profile")
-    #         pass
 
 class PositionSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
@@ -271,16 +291,20 @@ class PositionSchema(ma.SQLAlchemyAutoSchema):
     company = fields.Nested(CompanySchema, dump_only=True)
     departments = fields.Nested(DepartmentSchema, many=True, dump_only=True)
     department_ids = fields.List(fields.Integer(), load_only=True)
-    # num_applications = fields.Method("get_num_applications", dump_only=True)
-
-    # def get_num_applications(self, obj):
-    #     return len(obj.applications)
 
     @validates("deadline")
     def validate_deadline(self, value, **kwargs):
-        # if datetime.strptime(value, "%Y-%m-%dT%H:%M") < datetime.now():
         if value < datetime.now():
             raise ValidationError("Deadline cannot be in the past.")
+        
+    @pre_load
+    def fix_dates(self, data, **kwargs):
+        date_fields = ["deadline"]
+        for f in date_fields:
+            if f in data and data[f]:
+                dt = to_utc(data[f])
+                data[f] = dt
+        return data
     
     @post_load
     def make_instance(self, data, **kwargs):
@@ -289,7 +313,19 @@ class PositionSchema(ma.SQLAlchemyAutoSchema):
         if dept_ids:
             instance.departments = Department.query.filter(Department.id.in_(dept_ids)).all()
         return instance
-        
+
+    @pre_dump
+    def dt_to_local(self, data, **kwargs):
+        if data.created_at:
+            data.created_at = to_local(data.created_at)
+        if data.deadline:
+            data.deadline = to_local(data.deadline)
+        if data.deleted_at:
+            data.deleted_at = to_local(data.deleted_at)
+        if data.updated_at:
+            data.updated_at = to_local(data.updated_at)
+        return data
+            
 class ApplicationSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Application
@@ -304,6 +340,27 @@ class ApplicationSchema(ma.SQLAlchemyAutoSchema):
     student = fields.Nested(StudentSchema, only=("id", "first_name", "last_name", "roll_number", "resume_url"), dump_only=True)
     position = fields.Nested(PositionSchema, only=("id", "role", "company.name", "company.contact_email"), dump_only=True)
     placements = fields.Nested("PlacementSchema", only=("id", "status"), many=True)
+
+    @pre_load
+    def fix_dates(self, data, **kwargs):
+        date_fields = ["interview_date"]
+        for f in date_fields:
+            if f in data and data[f]:
+                dt = to_utc(data[f])
+                data[f] = dt
+        return data
+
+    @pre_dump
+    def dt_to_local(self, data, **kwargs):
+        if data.created_at:
+            data.created_at = to_local(data.created_at)
+        if data.interview_date:
+            data.interview_date = to_local(data.interview_date)
+        if data.updated_at:
+            data.updated_at = to_local(data.updated_at)
+        if data.deleted_at:
+            data.deleted_at = to_local(data.deleted_at)
+        return data
 
     @validates("interview_date")
     def validate_interview_date(self, value, **kwargs):
@@ -321,15 +378,35 @@ class PlacementSchema(ma.SQLAlchemyAutoSchema):
     status = auto_field(validate=validate.OneOf(["pending", "accepted", "rejected", "withdrawn"]))
     application = fields.Nested(ApplicationSchema, only=("id", "position.role", "position.company.name", "position.company.id", "position.id", "student.first_name", "student.last_name", "student.roll_number", "student.id"), dump_only=True)
 
+    @pre_load
+    def fix_dates(self, data, **kwargs):
+        date_fields = ["joining_date"]
+        for f in date_fields:
+            if f in data and data[f]:
+                dt = to_utc(data[f])
+                data[f] = dt
+        return data
+
     @validates("joining_date")
     def validate_joining_date(self, value, **kwargs):
-        # if datetime.strptime(value, "%Y-%m-%dT%H:%M") < datetime.now():
         if value < datetime.now():
             raise ValidationError("Deadline cannot be in the past.")
 
-class StatsSchema(ma.Schema):
+    @pre_dump
+    def dt_to_local(self, data, **kwargs):
+        if data.created_at:
+            data.created_at = to_local(data.created_at)
+        if data.joining_date:
+            data.joining_date = to_local(data.joining_date)
+        if data.deleted_at:
+            data.deleted_at = to_local(data.deleted_at)
+        return data
+
+class AdminStatsSchema(ma.Schema):
     num_students = fields.Integer()
     num_companies = fields.Integer()
+    num_companies_pending = fields.Integer()
+    companies_pending = fields.Nested(CompanySchema, only=("id", "name",), many=True, dump_only=True)
     num_positions = fields.Integer()
     num_applications = fields.Integer()
     num_placements = fields.Integer()
