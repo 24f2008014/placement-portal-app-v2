@@ -84,8 +84,12 @@ def create_application(id):
     """Create a new application for an open position."""
     student = token_auth.current_user().student
     position = db.get_or_404(Position, id)
+
+    # Position must be admin-approved, open for applications, and have a deadline in the future
     if position.status == "closed" or position.is_approved == False or datetime.now() > position.deadline:
         abort(403)
+    
+    # Student must not have existing in-progress application
     existing_application = db.session.scalar(
         db.select(Application)
         .join(Position)
@@ -97,6 +101,11 @@ def create_application(id):
     )
     if existing_application is not None:
         abort(403)
+    
+    # Student must meet eligibility criteria
+    if student.cgpa < position.min_cgpa:
+        abort(403)
+
     application = Application(student=student, position=position)
     db.session.add(application)
     db.session.commit()
@@ -106,8 +115,11 @@ def create_application(id):
 @authenticate(token_auth, role=["student"])
 @response(ApplicationSchema())
 def withdraw_application(id):
-    """Withdraw an application you made."""
-    # Withdraw if: pending
+    """Withdraw an application
+    Change an application's status to `withdrawn`.
+    
+    An application can only be withdrawn if it currently has the `pending` status.
+    """
     application = db.get_or_404(Application, id)
     if token_auth.current_user().student != application.student:
         abort(403)

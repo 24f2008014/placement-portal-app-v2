@@ -68,7 +68,8 @@ def change_position_status(data, id):
 @response(PaginatedCollection(PositionSchema()))
 def get_company_positions(args):
     """Get all positions made by your company."""
-    query = db.session.query(Position)
+    company = token_auth.current_user().company
+    query = db.session.query(Position).filter(Position.company == company)
     items, pagination = paginate_query(
         query=query,
         model=Position,
@@ -78,10 +79,13 @@ def get_company_positions(args):
             "role": "ilike",
             "salary_min": "gt",
             "salary_max": "gt",
-            "application_count": "gt"
+            "min_cgpa": "gt",
+            "application_count": "gt",
+            "is_approved": "equals",
+            "status": "equals"
         },
-        allowed_sort={"id", "role", "salary_min", "salary_max", "min_cgpa", "deadline", "status", "application_count"},
-        endpoint="company.get_positions_self"
+        allowed_sort={"id", "role", "salary_min", "salary_max", "min_cgpa", "deadline", "application_count", "is_approved", "status"},
+        endpoint="company.get_company_positions"
     )
     return { "pagination": pagination, "data": items }, 200
 
@@ -100,10 +104,13 @@ def get_company_applications(args):
         allowed_filters={
             "id": "equals",
             "student_id": "equals",
+            "position_id": "equals",
+            "created_at": "gt",
+            "updated_at": "gt",
             "status": "equals"
         },
-        allowed_sort={"id", "student_id", "status"},
-        endpoint="company.get_positions_self"
+        allowed_sort={"id", "student_id", "position_id", "created_at", "updated_at", "status"},
+        endpoint="company.get_company_applications"
     )
     return { "pagination": pagination, "data": items }, 200
 
@@ -121,9 +128,13 @@ def get_company_placements_self(args):
         args=args,
         allowed_filters={
             "id": "equals",
+            "application_id": "equals",
+            "student_id": "equals",
+            "salary": "gt",
+            "created_at": "gt",
             "status": "equals"
         },
-        allowed_sort={"id", "status"},
+        allowed_sort={"id", "application_id", "student_id", "salary", "created_at", "status"},
         endpoint="company.get_company_placements_self"
     )
     return { "pagination": pagination, "data": items }, 200
