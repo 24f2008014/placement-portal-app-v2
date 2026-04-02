@@ -20,6 +20,7 @@ import PlacementView from "@/views/PlacementView.vue";
 import StudentsView from "@/views/StudentsView.vue";
 import PositionsView from "@/views/PositionsView.vue";
 import SearchView from "@/views/SearchView.vue";
+import UsersView from "@/views/UsersView.vue";
 
 const routes = [
   {
@@ -131,6 +132,12 @@ const routes = [
         name: "search",
         component: SearchView,
         meta: { title: "Search", requiresAuth: true, roleRequired: ["admin"] }
+      },
+      {
+        path: "/users",
+        name: "users",
+        component: UsersView,
+        meta: { title: "Users", requiresAuth: true, roleRequired: ["admin"] }
       },
       {
         path: "/:pathMatch(.*)*",

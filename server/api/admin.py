@@ -4,8 +4,8 @@ from sqlalchemy import func
 from datetime import datetime
 from api.app import db, cache
 from api.auth import token_auth
-from api.schemas import StudentSchema, CompanySchema, paginate_query, ListQueryArgsSchema, PaginatedCollection, ApplicationSchema, StatsSchema, PlacementSchema
-from api.models import Student, Position, Application, Placement, Company
+from api.schemas import StudentSchema, CompanySchema, paginate_query, ListQueryArgsSchema, PaginatedCollection, ApplicationSchema, AdminStatsSchema, PlacementSchema, UserSchema
+from api.models import Student, Position, Application, Placement, Company, User
 
 admin = Blueprint("admin", __name__)
 
@@ -18,21 +18,46 @@ def cache_test():
 
 @admin.route("/stats", methods=["GET"])
 @authenticate(token_auth, role=["admin"])
-@response(StatsSchema())
+@response(AdminStatsSchema())
 def get_stats():
     """Get stats for the admin dashboard."""
     num_students = db.session.scalar(db.select(func.count()).select_from(Student))
     num_companies = db.session.scalar(db.select(func.count()).select_from(Company))
+    num_companies_pending = db.session.scalar(db.select(func.count()).select_from(Company).filter(Company.status == "pending"))
     num_positions = db.session.scalar(db.select(func.count()).select_from(Position))
     num_applications = db.session.scalar(db.select(func.count()).select_from(Application))
     num_placements = db.session.scalar(db.select(func.count()).select_from(Placement))
+    companies_pending = db.session.scalars(db.select(Company).filter(Company.status == "pending"))    
     return {
         "num_students": num_students,
         "num_companies": num_companies,
+        "num_companies_pending": num_companies_pending,
+        "companies_pending": companies_pending,
         "num_positions": num_positions,
         "num_applications": num_applications,
         "num_placements": num_placements
     }
+
+@admin.route("/users", methods=["GET"])
+@authenticate(token_auth, role=["admin"])
+@arguments(ListQueryArgsSchema())
+@response(PaginatedCollection(UserSchema()))
+def get_users(args):
+    """Get all users"""
+    query = db.session.query(User)
+    items, pagination = paginate_query(
+        query=query,
+        model=User,
+        args=args,
+        allowed_filters={
+            "id": "equals",
+            "email": "ilike",
+            "created_at": "gt"
+        },
+        allowed_sort={"id", "email", "created_at"},
+        endpoint="admin.get_users"
+    )
+    return { "pagination": pagination, "data": items }, 200
 
 @admin.route("/students", methods=["GET"])
 @authenticate(token_auth, role=["admin"])

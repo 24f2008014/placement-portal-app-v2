@@ -27,6 +27,7 @@ const auth = useAuthStore();
                         <li class="nav-item"><RouterLink :to="{ name: 'companies' }" class="nav-link">Companies</RouterLink></li>
                         <li class="nav-item"><RouterLink :to="{ name: 'students' }" class="nav-link">Students</RouterLink></li>
                         <li class="nav-item"><RouterLink :to="{ name: 'positions' }" class="nav-link">Positions</RouterLink></li>
+                        <li class="nav-item"><RouterLink :to="{ name: 'users' }" class="nav-link">Users</RouterLink></li>
                     </template>
                 </ul>
 
