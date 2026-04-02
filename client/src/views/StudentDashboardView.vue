@@ -11,7 +11,7 @@ const auth = useAuthStore();
 const stats = ref({});
 const loading = ref(true);
 
-const positions_endpoint = "/positions";
+const positions_endpoint = "/students/me/positions/unapplied";
 const positions_route = "position";
 const positions_fields = {
     "ID": {
@@ -66,6 +66,11 @@ const positions_fields = {
             min: "0"
         }
     },
+    "Created At": {
+        name: "created_at",
+        filter: false,
+        type: "date"
+    },
     "Deadline": {
         name: "deadline",
         filter: true,
@@ -73,19 +78,6 @@ const positions_fields = {
         type: "date",
         input: {
             type: "datetime-local"
-        }
-    },
-    "Status": {
-        name: "status",
-        filter: true,
-        label: "Status",
-        type: "select",
-        input: {
-            type: "select",
-            options: [
-                {label: "Open", value: "open"},
-                {label: "Closed", value: "closed"}
-            ]
         }
     }
 };
@@ -147,6 +139,61 @@ const my_applications_fields = {
     }
 };
 
+const placements_endpoint = "/students/me/placements";
+const placements_route = "placement";
+const placements_fields = {
+    "ID": {
+        name: "id",
+        filter: true,
+        label: "ID",
+        input: {
+            type: "number",
+            min: "1"
+        }
+    },
+    "Application ID": {
+        name: "application_id",
+        filter: false
+    },
+    "Position": {
+        name: "application.position.role",
+        filter: false
+    },
+    "Company": {
+        name: "application.position.company.name",
+        filter: false  
+    },
+    "Salary": {
+        name: "salary",
+        filter: false
+    },
+    "Joining Date": {
+        name: "joining_date",
+        filter: false,
+        type: "date"
+    },  
+    "Created At": {
+        name: "created_at",
+        filter: false,
+        type: "date"
+    },
+    "Status": {
+        name: "status",
+        filter: true,
+        label: "Status",
+        type: "select",
+        input: {
+            type: "select",
+            options: [
+                {label: "Pending", value: "pending"},
+                {label: "Accepted", value: "accepted"},
+                {label: "Rejected", value: "rejected"},
+                {label: "Withdrawn", value: "withdrawn"}
+            ]
+        }
+    }
+};
+
 async function getStats() {
     try {
         const response = await api.get("/students/me/stats");
@@ -182,7 +229,7 @@ onMounted(() => {
     <template v-if="!loading">
         <div class="row">
             <div class="col">
-                <h3>Scheduled Interviews</h3>
+                <h4>Scheduled Interviews</h4>
                 <ul v-if="stats.upcoming_interviews.length > 0">
                     <li v-for="i in stats.upcoming_interviews">
                         With the company <strong>{{ i.position.company.name }}</strong> on <strong>{{ formatDate(i.interview_date) }}</strong> for the position of <strong>{{ i.position.role }}</strong> <RouterLink :to="{name: 'application', params: { id: i.id } }">(view application)</RouterLink>
@@ -192,20 +239,49 @@ onMounted(() => {
             </div>
         </div>
         <hr class="mb-4">
+
+        <div class="row">
+            <div class="col">
+                <ul class="nav nav-tabs" id="myTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="applications-tab" data-bs-toggle="tab" data-bs-target="#applications-tab-pane" type="button" role="tab" aria-controls="applications-tab-pane" aria-selected="true">Your Applications ({{ stats.num_applications }})</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="positions-tab" data-bs-toggle="tab" data-bs-target="#positions-tab-pane" type="button" role="tab" aria-controls="positions-tab-pane" aria-selected="false">Positions</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="placements-tab" data-bs-toggle="tab" data-bs-target="#placements-tab-pane" type="button" role="tab" aria-controls="placements-tab-pane" aria-selected="false">Placements</button>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="tab-content" id="myTabContent">
+                <div class="tab-pane fade show active" id="applications-tab-pane" role="tabpanel" aria-labelledby="applications-tab" tabindex="0">
+                    <div class="row mt-3">
+                        <div class="col">
+                            <h4 class="mb-3">Students</h4>
+                            <PaginatedTable :url="my_applications_endpoint" :fields="my_applications_fields" :item_route_name="my_applications_route" />
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="positions-tab-pane" role="tabpanel" aria-labelledby="positions-tab" tabindex="0">
+                    <div class="row mt-3">
+                        <div class="col">
+                            <h4 class="mb-3">Positions</h4>
+                            <p>These are open positions you haven't applied for yet.</p>
+                            <PaginatedTable :url="positions_endpoint" :fields="positions_fields" :item_route_name="positions_route" />
+                        </div>
+                    </div>
+                </div>
+                <div class="tab-pane fade" id="placements-tab-pane" role="tabpanel" aria-labelledby="placements-tab" tabindex="0">
+                    <div class="row mt-3">
+                        <div class="col">
+                            <h4 class="mb-3">Your Placements</h4>
+                            <PaginatedTable :url="placements_endpoint" :fields="placements_fields" :item_route_name="placements_route" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </template>
-
-    <div class="row mb-4">
-        <div class="col">
-            <h4 class="mb-3">Your Applications ({{ stats.num_applications }})</h4>
-            <PaginatedTable :url="my_applications_endpoint" :fields="my_applications_fields" :item_route_name="my_applications_route" />
-        </div>
-    </div>
-    <hr class="mb-4">
-
-    <div class="row mb-4">
-        <div class="col">
-            <h4 class="mb-3">Open Positions</h4>
-            <PaginatedTable :url="positions_endpoint" :fields="positions_fields" :item_route_name="positions_route" />
-        </div>
-    </div>
 </template>
