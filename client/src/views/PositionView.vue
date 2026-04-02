@@ -118,6 +118,7 @@ async function postApplication() {
         router.push({ name: "application", params: { id: application_id } });
     } catch (error) {
         console.error(error);
+        alert.addAlert(error, "error");
     }
 }
 
@@ -155,25 +156,25 @@ onMounted(() => {
 
             <div class="row" v-if="auth.currentUser.role=='company' && !loading">
                 <div class="col d-flex gap-2">
-                    <button type="button" class="btn btn-primary btn-sm" @click='router.push({ name: "company_positions" })'>
-                        <i class="bi bi-arrow-left me-2"></i>Your Positions
+                    <button type="button" class="btn btn-success btn-sm" @click='router.push({ name: "company_dashboard" })'>
+                        <i class="bi bi-arrow-left me-2"></i>Dashboard
                     </button>
                 </div>
             </div>            
         </div>
     </div>
-    <hr class="mb-4">
 
     <template v-if="!loading">
+        <hr class="mb-4">
         <div class="row mb-4">
             <div class="col">
                 <h3 class="mb-4">Position Details</h3>
                 <PositionViewForm :position="position" />
             </div>
         </div>
-        <hr class="mb-4">
 
         <template v-if="auth.currentUser.role!='company'">
+            <hr class="mb-4">
             <div class="row mb-4">
                 <div class="col">
                     <h3 class="mb-3">About the Company</h3>
@@ -181,48 +182,47 @@ onMounted(() => {
                     <p><RouterLink :to='{ name: "company", params: { "id": position.company_id } }'>Click here to learn more about {{ position.company.name }}.</RouterLink></p>
                 </div>
             </div>
-            <hr class="mb-4">
         </template>
 
-        <template v-if="auth.currentUser.role=='company'">
-            <div class="row mb-4">
-                <div class="col">
-                    <h3>Current Status: <code>{{ position.status }}</code></h3>
-                    <p v-if="position.status=='open'">This position is currently <strong>open</strong>.</p>
-                    <p v-else>This position is currently <strong>closed</strong>.</p>
-                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#PositionStatusModal"><i class="bi bi-wrench me-2"></i>Change Status</button>
-                </div>
-
-                <Modal :title="'Change Status'" :id="'PositionStatusModal'" :yes-label="'Change'" @confirm="changeStatus">
-                    <template #modal-body>
-                        <p v-if="position.status=='open'">Are you sure you want to <strong>close</strong> Position #{{ $route.params.id }}?</p>
-                        <p v-else>Are you sure you want to <strong>open</strong> Position #{{ $route.params.id }}?</p>
-                    </template>
-                </Modal>
-            </div>
-            <hr class="mb-4">
-        </template>
-
-        <template v-else-if="auth.currentUser.role=='admin'">
-            <div class="row mb-4">
-                <div class="col">
-                    <h3>Approval Status: <code>{{ position.is_approved }}</code></h3>
-                    <p v-if="position.is_approved==true">This position is <strong>approved</strong>.</p>
-                    <p v-else>This position is not <strong>approved</strong>, and requires admin approval.</p>
+        <hr class="mb-4">
+        <div class="row mb-4">
+            <div class="col">
+                <h3>Admin Approved? <code>{{ position.is_approved }}</code></h3>
+                <p v-if="position.is_approved==true">This position is <strong>approved</strong>.</p>
+                <p v-else>This position <strong>has not yet been approved by an administrator</strong>.</p>
+                <template v-if="auth.currentUser.role=='admin' && !position.is_approved">
                     <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#PositionApprovalModal"><i class="bi bi-wrench me-2"></i>Change Approval Status</button>
-                </div>
-
-                <Modal :title="'Change Approval Status'" :id="'PositionApprovalModal'" :yes-label="'Change'" @confirm="changeApproval">
-                    <template #modal-body>
-                        <p v-if="position.is_approved==true">Are you sure you want to change Position #{{ $route.params.id }}'s approval status from <strong>approved</strong> to <strong>not approved</strong>?</p>
-                        <p v-else>Are you sure you want to change Position #{{ $route.params.id }}'s approval status from <strong>not approved</strong> to <strong>approved</strong>?</p>
-                    </template>
-                </Modal>
+                    <Modal :title="'Change Approval Status'" :id="'PositionApprovalModal'" :yes-label="'Change'" @confirm="changeApproval">
+                        <template #modal-body>
+                            <p v-if="position.is_approved==true">Are you sure you want to change Position #{{ $route.params.id }}'s approval status from <strong>approved</strong> to <strong>not approved</strong>?</p>
+                            <p v-else>Are you sure you want to change Position #{{ $route.params.id }}'s approval status from <strong>not approved</strong> to <strong>approved</strong>?</p>
+                        </template>
+                    </Modal>
+                </template>
             </div>
-            <hr class="mb-4">
-        </template>
+        </div>
+
+        <hr class="mb-4">
+        <div class="row mb-4">
+            <div class="col">
+                <h3>Current Status: <code>{{ position.status }}</code></h3>
+                <p v-if="position.status=='closed'">This position is currently <strong>closed</strong>.</p>
+                <template v-else>
+                    <p>This position is currently <strong>open</strong> (pending admin approval).</p>
+                    <template v-if="auth.currentUser.role=='company'">
+                        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#PositionStatusModal"><i class="bi bi-x-lg me-2"></i>Close Position</button>
+                        <Modal :title="'Change Status'" :id="'PositionStatusModal'" :yes-label="'Change'" @confirm="changeStatus">
+                            <template #modal-body>
+                                <p>Are you sure you want to <strong>close</strong> Position #{{ $route.params.id }}? This cannot be undone.</p>
+                            </template>
+                        </Modal>
+                    </template>
+                </template>
+            </div>
+        </div>
     
-        <template v-if="auth.currentUser.role!='student'">
+        <template v-if="auth.currentUser.role!='student' && position.is_approved=='true'">
+            <hr class="mb-4">
             <div class="row">
                 <div class="col">
                     <h3 class="mb-4">Applications Received</h3>
@@ -232,26 +232,32 @@ onMounted(() => {
         </template>
 
         <template v-if="auth.currentUser.role=='student'">
+            <hr class="mb-4">
             <div class="row mb-4">
                 <div class="col" v-if="!applicationLoading">
                     <h3 class="mb-3">Your Application</h3>
-
                     <template v-if="studentApplication.length == 0 || studentApplication[0].status=='withdrawn'">
 
-                        <template v-if="studentCgpa > position.min_cgpa">
-                            <p>You don't have any pending applications for this position. Would you like to submit an application?</p>
-                            <button type="button" class="btn btn-sm btn-success" @click="postApplication">Apply</button>
+                        <template v-if="position.status=='closed'">
+                            This position is currently not accepting any new applications.
                         </template>
 
                         <template v-else>
-                            <p>Unfortunately, you do not meet the minimum CGPA required for this position ({{ position.min_cgpa }}). You cannot apply.</p>
-                            <button type="button" class="btn btn-sm btn-success" disabled>Apply</button>
+                            <template v-if="studentCgpa >= position.min_cgpa">
+                                <p>You don't have any pending applications for this position. Would you like to submit an application?</p>
+                                <button type="button" class="btn btn-sm btn-success" @click="postApplication"><i class="bi bi-plus-lg me-2"></i>Apply</button>
+                            </template>
+
+                            <template v-else>
+                                <p>Unfortunately, you do not meet the minimum CGPA required for this position ({{ position.min_cgpa }}). You cannot apply.</p>
+                                <button type="button" class="btn btn-sm btn-success" disabled><i class="bi bi-plus-lg me-2"></i>Apply</button>
+                            </template>
                         </template>
 
                     </template>
 
                     <template v-else>
-                        <p>You have already applied to this position. Click the button below to view your application.</p>
+                        <p>You have already applied to this position. Click the button below to view your latest application.</p>
                         <button type="button" class="btn btn-sm btn-primary" @click='router.push({name: "application", params: {"id": studentApplication[0].id}})'>View Application</button>
                     </template>
                 </div>
