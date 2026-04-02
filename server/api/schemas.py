@@ -34,6 +34,7 @@ def paginate_query(query, model, args, allowed_filters, allowed_sort, endpoint):
                 query = query.filter(getattr(model, k).ilike(f"%{v}%"))
             elif allowed_filters[k] == "ilike_relationship":
                 rel_name, rel_attr = str.split(k, ".")
+                query = query.join(getattr(model, rel_name))
                 query = query.filter(
                     getattr(getattr(model, rel_name).mapper.class_, rel_attr).ilike(f"%{v}%")
                 )
@@ -43,7 +44,7 @@ def paginate_query(query, model, args, allowed_filters, allowed_sort, endpoint):
 
     # Sort
     if (sort_by) and (sort_by in allowed_sort):
-        sort_col = getattr(model, sort_by)
+        sort_col = getattr(model, sort_by, None)
         order = asc(sort_col) if sort_dir == "asc" else desc(sort_col)
         query = query.order_by(order)
     
