@@ -2,7 +2,7 @@ from flask import Blueprint, abort
 from api.app import db
 from apifairy import authenticate, body, response, other_responses, arguments
 from api.auth import token_auth
-from api.schemas import StudentSchema, paginate_query, ListQueryArgsSchema, PaginatedCollection, ApplicationSchema, StudentStatsSchema, PlacementSchema
+from api.schemas import StudentSchema, paginate_query, ListQueryArgsSchema, PaginatedCollection, ApplicationSchema, StudentStatsSchema, PlacementSchema, PositionSchema
 from api.models import Student, Position, Application, Placement
 from datetime import datetime, timezone
 from sqlalchemy import func
@@ -157,3 +157,64 @@ def reject_placement(id):
     placement.status = "rejected"
     db.session.commit()
     return placement
+
+@student.route("/students/me/positions/unapplied", methods=["GET"])
+@authenticate(token_auth, role=["student"])
+@arguments(ListQueryArgsSchema())
+@response(PaginatedCollection(PositionSchema()))
+def get_positions_unapplied(args):
+    """Get open positions you haven't applied for yet
+    Can be filtered using query arguments. Filters must be in the format `?filters={"key1":"value1","key1":"value2"}`.
+
+    Allowed `filters`: `id` (=), `role` (ILIKE), `salary_min` (>=), `salary_max` (>=), `deadline` (>=), `min_cgpa` (>=), `status` (=).
+    
+    Allowed `sort_by`: `id`, `role`, `salary_min`, `salary_max`, `deadline`, `min_cgpa`, `status`.
+    """
+    student = token_auth.current_user().student
+    query = db.session.query(Position).filter(
+        Position.is_approved == True,
+        Position.status == "open",
+        ~Position.applications.any(Application.student_id == student.id)
+    )
+    items, pagination = paginate_query(
+        query=query,
+        model=Position,
+        args=args,
+        allowed_filters={
+            "id": "equals",
+            "company.name": "ilike_relationship",
+            "role": "ilike",
+            "salary_min": "gt",
+            "salary_max": "gt",
+            "deadline": "gt",
+            "min_cgpa": "gt",
+            "created_at": "gt"
+        },
+        allowed_sort={"id", "role", "salary_min", "salary_max", "deadline", "min_cgpa", "created_at"},
+        endpoint="student.get_positions_unapplied"
+    )
+    return { "pagination": pagination, "data": items }, 200
+
+@student.route("/students/me/placements", methods=["GET"])
+@authenticate(token_auth, role=["student"])
+@arguments(ListQueryArgsSchema())
+@response(PaginatedCollection(PlacementSchema()))
+def get_student_placements_self(args):
+    """Get all your placements"""
+    student = token_auth.current_user().student
+    query = db.session.query(Placement).join(Application).filter(Application.student_id == student.id)
+    items, pagination = paginate_query(
+        query=query,
+        model=Placement,
+        args=args,
+        allowed_filters={
+            "id": "equals",
+            "application_id": "equals",
+            "salary": "gt",
+            "created_at": "gt",
+            "status": "equals"
+        },
+        allowed_sort={"id", "application_id", "salary", "created_at", "status"},
+        endpoint="company.get_student_placements_self"
+    )
+    return { "pagination": pagination, "data": items }, 200
