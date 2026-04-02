@@ -5,7 +5,6 @@ import { markRequiredFields, flattenResponse } from "@/utils/helpers";
 import { useAlertStore } from "@/stores/alert";
 
 const alert = useAlertStore();
-const updated = ref(false);
 const errors = ref({});
 const inputName = ref();
 const inputIndustry = ref("");
@@ -20,11 +19,10 @@ async function getIndustries() {
     try {
         const response = await api.get("/industries");
         industries.value = response.data;
+    } catch (error) {
+        console.error(error);
     }
-    catch (error) {
-        console.log(error);
-    }
-};
+}
 
 async function getDetails() {
     try {
@@ -36,9 +34,8 @@ async function getDetails() {
         inputContactPhoneNumber.value = response.data.contact_phone_number;
         inputWebsite.value = response.data.website;
         inputLocation.value = response.data.location;
-    }
-    catch (error) {
-        console.log(error);
+    } catch (error) {
+        console.error(error);
     }
 }
 
@@ -53,18 +50,16 @@ async function submitForm() {
             contact_email: inputContactEmail.value,
             contact_phone_number: inputContactPhoneNumber.value,
             location: inputLocation.value,
-        }
+        };
         const response = await api.put("/companies/me", formData);
-        updated.value = true;
         alert.addAlert("Company profile updated.", "success");
-    }
-    catch (error) {
-        console.log(error.response.data)
+    } catch (error) {
+        console.error(error.response.data)
         if ("errors" in error.response.data) {
             errors.value = flattenResponse(error.response.data.errors.json)
         }
     }
-};
+}
 
 onMounted(() => {
     getIndustries();
@@ -74,9 +69,6 @@ onMounted(() => {
 </script>
 
 <template>
-    <h3 class="display-6">Company Profile</h3>
-    <hr class="mb-4">
-    <p v-if="updated" class="text-success">Updated profile.</p>
     <form class="border px-3 py-3 needs-validation" @submit.prevent="submitForm">
         <div class="mb-3">
             <label for="inputName" class="form-label">Company Name</label>
@@ -104,21 +96,21 @@ onMounted(() => {
 
         <div class="mb-3">
             <label for="inputDescription" class="form-label">Description</label>
-            <input type="text" class="form-control" :class="{ 'is-invalid': errors.description }" id="inputDescription" v-model="inputDescription" aria-describedby="inputDescriptionValidation" required>
+            <textarea class="form-control" :class="{ 'is-invalid': errors.description }" id="inputDescription" v-model="inputDescription" aria-describedby="inputDescriptionValidation" required style="height:100px;" />
             <div id="descriptionHelp" class="form-text">Please provide a brief description of what your company does.</div>
             <div v-if="errors.description" class="invalid-feedback" id="inputDescriptionValidation">{{ errors.description[0] }}</div>
         </div>
 
         <div class="row mb-3">
             <div class="col">
-                <label for="inputContactEmail" class="form-label">Contact email</label>
+                <label for="inputContactEmail" class="form-label">Contact Email</label>
                 <input type="email" class="form-control" :class="{ 'is-invalid': errors.contact_email }" id="inputContactEmail" v-model="inputContactEmail" required aria-describedby="inputContactEmailValidation">
                 <div id="contactEmailHelp" class="form-text">This will be provided to students who want to get in touch with your company.</div>
                 <div v-if="errors.contact_email" class="invalid-feedback" id="inputContactEmailValidation">{{ errors.contact_email[0] }}</div>
             </div>
             <div class="col">
-                <label for="inputContactPhoneNumber" class="form-label">Contact phone number</label>
-                <input type="url" class="form-control" :class="{ 'is-invalid': errors.contact_phone_number }" id="inputContactPhoneNumber" v-model="inputContactPhoneNumber" aria-describedby="inputContactPhoneNumberValidation" placeholder="+91 ...">
+                <label for="inputContactPhoneNumber" class="form-label">Contact Phone Number</label>
+                <input type="tel" class="form-control" :class="{ 'is-invalid': errors.contact_phone_number }" id="inputContactPhoneNumber" v-model="inputContactPhoneNumber" aria-describedby="inputContactPhoneNumberValidation" placeholder="+91 ..." pattern="[0-9]{10}">
                 <div id="contactPhoneNumberHelp" class="form-text">This will be provided to students who want to get in touch with your company.</div>
                 <div v-if="errors.contact_phone_number" class="invalid-feedback" id="inputContactPhoneNumberValidation">{{ errors.contact_phone_number[0] }}</div>
             </div>

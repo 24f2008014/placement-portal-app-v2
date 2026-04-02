@@ -52,7 +52,7 @@ async function submitForm() {
         router.push({ name: "login" });
     }
     catch (error) {
-        console.log(error.response.data)
+        console.log(error);
         if ("errors" in error.response.data) {
             errors.value = flattenResponse(error.response.data.errors.json)
         }
@@ -108,7 +108,7 @@ onMounted(() => {
 
         <div class="mb-3">
             <label for="inputDescription" class="form-label">Description</label>
-            <input type="text" class="form-control" :class="{ 'is-invalid': errors.description }" id="inputDescription" v-model="inputDescription" aria-describedby="inputDescriptionValidation" required>
+            <textarea class="form-control" :class="{ 'is-invalid': errors.description }" id="inputDescription" v-model="inputDescription" aria-describedby="inputDescriptionValidation" required style="height:100px;" />
             <div id="descriptionHelp" class="form-text">Please provide a brief description of what your company does.</div>
             <div v-if="errors.description" class="invalid-feedback" id="inputDescriptionValidation">{{ errors.description[0] }}</div>
         </div>
@@ -122,7 +122,7 @@ onMounted(() => {
             </div>
             <div class="col">
                 <label for="inputContactPhoneNumber" class="form-label">Contact phone number</label>
-                <input type="url" class="form-control" :class="{ 'is-invalid': errors.contact_phone_number }" id="inputContactPhoneNumber" v-model="inputContactPhoneNumber" aria-describedby="inputContactPhoneNumberValidation" placeholder="+91 ...">
+                <input type="tel" class="form-control" :class="{ 'is-invalid': errors.contact_phone_number }" id="inputContactPhoneNumber" v-model="inputContactPhoneNumber" aria-describedby="inputContactPhoneNumberValidation" placeholder="+91 ..." pattern="[0-9]{10}">
                 <div id="contactPhoneNumberHelp" class="form-text">This will be provided to students who want to get in touch with your company.</div>
                 <div v-if="errors.contact_phone_number" class="invalid-feedback" id="inputContactPhoneNumberValidation">{{ errors.contact_phone_number[0] }}</div>
             </div>
