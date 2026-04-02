@@ -18,6 +18,7 @@ const router = useRouter();
 const route = useRoute();
 const errors = ref({});
 const studentApplication = ref([]);
+const studentCgpa = ref();
 
 const applications_endpoint = `/positions/${route.params.id}/applications`;
 const applications_route = "application";
@@ -69,7 +70,6 @@ async function getPosition() {
         const response = await api.get(`/positions/${route.params.id}`);
         position.value = response.data;
         loading.value = false;
-        // console.log(response.data);
     } catch (error) {
         console.error(error);
     }
@@ -121,9 +121,19 @@ async function postApplication() {
     }
 }
 
+async function getStudentCgpa() {
+    try {
+        const response = await api.get("/students/me");
+        studentCgpa.value = response.data.cgpa;
+    } catch (error) {
+        console.error(error);
+    }
+}
+
 onMounted(() => {
     getPosition();
     if (auth.currentUser.role == "student") {
+        getStudentCgpa();
         getStudentApplication();
     }
 });
@@ -134,6 +144,7 @@ onMounted(() => {
         <div class="col mb-3">
             <h6 class="display-6">View Position</h6>
             <p class="lead text-muted">Position ID: #{{ route.params.id }}</p>
+            
             <div class="row" v-if="auth.currentUser.role!='company' && !loading">
                 <div class="col d-flex gap-2">
                     <button type="button" class="btn btn-primary btn-sm" @click='router.push({ name: "positions" })'>
@@ -141,6 +152,7 @@ onMounted(() => {
                     </button>
                 </div>
             </div>
+
             <div class="row" v-if="auth.currentUser.role=='company' && !loading">
                 <div class="col d-flex gap-2">
                     <button type="button" class="btn btn-primary btn-sm" @click='router.push({ name: "company_positions" })'>
@@ -199,6 +211,7 @@ onMounted(() => {
                     <p v-else>This position is not <strong>approved</strong>, and requires admin approval.</p>
                     <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#PositionApprovalModal"><i class="bi bi-wrench me-2"></i>Change Approval Status</button>
                 </div>
+
                 <Modal :title="'Change Approval Status'" :id="'PositionApprovalModal'" :yes-label="'Change'" @confirm="changeApproval">
                     <template #modal-body>
                         <p v-if="position.is_approved==true">Are you sure you want to change Position #{{ $route.params.id }}'s approval status from <strong>approved</strong> to <strong>not approved</strong>?</p>
@@ -208,32 +221,43 @@ onMounted(() => {
             </div>
             <hr class="mb-4">
         </template>
+    
+        <template v-if="auth.currentUser.role!='student'">
+            <div class="row">
+                <div class="col">
+                    <h3 class="mb-4">Applications Received</h3>
+                    <PaginatedTable :url="applications_endpoint" :fields="applications_fields" :item_route_name="applications_route" />
+                </div>
+            </div>
+        </template>
+
+        <template v-if="auth.currentUser.role=='student'">
+            <div class="row mb-4">
+                <div class="col" v-if="!applicationLoading">
+                    <h3 class="mb-3">Your Application</h3>
+
+                    <template v-if="studentApplication.length == 0 || studentApplication[0].status=='withdrawn'">
+
+                        <template v-if="studentCgpa > position.min_cgpa">
+                            <p>You don't have any pending applications for this position. Would you like to submit an application?</p>
+                            <button type="button" class="btn btn-sm btn-success" @click="postApplication">Apply</button>
+                        </template>
+
+                        <template v-else>
+                            <p>Unfortunately, you do not meet the minimum CGPA required for this position ({{ position.min_cgpa }}). You cannot apply.</p>
+                            <button type="button" class="btn btn-sm btn-success" disabled>Apply</button>
+                        </template>
+
+                    </template>
+
+                    <template v-else>
+                        <p>You have already applied to this position. Click the button below to view your application.</p>
+                        <button type="button" class="btn btn-sm btn-primary" @click='router.push({name: "application", params: {"id": studentApplication[0].id}})'>View Application</button>
+                    </template>
+                </div>
+                <div class="col" v-else><p>Loading...</p></div>
+            </div>
+        </template>
     </template>
     <div v-else><p>Loading...</p></div>
-
-    <template v-if="auth.currentUser.role!='student'">
-        <div class="row">
-            <div class="col">
-                <h3 class="mb-4">Applications Received</h3>
-                <PaginatedTable :url="applications_endpoint" :fields="applications_fields" :item_route_name="applications_route"></PaginatedTable>
-            </div>
-        </div>
-    </template>
-
-    <template v-if="auth.currentUser.role=='student'">
-        <div class="row mb-4">
-            <div class="col" v-if="!applicationLoading">
-                <h3 class="mb-3">Your Application</h3>
-                <template v-if="studentApplication.length == 0 || studentApplication[0].status=='withdrawn'">
-                    <p>You don't have any pending applications for this position. Would you like to submit an application?</p>
-                    <button type="button" class="btn btn-success" @click="postApplication">Apply</button>
-                </template>
-                <template v-else>
-                    <p>You have already applied to this position. Click the button below to view your application.</p>
-                    <button type="button" class="btn btn-primary" @click='router.push({name: "application", params: {"id": studentApplication[0].id}})'>View Application</button>
-                </template>
-            </div>
-            <div class="col" v-else><p>Loading...</p></div>
-        </div>
-    </template>
 </template>
