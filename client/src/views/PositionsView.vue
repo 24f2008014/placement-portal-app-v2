@@ -23,7 +23,7 @@ const positions_fields = {
     },
     "Company": {
         name: "company.name",
-        filter: false,
+        filter: true,
         label: "Company",
         input: {
             type: "text"
