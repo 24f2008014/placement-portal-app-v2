@@ -63,7 +63,6 @@ async function getPaginatedData(url, params=null, filters=null) {
         const response = await api.get(fetchUrl);
         paginatedData.value = response.data.data;
         pagination.value = response.data.pagination;
-        // console.log(response.data.data);
     } catch (error) {
         console.error(error);
         if ("errors" in error.response.data) {

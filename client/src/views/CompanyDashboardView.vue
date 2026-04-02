@@ -3,6 +3,7 @@ import { ref, onMounted } from "vue";
 import { api } from "@/utils/api";
 import PaginatedTable from "@/components/PaginatedTable.vue";
 import { formatDate } from "@/utils/helpers";
+import router from "@/router";
 
 const loading = ref(true);
 const errors = ref({});
@@ -61,13 +62,26 @@ const positions_fields = {
             type: "datetime-local"
         }
     },
-    "Application Count": {
+    "Applications": {
         name: "application_count",
         filter: true,
-        label: "Application Count \u2265",
+        label: "Applications \u2265",
         input: {
             type: "number",
             min: "0"
+        }
+    },
+    "Approved": {
+        name: "is_approved",
+        filter: true,
+        label: "Approved",
+        type: "select",
+        input: {
+            type: "select",
+            options: [
+                {label: "True", value: true},
+                {label: "False", value: false}
+            ]
         }
     },
     "Status": {
@@ -99,23 +113,34 @@ const placements_fields = {
     },
     "Application ID": {
         name: "application_id",
-        filter: false
+        filter: true,
+        label: "Application ID",
+        input: {
+            type: "number",
+            min: "1"
+        }
     },
     "Student ID": {
         name: "application.student.id",
-        filter: false
+        filter: true,
+        label: "Student ID",
+        input: {
+            type: "number",
+            min: "1"
+        }        
     },
     "Position": {
         name: "application.position.role",
         filter: false
     },
-    "Company": {
-        name: "application.position.company.name",
-        filter: false  
-    },
     "Salary": {
         name: "salary",
-        filter: false
+        filter: true,
+        label: "Salary \u2265",
+        input: {
+            type: "number",
+            min: "0"
+        }
     },
     "Joining Date": {
         name: "joining_date",
@@ -158,15 +183,29 @@ const applications_fields = {
     },
     "Student ID": {
         name: "student_id",
-        filter: false
+        filter: true,
+        label: "Student ID",
+        input: {
+            type: "number",
+            min: "1"
+        }
     },
     "Position ID": {
         name: "position_id",
-        filter: false
+        filter: true,
+        label: "Position ID",
+        input: {
+            type: "number",
+            min: "1"
+        }
     },    
     "Position": {
         name: "position.role",
-        filter: false
+        filter: false,
+        label: "Position",
+        input: {
+            type: "text"
+        }
     },
     "Created At": {
         name: "created_at",
@@ -258,14 +297,23 @@ onMounted(() => {
                 <template v-if="status=='pending'">
                     <h4>Status: <code class="text-warning">Pending</code></h4>
                     <p>Your company account requires admin approval before you can list any new positions. Please wait. Thank you for your patience.</p>
+                    <div class="col">
+                        <button type="button" class="btn btn-sm btn-success mb-3" disabled><i class="bi bi-plus-lg me-2"></i>New Position</button>
+                    </div>
                 </template>
                 <template v-else-if="status=='blacklisted'">
                     <h4>Status: <code class="text-danger">Blacklisted</code></h4>
                     <p>Your company account has been blacklisted, and you cannot list any new positions. Please contact an administrator for further details.</p>
+                    <div class="col">
+                        <button type="button" class="btn btn-sm btn-success mb-3" disabled><i class="bi bi-plus-lg me-2"></i>New Position</button>
+                    </div>                    
                 </template>
                 <template v-else>
                     <h4>Status: <code class="text-success">Whitelisted</code></h4>
                     <p>Your company has been approved, and you're free to list any new positions you're hiring for.</p>
+                    <div class="col">
+                        <button @click="router.push({ name: 'company_positions' })" type="button" class="btn btn-sm btn-success mb-3"><i class="bi bi-plus-lg me-2"></i>New Position</button>
+                    </div>
                 </template>
             </div>
         </div>
@@ -290,7 +338,7 @@ onMounted(() => {
                 <div class="tab-pane fade show active" id="positions-tab-pane" role="tabpanel" aria-labelledby="positions-tab" tabindex="0">
                     <div class="row mt-3">
                         <div class="col">
-                            <h4 class="mb-3">Positions</h4>
+                            <h4 class="mb-3">Your Positions</h4>
                             <PaginatedTable :url="positions_endpoint" :fields="positions_fields" :item_route_name="positions_route" />
                         </div>
                     </div>
@@ -298,7 +346,7 @@ onMounted(() => {
                 <div class="tab-pane fade" id="applications-tab-pane" role="tabpanel" aria-labelledby="applications-tab" tabindex="0">
                     <div class="row mt-3">
                         <div class="col">
-                            <h4 class="mb-3">Applications</h4>
+                            <h4 class="mb-3">Applications Received</h4>
                             <PaginatedTable :url="applications_endpoint" :fields="applications_fields" :item_route_name="applications_route" />
                         </div>
                     </div>
@@ -306,7 +354,7 @@ onMounted(() => {
                 <div class="tab-pane fade" id="placements-tab-pane" role="tabpanel" aria-labelledby="placements-tab" tabindex="0">
                     <div class="row mt-3">
                         <div class="col">
-                            <h4 class="mb-3">Placements</h4>
+                            <h4 class="mb-3">Your Placement Offers</h4>
                             <PaginatedTable :url="placements_endpoint" :fields="placements_fields" :item_route_name="placements_route" />
                         </div>
                     </div>

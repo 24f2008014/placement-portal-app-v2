@@ -83,8 +83,11 @@ const companies_fields = {
     },
     "Industry": {
         name: "industry.name",
-        filter: false,
-        label: "Industry"
+        filter: true,
+        label: "Industry",
+        input: {
+            type: "text"
+        }
     },
     "Location": {
         name: "location",
@@ -100,6 +103,15 @@ const companies_fields = {
         label: "Email",
         input: {
             type: "email"
+        }
+    },
+    "Open Positions": {
+        name: "open_position_count",
+        filter: true,
+        label: "Open Positions \u2265",
+        input: {
+            type: "number",
+            min: "0"
         }
     },
     "Status": {
