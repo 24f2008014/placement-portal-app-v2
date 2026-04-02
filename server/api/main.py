@@ -119,7 +119,7 @@ def get_positions(args):
             "created_at": "gt",
             "application_count": "gt"
         },
-        allowed_sort={"id", "role", "salary_min", "salary_max", "deadline", "min_cgpa", "status"},
+        allowed_sort={"id", "role", "salary_min", "salary_max", "deadline", "min_cgpa", "status", "created_at"},
         endpoint="main.get_positions"
     )
     return { "pagination": pagination, "data": items }, 200
