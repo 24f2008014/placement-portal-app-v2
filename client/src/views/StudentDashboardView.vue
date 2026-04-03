@@ -204,6 +204,15 @@ async function getStats() {
     }
 }
 
+async function getReminder() {
+    try {
+        const response = await api.get("/students/me/reminder");
+        console.log(response.data);
+    } catch (error) {
+        console.error(error);
+    }
+}
+
 onMounted(() => {
     getStats();
 });
@@ -225,6 +234,8 @@ onMounted(() => {
         </div>        
     </div>
     <hr class="mb-4">
+
+    <button type="button" class="btn btn-sm btn-success mb-4" @click="getReminder">Email Upcoming Interviews</button>
 
     <template v-if="!loading">
         <div class="row">

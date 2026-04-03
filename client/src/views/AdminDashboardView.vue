@@ -331,6 +331,15 @@ async function getStats() {
     }
 }
 
+async function getMonthlyReport() {
+    try {
+        const response = await api.get("/admin/monthly_report");
+        console.log(response.data);
+    } catch (error) {
+        console.error(error);
+    }
+}
+
 onMounted(() => {
     getStats();
 });
@@ -347,6 +356,8 @@ onMounted(() => {
         </div>
     </div>
     <hr class="mb-4">
+
+    <button type="button" class="btn btn-sm btn-success mb-4" @click="getMonthlyReport">Email Monthly Report</button>
 
     <template v-if="!loading">
         <div class="row">
