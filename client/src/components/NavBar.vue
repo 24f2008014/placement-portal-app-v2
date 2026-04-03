@@ -15,7 +15,7 @@ const auth = useAuthStore();
                 <ul class="navbar-nav">
                     <template v-if="auth.currentUser.role=='student'">
                         <li class="nav-item"><RouterLink :to="{ name: 'student_dashboard' }" class="nav-link">Dashboard</RouterLink></li>
-                        <li class="nav-item"><RouterLink :to="{ name: 'companies' }" class="nav-link">Companies</RouterLink></li>
+                        <!-- <li class="nav-item"><RouterLink :to="{ name: 'companies' }" class="nav-link">Companies</RouterLink></li> -->
                         <li class="nav-item"><RouterLink :to="{ name: 'positions' }" class="nav-link">Positions</RouterLink></li>
                     </template>
                     <template v-if="auth.currentUser.role=='company'">
@@ -24,10 +24,10 @@ const auth = useAuthStore();
                     </template>
                     <template v-if="auth.currentUser.role=='admin'">
                         <li class="nav-item"><RouterLink :to="{ name: 'admin_dashboard' }" class="nav-link">Dashboard</RouterLink></li>
-                        <li class="nav-item"><RouterLink :to="{ name: 'companies' }" class="nav-link">Companies</RouterLink></li>
-                        <li class="nav-item"><RouterLink :to="{ name: 'students' }" class="nav-link">Students</RouterLink></li>
-                        <li class="nav-item"><RouterLink :to="{ name: 'positions' }" class="nav-link">Positions</RouterLink></li>
-                        <li class="nav-item"><RouterLink :to="{ name: 'users' }" class="nav-link">Users</RouterLink></li>
+                        <!-- <li class="nav-item"><RouterLink :to="{ name: 'companies' }" class="nav-link">Companies</RouterLink></li> -->
+                        <!-- <li class="nav-item"><RouterLink :to="{ name: 'students' }" class="nav-link">Students</RouterLink></li> -->
+                        <!-- <li class="nav-item"><RouterLink :to="{ name: 'positions' }" class="nav-link">Positions</RouterLink><li> -->
+                        <!-- <li class="nav-item"><RouterLink :to="{ name: 'users' }" class="nav-link">Users</RouterLink></li> -->
                     </template>
                 </ul>
 
