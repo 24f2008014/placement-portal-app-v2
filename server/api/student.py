@@ -3,12 +3,24 @@ from api.app import db
 from apifairy import authenticate, body, response, other_responses, arguments
 from api.auth import token_auth
 from api.schemas import StudentSchema, paginate_query, ListQueryArgsSchema, PaginatedCollection, ApplicationSchema, StudentStatsSchema, PlacementSchema, PositionSchema
-from api.models import Student, Position, Application, Placement
+from api.models import Position, Application, Placement
 from datetime import datetime, timezone
 from sqlalchemy import func
-from api.tasks import export_applications_csv
+from api.tasks import export_applications_csv, send_interview_reminder
 
 student = Blueprint("student", __name__)
+
+@student.route("/students/me/reminder", methods=["GET"])
+@authenticate(token_auth, role=["student"])
+def daily_reminder_manual():
+    """Manually trigger the daily interview reminder email"""
+    student_id = token_auth.current_user().student.id
+    send_interview_reminder.delay(
+        id=student_id,
+        subject="Reminder: Upcoming Interviews | Placer",
+        template="interview_reminder"
+    )
+    return "Sent!", 200
 
 @student.route("/student/me/applications/export", methods=["GET"])
 @authenticate(token_auth, role=["student"])

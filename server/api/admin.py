@@ -5,9 +5,17 @@ from datetime import datetime
 from api.app import db, cache
 from api.auth import token_auth
 from api.schemas import StudentSchema, CompanySchema, paginate_query, ListQueryArgsSchema, PaginatedCollection, ApplicationSchema, AdminStatsSchema, PlacementSchema, UserSchema
-from api.models import Student, Position, Application, Placement, Company, User
+from api.models import Student, Position, Application, Placement, Company, User, Role
+from api.tasks import monthly_report
 
 admin = Blueprint("admin", __name__)
+
+@admin.route("/admin/monthly_report", methods=["GET"])
+@authenticate(token_auth, role=["admin"])
+def monthly_report_manual():
+    """Manually trigger the admin monthly report email"""
+    monthly_report.delay()
+    return "Sent!", 200
 
 @admin.route("/cache_test", methods=["GET"])
 @authenticate(token_auth, role=["admin"])
