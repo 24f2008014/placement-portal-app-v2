@@ -5,7 +5,7 @@ from api.auth import token_auth
 from api.models import User, Student, Department, Branch, Industry, Company, Position, Application, Placement, Role
 from marshmallow_oneofschema import OneOfSchema
 from datetime import datetime
-from sqlalchemy import func, asc, desc, select, text
+from sqlalchemy import func, asc, desc, select
 import json
 from werkzeug.exceptions import BadRequest
 from flask import request, url_for, current_app
@@ -22,7 +22,6 @@ def to_utc(dt):
     naive_dt = datetime.strptime(dt, '%Y-%m-%dT%H:%M')
     localized_dt = naive_dt.replace(tzinfo=ZoneInfo("Asia/Kolkata"))
     utc_dt = localized_dt.astimezone(ZoneInfo("UTC"))
-    # print(f"naive: {naive_dt}, localized: {localized_dt}, utc: {utc_dt}, final: {utc_dt.replace(tzinfo=None).isoformat()}")
     return utc_dt.replace(tzinfo=None) # .isoformat() is a no no
 
 def paginate_query(query, model, args, allowed_filters, allowed_sort, endpoint):
@@ -37,28 +36,41 @@ def paginate_query(query, model, args, allowed_filters, allowed_sort, endpoint):
         if k not in allowed_filters.keys():
             raise BadRequest("Bad filter.")
         if len(str(v)) > 0:
+
+            # If it's a related attribute (ex. application.position.role), traverse the relationships by name
+            # starting with `model` up to the last related object + attribute
+            if "." in k:
+                ks = str.split(k, ".")
+                rel, rel_attr = getattr(model, ks.pop(0)).mapper.class_, ks.pop(0) # mapper.class_ returns the actual DB model class
+                while len(ks) > 0:
+                    rel, rel_attr = getattr(rel, rel_attr).mapper.class_, ks.pop(0)
+            else:
+                rel = model
+                rel_attr = k
+
             if allowed_filters[k] == "gt":
-                print(k, v)
-                query = query.filter(getattr(model, k) >= v)
+                query = query.filter(getattr(rel, rel_attr) >= v)
             elif allowed_filters[k] == "lt":
-                query = query.filter(getattr(model, k) <= v)
+                query = query.filter(getattr(rel, rel_attr) <= v)
             elif allowed_filters[k] == "equals":
-                query = query.filter(getattr(model, k) == v)
+                query = query.filter(getattr(rel, rel_attr) == v)
             elif allowed_filters[k] == "ilike":
-                query = query.filter(getattr(model, k).ilike(f"%{v}%"))
-            elif allowed_filters[k] == "ilike_relationship":
-                rel_name, rel_attr = str.split(k, ".")
-                query = query.join(getattr(model, rel_name))
-                query = query.filter(
-                    getattr(getattr(model, rel_name).mapper.class_, rel_attr).ilike(f"%{v}%")
-                )
+                query = query.filter(getattr(rel, rel_attr).ilike(f"%{v}%"))
     
     # Total number of records
     total = int(db.session.scalar(select(func.count()).select_from(query.subquery())))
 
     # Sort
     if (sort_by) and (sort_by in allowed_sort):
-        sort_col = getattr(model, sort_by, None)
+        if "." in sort_by:
+            sorts = str.split(sort_by, ".")
+            rel, rel_attr = getattr(model, sorts.pop(0)).mapper.class_, sorts.pop(0)
+            while len(sorts) > 0:
+                rel, rel_attr = getattr(rel, rel_attr).mapper.class_, sorts.pop(0)
+            sort_col = getattr(rel, rel_attr, None)
+        else:
+            sort_col = getattr(model, sort_by, None)
+        
         order = asc(sort_col) if sort_dir == "asc" else desc(sort_col)
         query = query.order_by(order)
     
@@ -338,8 +350,9 @@ class ApplicationSchema(ma.SQLAlchemyAutoSchema):
     position_id = auto_field(dump_only=True)
     status = auto_field(validate=validate.OneOf(["pending", "shortlisted", "selected", "rejected", "withdrawn"]))
     student = fields.Nested(StudentSchema, only=("id", "first_name", "last_name", "roll_number", "resume_url"), dump_only=True)
-    position = fields.Nested(PositionSchema, only=("id", "role", "company.name", "company.contact_email"), dump_only=True)
+    position = fields.Nested(PositionSchema, only=("id", "role", "company_id", "company.name", "company.contact_email"), dump_only=True)
     placements = fields.Nested("PlacementSchema", only=("id", "status"), many=True)
+    placement_count = auto_field(dump_only=True)
 
     @pre_load
     def fix_dates(self, data, **kwargs):
