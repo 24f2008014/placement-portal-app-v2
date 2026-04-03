@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+    <head>
+        <style>
+            table {
+                border-collapse: collapse;
+            }
+            th, td {
+                border: 1px solid black;
+                padding: 8px;
+            }
+        </style>
+    </head>    
+    <body>
+        <p>Dear Admin,</p>
+        <p>Here are the statistics for Placer for last month ({{ month }}):</p>
+        <table>
+            <thead>
+                <td><strong>New Positions</strong></td>
+                <td><strong>New Applications</strong></td>
+                <td><strong>Placement Offers</strong></td>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{{ num_positions }}</td>
+                    <td>{{ num_applications }}</td>
+                    <td>{{ num_placements }}</td>
+                </tr>
+            </tbody>
+        </table>
+        <p>Regards,</p>
+        <p>Placer</p>
+    </body>
+</html>

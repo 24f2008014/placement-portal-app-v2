@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+    <head>
+        <style>
+            table {
+                border-collapse: collapse;
+            }
+            th, td {
+                border: 1px solid black;
+                padding: 8px;
+            }
+        </style>
+    </head>
+    <body>
+        <p>Dear {{ name }},</p>
+        <p>This is a gentle reminder that you have the following interviews coming up:</p>
+        <table>
+            <thead>
+                <td><strong>Company</strong></td>
+                <td><strong>Interview Date</strong></td>
+                <td><strong>Position</strong></td>
+                <td><strong>Date Applied</strong></td>
+            </thead>
+            <tbody>
+                {% for i in interviews %}
+                <tr>
+                    <td>{{ i.company }}</td>
+                    <td>{{ i.interview_date }}</td>
+                    <td>{{ i.position }}</td>
+                    <td>{{ i.application_date }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <p>Please coordinate with the respective company/companies and ensure you attend your interviews without fail. Thank you.</p>
+        <p>Regards,</p>
+        <p>Placer</p>
+    </body>
+</html>

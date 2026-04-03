@@ -1,0 +1,10 @@
+Dear Admin,
+
+Here are the statistics for Placer for last month ({{ month }}):
+
+- New Positions: {{ num_positions }}
+- New Applications: {{ num_applications }}
+- Placement Offers: {{ num_placements }}
+
+Regards,
+Placer
