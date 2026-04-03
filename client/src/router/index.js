@@ -171,6 +171,15 @@ router.beforeEach(async (to, from) => {
 
   // Role-based guard
   if (to.meta.roleRequired && !to.meta.roleRequired.includes(auth.currentUser.role)) {
+    if ((to.name == "student_dashboard" || to.name == "admin_dashboard") && auth.currentUser.role == "company") {
+      return { name: "company_dashboard" };
+    }
+    if ((to.name == "company_dashboard" || to.name == "admin_dashboard") && auth.currentUser.role == "student") {
+      return { name: "student_dashboard" };
+    }
+    if ((to.name == "student_dashboard" || to.name == "company_dashboard") && auth.currentUser.role == "admin") {
+      return { name: "admin_dashboard" };
+    }
     alert.addAlert("You are not authorized to view that page.", "error");
     return { name: "home" };
   }
