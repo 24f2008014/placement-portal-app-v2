@@ -5,6 +5,8 @@ venv/
 instance/
 *.pdf
 server/temp/
+uploads/
+celerybeat-schedule
 
 # Logs
 logs
