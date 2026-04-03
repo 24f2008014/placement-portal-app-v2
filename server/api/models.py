@@ -195,6 +195,13 @@ class Application(Updateable, TimeConversionMixin, db.Model):
     student: Mapped["Student"] = relationship(back_populates="applications")
     position: Mapped["Position"] = relationship(back_populates="applications")
     placements: Mapped[List["Placement"]] = relationship(back_populates="application")
+    placement_count = column_property(
+        db.select(func.count())
+        .select_from(text("Placement"))
+        .where(text("Placement.application_id") == id)
+        .correlate_except(text("Placement"))
+        .scalar_subquery()
+    )    
 
 class Placement(Updateable, TimeConversionMixin, db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
