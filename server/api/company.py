@@ -3,7 +3,7 @@ from api.app import db
 from apifairy import authenticate, body, response, other_responses, arguments
 from api.auth import token_auth
 from api.schemas import CompanySchema, PositionSchema, paginate_query, ListQueryArgsSchema, PaginatedCollection, ApplicationSchema, PlacementSchema, CompanyStatsSchema
-from api.models import Student, Position, Application, Placement, Company
+from api.models import Position, Application, Placement
 from datetime import datetime, timezone
 from sqlalchemy import func
 
@@ -13,7 +13,7 @@ company = Blueprint("company", __name__)
 @authenticate(token_auth, role=["company"])
 @response(CompanyStatsSchema())
 def get_company_stats():
-    """Get stats for the admin dashboard."""
+    """Get company dashboard stats"""
     company = token_auth.current_user().company
     num_positions = db.session.scalar(db.select(func.count()).select_from(Position).where(Position.company == company))
     num_applications = db.session.scalar(db.select(func.count()).select_from(Application).join(Position).where(Position.company == company))
@@ -39,6 +39,7 @@ def get_company_stats():
 @body(PositionSchema())
 @response(PositionSchema())
 def new_position(data):
+    """Create new position"""
     company = token_auth.current_user().company
     if company.status != "whitelisted":
         abort(403)
@@ -55,7 +56,7 @@ def new_position(data):
 @body(PositionSchema(only=("status",), partial=True, load_instance=False))
 @response(PositionSchema())
 def change_position_status(data, id):
-    """Change a position's status."""
+    """Change a position's status"""
     position = db.get_or_404(Position, id)
     if token_auth.current_user().company and token_auth.current_user().company != position.company:
         abort(403)
@@ -68,7 +69,7 @@ def change_position_status(data, id):
 @arguments(ListQueryArgsSchema())
 @response(PaginatedCollection(PositionSchema()))
 def get_company_positions(args):
-    """Get all positions made by your company."""
+    """Get your positions"""
     company = token_auth.current_user().company
     query = db.session.query(Position).filter(Position.company == company)
     items, pagination = paginate_query(
@@ -81,11 +82,13 @@ def get_company_positions(args):
             "salary_min": "gt",
             "salary_max": "gt",
             "min_cgpa": "gt",
-            "application_count": "gt",
+            "deadline": "gt",
             "is_approved": "equals",
-            "status": "equals"
+            "status": "equals",
+            "created_at": "gt",
+            "application_count": "gt"
         },
-        allowed_sort={"id", "role", "salary_min", "salary_max", "min_cgpa", "deadline", "application_count", "is_approved", "status"},
+        allowed_sort={"id", "role", "salary_min", "salary_max", "min_cgpa", "deadline", "is_approved", "status", "created_at", "application_count"},    
         endpoint="company.get_company_positions"
     )
     return { "pagination": pagination, "data": items }, 200
@@ -95,7 +98,7 @@ def get_company_positions(args):
 @arguments(ListQueryArgsSchema())
 @response(PaginatedCollection(ApplicationSchema()))
 def get_company_applications(args):
-    """Get all applications made for your company."""
+    """Get applications for your positions"""
     company = token_auth.current_user().company
     query = db.session.query(Application).join(Position).filter(Position.company == company)
     items, pagination = paginate_query(
@@ -106,11 +109,13 @@ def get_company_applications(args):
             "id": "equals",
             "student_id": "equals",
             "position_id": "equals",
+            "position.role": "ilike",
             "created_at": "gt",
             "updated_at": "gt",
+            "placement_count": "gt",
             "status": "equals"
         },
-        allowed_sort={"id", "student_id", "position_id", "created_at", "updated_at", "status"},
+        allowed_sort={"id", "student_id", "position_id", "position.role", "created_at", "updated_at", "placement_count", "status"},      
         endpoint="company.get_company_applications"
     )
     return { "pagination": pagination, "data": items }, 200
@@ -120,7 +125,7 @@ def get_company_applications(args):
 @arguments(ListQueryArgsSchema())
 @response(PaginatedCollection(PlacementSchema()))
 def get_company_placements_self(args):
-    """Get all placements made by your company."""
+    """Get your placements"""
     company = token_auth.current_user().company
     query = db.session.query(Placement).join(Application).join(Position).filter(Position.company == company)
     items, pagination = paginate_query(
@@ -130,12 +135,14 @@ def get_company_placements_self(args):
         allowed_filters={
             "id": "equals",
             "application_id": "equals",
-            "student_id": "equals",
+            "application.student_id": "equals",
+            "application.position.role": "ilike",
+            "joining_date": "gt",
             "salary": "gt",
             "created_at": "gt",
             "status": "equals"
         },
-        allowed_sort={"id", "application_id", "student_id", "salary", "created_at", "status"},
+        allowed_sort={"id", "application_id", "application.student_id", "application.position.role", "joining_date", "salary", "created_at", "status"},
         endpoint="company.get_company_placements_self"
     )
     return { "pagination": pagination, "data": items }, 200
@@ -144,7 +151,7 @@ def get_company_placements_self(args):
 @authenticate(token_auth)
 @response(CompanySchema())
 def get_company_self():
-    """Returns your company's details."""
+    """Get your company's details"""
     return token_auth.current_user().company
 
 @company.route("/companies/me", methods=["PUT"])
@@ -152,7 +159,7 @@ def get_company_self():
 @body(CompanySchema(load_instance=False))
 @response(CompanySchema())
 def update_company_self(data):
-    """Update your company's details."""
+    """Update your company's details"""
     company = token_auth.current_user().company
     company.update(data)
     db.session.commit()
@@ -163,7 +170,7 @@ def update_company_self(data):
 @body(ApplicationSchema(only=("interview_date",), partial=True, load_instance=False))
 @response(ApplicationSchema())
 def shortlist_application(data, id):
-    """Shortlist an applicant for an interview."""
+    """Shortlist an application for interview"""
     application = db.get_or_404(Application, id)
     if token_auth.current_user().company != application.position.company:
         abort(403)
@@ -180,7 +187,7 @@ def shortlist_application(data, id):
 @body(PlacementSchema())
 @response(PlacementSchema(), 201)
 def select_application(data, id):
-    """Select an applicant and make them a placement offer."""
+    """Select an application and make a placement offer"""
     application = db.get_or_404(Application, id)
     if token_auth.current_user().company != application.position.company:
         abort(403)
@@ -198,7 +205,7 @@ def select_application(data, id):
 @body(ApplicationSchema(only=("feedback",), partial=True, load_instance=False))
 @response(ApplicationSchema())
 def reject_application(data, id):
-    """Reject an application."""
+    """Reject an application"""
     application = db.get_or_404(Application, id)
     if token_auth.current_user().company != application.position.company:
         abort(403)
@@ -214,7 +221,7 @@ def reject_application(data, id):
 @authenticate(token_auth, role=["student"])
 @response(PlacementSchema())
 def withdraw_placement(id):
-    """Withdraw a pending placement offer."""
+    """Withdraw a placement offer"""
     placement = db.get_or_404(Placement, id)
     if token_auth.current_user().company != placement.application.position.company:
         abort(403)

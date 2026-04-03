@@ -4,8 +4,8 @@ from sqlalchemy import func
 from datetime import datetime
 from api.app import db, cache
 from api.auth import token_auth
-from api.schemas import StudentSchema, CompanySchema, paginate_query, ListQueryArgsSchema, PaginatedCollection, ApplicationSchema, AdminStatsSchema, PlacementSchema, UserSchema
-from api.models import Student, Position, Application, Placement, Company, User, Role
+from api.schemas import StudentSchema, CompanySchema, paginate_query, ListQueryArgsSchema, PaginatedCollection, ApplicationSchema, AdminStatsSchema, PlacementSchema
+from api.models import Student, Position, Application, Placement, Company, User
 from api.tasks import monthly_report
 
 admin = Blueprint("admin", __name__)
@@ -21,14 +21,14 @@ def monthly_report_manual():
 @authenticate(token_auth, role=["admin"])
 @cache.cached(timeout=15)
 def cache_test():
-    """Quickly check whether caching is working properly or not."""
+    """Test if cache is working"""
     return { "time": datetime.now() }, 200
 
 @admin.route("/stats", methods=["GET"])
 @authenticate(token_auth, role=["admin"])
 @response(AdminStatsSchema())
 def get_stats():
-    """Get stats for the admin dashboard."""
+    """Get overall stats"""
     num_students = db.session.scalar(db.select(func.count()).select_from(Student))
     num_companies = db.session.scalar(db.select(func.count()).select_from(Company))
     num_companies_pending = db.session.scalar(db.select(func.count()).select_from(Company).filter(Company.status == "pending"))
@@ -46,34 +46,13 @@ def get_stats():
         "num_placements": num_placements
     }
 
-@admin.route("/users", methods=["GET"])
-@authenticate(token_auth, role=["admin"])
-@arguments(ListQueryArgsSchema())
-@response(PaginatedCollection(UserSchema()))
-def get_users(args):
-    """Get all users"""
-    query = db.session.query(User)
-    items, pagination = paginate_query(
-        query=query,
-        model=User,
-        args=args,
-        allowed_filters={
-            "id": "equals",
-            "email": "ilike",
-            "created_at": "gt"
-        },
-        allowed_sort={"id", "email", "created_at"},
-        endpoint="admin.get_users"
-    )
-    return { "pagination": pagination, "data": items }, 200
-
 @admin.route("/students", methods=["GET"])
 @authenticate(token_auth, role=["admin"])
 @arguments(ListQueryArgsSchema())
 @response(PaginatedCollection(StudentSchema()))
 def get_students(args):
-    """Get all students."""
-    query = db.session.query(Student)
+    """Get all students"""
+    query = db.session.query(Student).join(User)
     items, pagination = paginate_query(
         query=query,
         model=Student,
@@ -81,14 +60,14 @@ def get_students(args):
         allowed_filters={
             "id": "equals",
             "roll_number": "equals",
-            "contact_email": "ilike",
+            "user.email": "ilike",
             "first_name": "ilike",
             "last_name": "ilike",
             "cgpa": "gt",
             "gender": "equals",
             "status": "equals"
         },
-        allowed_sort={"id", "roll_number", "contact_email", "first_name", "last_name", "cgpa", "gender", "status"},
+        allowed_sort={"id", "roll_number", "user.email", "first_name", "last_name", "cgpa", "gender", "status"},
         endpoint="admin.get_students"
     )
     return { "pagination": pagination, "data": items }, 200
@@ -98,16 +77,23 @@ def get_students(args):
 @arguments(ListQueryArgsSchema())
 @response(PaginatedCollection(ApplicationSchema()))
 def get_student_applications(args, id):
-    """Get a student's applications."""
-    query = db.session.query(Application).filter(Application.student_id == id)
+    """Get a student's applications"""
+    query = db.session.query(Application).join(Position).join(Company).filter(Application.student_id == id)
     items, pagination = paginate_query(
         query=query,
         model=Application,
         args=args,
         allowed_filters={
-            "id": "equals"
+            "id": "equals",
+            "position_id": "equals",
+            "position.role": "ilike",
+            "position.company.name": "ilike",
+            "created_at": "gt",
+            "updated_at": "gt",
+            "placement_count": "gt",
+            "status": "equals"
         },
-        allowed_sort={"id"},
+        allowed_sort={"id", "position_id", "position.role", "position.company.name", "created_at", "updated_at", "placement_count", "status"},
         endpoint="admin.get_student_applications"
     )
     return { "pagination": pagination, "data": items }, 200
@@ -117,7 +103,7 @@ def get_student_applications(args, id):
 @body(StudentSchema(only=("status",), partial=True, load_instance=False))
 @response(StudentSchema())
 def update_student_status(data, id):
-    """Update a student's status."""
+    """Update a student's status"""
     student = db.get_or_404(Student, id)
     student.update(data)
     db.session.commit()
@@ -139,8 +125,8 @@ def update_company_status(data, id):
 @arguments(ListQueryArgsSchema())
 @response(PaginatedCollection(ApplicationSchema()))
 def get_applications(args):
-    """Get all applications."""
-    query = db.session.query(Application)
+    """Get all applications"""
+    query = db.session.query(Application).join(Position).join(Company)
     items, pagination = paginate_query(
         query=query,
         model=Application,
@@ -148,10 +134,16 @@ def get_applications(args):
         allowed_filters={
             "id": "equals",
             "student_id": "equals",
+            "position_id": "equals",
+            "position.role": "ilike",
+            "position.company.name": "ilike",
+            "created_at": "gt",
+            "updated_at": "gt",
+            "placement_count": "gt",
             "status": "equals"
         },
-        allowed_sort={"id", "student_id", "created_at", "status"},
-        endpoint="admin.get_student_applications"
+        allowed_sort={"id", "student_id", "position_id", "position.role", "position.company.name", "created_at", "updated_at", "placement_count", "status"},
+        endpoint="admin.get_applications"
     )
     return { "pagination": pagination, "data": items }, 200
 
@@ -160,17 +152,23 @@ def get_applications(args):
 @arguments(ListQueryArgsSchema())
 @response(PaginatedCollection(PlacementSchema()))
 def get_student_placements(args, id):
-    """Get a student's placements."""
-    query = db.session.query(Placement).join(Application).filter(Application.student_id == id)
+    """Get a student's placements"""
+    query = db.session.query(Placement).join(Application).join(Position).join(Company).filter(Application.student_id == id)
     items, pagination = paginate_query(
         query=query,
         model=Placement,
         args=args,
         allowed_filters={
             "id": "equals",
-            "status": "equals"
+            "application_id": "equals",
+            "application.position.role": "ilike",
+            "application.position.company.name": "ilike",
+            "joining_date": "gt",
+            "salary": "gt",
+            "status": "equals",
+            "created_at": "gt"
         },
-        allowed_sort={"id", "application_id", "created_at", "status"},
+        allowed_sort={"id", "application_id", "application.position.role", "application.position.company.name", "joining_date", "salary", "status", "created_at"},
         endpoint="admin.get_student_placements"
     )
     return { "pagination": pagination, "data": items }, 200
@@ -180,17 +178,24 @@ def get_student_placements(args, id):
 @arguments(ListQueryArgsSchema())
 @response(PaginatedCollection(PlacementSchema()))
 def get_placements(args):
-    """Get all placements."""
-    query = db.session.query(Placement)
+    """Get all placements"""
+    query = db.session.query(Placement).join(Application).join(Position).join(Company)
     items, pagination = paginate_query(
         query=query,
         model=Placement,
         args=args,
         allowed_filters={
             "id": "equals",
-            "status": "equals"
+            "application_id": "equals",
+            "application.student_id": "equals",
+            "application.position.role": "ilike",
+            "application.position.company.name": "ilike",
+            "joining_date": "gt",
+            "salary": "gt",
+            "status": "equals",
+            "created_at": "gt"
         },
-        allowed_sort={"id", "status"},
+        allowed_sort={"id", "application_id", "application.student_id", "application.position.role", "application.position.company.name", "joining_date", "salary", "status", "created_at"},
         endpoint="admin.get_placements"
     )
     return { "pagination": pagination, "data": items }, 200
