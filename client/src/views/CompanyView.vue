@@ -79,8 +79,7 @@ const positions_fields = {
     },
     "Min. CGPA": {
         name: "min_cgpa",
-        filter: true,
-        label: "Min. CGPA \u2265"
+        filter: false,
     },
     "Deadline": {
         name: "deadline",
@@ -91,6 +90,19 @@ const positions_fields = {
             type: "datetime-local"
         }
     },
+    "Approved": {
+        name: "is_approved",
+        filter: true,
+        label: "Approved",
+        type: "select",
+        input: {
+            type: "select",
+            options: [
+                {label: "True", value: true},
+                {label: "False", value: false}
+            ]
+        }
+    },    
     "Application Count": {
         name: "application_count",
         filter: false
@@ -122,9 +134,8 @@ onMounted(() => {
             <p class="lead text-muted">Company ID: #{{ route.params.id }}</p>
             <div class="row">
                 <div class="col d-flex gap-2">
-                    <button v-if="auth.currentUser.role!='company'" type="button" class="btn btn-primary btn-sm" @click='router.push({ "name": "companies" })'>
-                        <i class="bi bi-arrow-left me-2"></i>All Companies
-                    </button>
+                    <button v-if="auth.currentUser.role=='admin'" type="button" class="btn btn-primary btn-sm" @click='router.push({ name: "admin_dashboard" })'><i class="bi bi-arrow-left me-2"></i>Dashboard</button>
+                    <button v-else type="button" class="btn btn-primary btn-sm" @click='router.push({ name: "student_dashboard" })'><i class="bi bi-arrow-left me-2"></i>Dashboard</button>
                 </div>
             </div>
         </div>
@@ -200,5 +211,6 @@ onMounted(() => {
             </div>
         </template>
     </template>
+
     <div class="row mb-4" v-else><p>Loading...</p></div>
 </template>

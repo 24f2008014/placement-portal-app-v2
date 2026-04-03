@@ -34,7 +34,12 @@ const applications_fields = {
     },
     "Student ID": {
         name: "student_id",
-        filter: false
+        filter: true,
+        label: "Student ID",
+        input: {
+            type: "number",
+            min: "1"
+        }
     },
     "Created At": {
         name: "created_at",
@@ -145,22 +150,12 @@ onMounted(() => {
         <div class="col mb-3">
             <h6 class="display-6">View Position</h6>
             <p class="lead text-muted">Position ID: #{{ route.params.id }}</p>
-            
-            <div class="row" v-if="auth.currentUser.role!='company' && !loading">
-                <div class="col d-flex gap-2">
-                    <button type="button" class="btn btn-primary btn-sm" @click='router.push({ name: "positions" })'>
-                        <i class="bi bi-arrow-left me-2"></i>All Positions
-                    </button>
-                </div>
-            </div>
 
-            <div class="row" v-if="auth.currentUser.role=='company' && !loading">
+            <div class="row" v-if="!loading">
                 <div class="col d-flex gap-2">
-                    <button type="button" class="btn btn-success btn-sm" @click='router.push({ name: "company_dashboard" })'>
-                        <i class="bi bi-arrow-left me-2"></i>Dashboard
-                    </button>
+                    <button type="button" class="btn btn-primary btn-sm" @click='router.push({ name: "company_dashboard" })'><i class="bi bi-arrow-left me-2"></i>Dashboard</button>
                 </div>
-            </div>            
+            </div>          
         </div>
     </div>
 
@@ -177,9 +172,11 @@ onMounted(() => {
             <hr class="mb-4">
             <div class="row mb-4">
                 <div class="col">
-                    <h3 class="mb-3">About the Company</h3>
+                    <h3 class="mb-3">About the Company</h3>                    
                     <p>{{ position.company.description }}</p>
-                    <p><RouterLink :to='{ name: "company", params: { "id": position.company_id } }'>Click here to learn more about {{ position.company.name }}.</RouterLink></p>
+                    <div class="col d-flex gap-2">
+                        <button type="button" class="btn btn-success btn-sm" @click='router.push({ name: "company", params: { id: position.company_id } })'><i class="bi bi-box-arrow-up-right me-2"></i>View Company</button>
+                    </div>                    
                 </div>
             </div>
         </template>
@@ -188,8 +185,9 @@ onMounted(() => {
         <div class="row mb-4">
             <div class="col">
                 <h3>Admin Approved? <code>{{ position.is_approved }}</code></h3>
-                <p v-if="position.is_approved==true">This position is <strong>approved</strong>.</p>
-                <p v-else>This position <strong>has not yet been approved by an administrator</strong>.</p>
+                <p v-if="position.is_approved==true">This position is <code class="text-success fw-bold">approved</code>.</p>
+                <p v-else>This position has <code class="text-danger fw-bold">not been approved</code> by an administrator.</p>
+
                 <template v-if="auth.currentUser.role=='admin' && !position.is_approved">
                     <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#PositionApprovalModal"><i class="bi bi-wrench me-2"></i>Change Approval Status</button>
                     <Modal :title="'Change Approval Status'" :id="'PositionApprovalModal'" :yes-label="'Change'" @confirm="changeApproval">
@@ -206,9 +204,10 @@ onMounted(() => {
         <div class="row mb-4">
             <div class="col">
                 <h3>Current Status: <code>{{ position.status }}</code></h3>
-                <p v-if="position.status=='closed'">This position is currently <strong>closed</strong>.</p>
+                <p v-if="position.status=='closed'">This position is currently <code class="text-danger fw-bold">closed</code>.</p>
+
                 <template v-else>
-                    <p>This position is currently <strong>open</strong> (pending admin approval).</p>
+                    <p>This position is currently <code class="text-success fw-bold">open</code> (pending admin approval).</p>
                     <template v-if="auth.currentUser.role=='company'">
                         <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#PositionStatusModal"><i class="bi bi-x-lg me-2"></i>Close Position</button>
                         <Modal :title="'Change Status'" :id="'PositionStatusModal'" :yes-label="'Change'" @confirm="changeStatus">
@@ -221,7 +220,7 @@ onMounted(() => {
             </div>
         </div>
     
-        <template v-if="auth.currentUser.role!='student' && position.is_approved=='true'">
+        <template v-if="auth.currentUser.role!='student' && position.is_approved==true">
             <hr class="mb-4">
             <div class="row">
                 <div class="col">

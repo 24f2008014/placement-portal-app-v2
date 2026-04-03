@@ -28,7 +28,11 @@ const students_fields = {
     },
     "Email": {
         name: "user.email",
-        filter: false
+        filter: true,
+        label: "Email",
+        input: {
+            type: "email"
+        }
     },
     "First Name": {
         name: "first_name",
@@ -44,6 +48,30 @@ const students_fields = {
         label: "Last Name",
         input: {
             type: "text"
+        }
+    },
+    "CGPA": {
+        name: "cgpa",
+        filter: true,
+        label: "CGPA",
+        input: {
+            type: "number",
+            min: "0",
+            max: "10"
+        }
+    },
+    "Gender": {
+        name: "gender",
+        filter: true,
+        label: "Gender",
+        type: "select",
+        input: {
+            type: "select",
+            options: [
+                {value: "male", label: "Male"},
+                {value: "female", label: "Female"},
+                {value: "other", label: "Other"}
+            ]
         }
     },
     "Status": {
@@ -98,7 +126,7 @@ const companies_fields = {
         }
     },
     "Email": {
-        name: "contact_email",
+        name: "user.email",
         filter: true,
         label: "Email",
         input: {
@@ -152,7 +180,7 @@ const positions_fields = {
     },
     "Company": {
         name: "company.name",
-        filter: false,
+        filter: true,
         label: "Company",
         input: {
             type: "text"
@@ -178,8 +206,7 @@ const positions_fields = {
     },
     "Min. CGPA": {
         name: "min_cgpa",
-        filter: true,
-        label: "Min. CGPA \u2265"
+        filter: false
     },
     "Deadline": {
         name: "deadline",
@@ -188,6 +215,19 @@ const positions_fields = {
         type: "date",
         input: {
             type: "datetime-local"
+        }
+    },
+    "Approved": {
+        name: "is_approved",
+        filter: true,
+        label: "Approved",
+        type: "select",
+        input: {
+            type: "select",
+            options: [
+                {label: "True", value: true},
+                {label: "False", value: false}
+            ]
         }
     },
     "Status": {
@@ -219,19 +259,37 @@ const applications_fields = {
     },
     "Student ID": {
         name: "student_id",
-        filter: false
+        filter: true,
+        label: "Student ID",
+        input: {
+            type: "number",
+            min: "1"
+        }
     },
     "Position ID": {
         name: "position_id",
-        filter: false
+        filter: true,
+        label: "Position ID",
+        input: {
+            type: "number",
+            min: "1"
+        }        
     },    
-    "Position": {
+    "Role": {
         name: "position.role",
-        filter: false
+        filter: true,
+        label: "Role",
+        input: {
+            type: "text"
+        }        
     },
     "Company": {
         name: "position.company.name",
-        filter: false  
+        filter: true,
+        label: "Company",
+        input: {
+            type: "text"
+        }
     },
     "Created At": {
         name: "created_at",
@@ -275,23 +333,42 @@ const placements_fields = {
     },
     "Application ID": {
         name: "application_id",
-        filter: false
+        filter: true,
+        label: "Application ID",
+        input: {
+            type: "number",
+            min: "1"
+        }
     },
     "Student ID": {
         name: "application.student.id",
-        filter: false
+        filter: true,
+        label: "Student ID",
+        input: {
+            type: "number",
+            min: "1"
+        }
     },
-    "Position": {
+    "Role": {
         name: "application.position.role",
-        filter: false
+        filter: true,
+        label: "Role",
+        input: {
+            type: "text"
+        }
     },
     "Company": {
         name: "application.position.company.name",
-        filter: false  
+        filter: true,
+        label: "Company",
+        input: {
+            type: "text"
+        }
     },
     "Salary": {
         name: "salary",
-        filter: false
+        filter: true,
+        label: "Salary \u2265"
     },
     "Joining Date": {
         name: "joining_date",

@@ -104,17 +104,21 @@ onMounted(() => {
             </div>
         </div>
     </div>
-    <hr class="mb-4">
 
     <template v-if="!loading">
+        <hr class="mb-4">
         <div class="row mb-4">
+            <div class="col">
             <h3>Application Details</h3>
             <template v-if="auth.currentUser.role!='student'">
-                <div class="col d-flex mt-2 gap-2">
-                    <button type="button" class="btn btn-sm btn-primary" @click="router.push({ name: 'student', params: { id: application.student_id } })"><i class="bi bi-box-arrow-up-right me-2"></i>View Student</button>
-                    <button v-if="application.student.resume_url" type="button" class="btn btn-sm btn-success" @click="viewResume(application.student.resume_url)"><i class="bi bi-download me-2"></i>View Resume</button>
+                <div class="row">
+                    <div class="col d-flex mt-2 gap-2">
+                        <button type="button" class="btn btn-sm btn-primary" @click="router.push({ name: 'student', params: { id: application.student_id } })"><i class="bi bi-box-arrow-up-right me-2"></i>View Student</button>
+                        <button v-if="application.student.resume_url" type="button" class="btn btn-sm btn-success" @click="viewResume(application.student.resume_url)"><i class="bi bi-download me-2"></i>Get Resume</button>
+                    </div>
                 </div>
             </template>
+            </div>
         </div>
 
         <div class="row mb-4">
@@ -137,13 +141,13 @@ onMounted(() => {
                 <p>{{ application.status }}</p>
             </div>
         </div>
+        
         <hr class="mb-4">
-
         <div class="row mb-4">
             <div class="col">
                 <h3>Current Status: <code>{{ application.status }}</code></h3>
                 <template v-if="application.status=='pending'">
-                    <p>This application is currently <strong>pending</strong> company review. The company may either shortlist the candidate for an interview, or reject the application.</p>
+                    <p>This application is currently <code class="text-warning fw-bold">pending</code> company review. The company may either shortlist the candidate for an interview, or reject the application.</p>
                     <button v-if="auth.currentUser.role=='student'" type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#withdrawApplicationModal"><i class="bi bi-x-lg me-2"></i>Withdraw Application</button>
                     <template v-else-if="auth.currentUser.role=='company'">
                         <div class="row">
@@ -156,7 +160,7 @@ onMounted(() => {
                 </template>
 
                 <template v-else-if="application.status=='shortlisted'">
-                    <p>This application has been <strong>shortlisted</strong>, and an interview has been scheduled. The company will get in touch with the applicant via email soon to organize the interview. In case of any further questions, here is the company's email address.</p>
+                    <p>This application has been <code class="text-primary fw-bold">shortlisted</code>, and an interview has been scheduled. The company will get in touch with the applicant via email soon to organize the interview. In case of any further questions, here is the company's email address.</p>
                     <p class="mb-0"><strong>Interview Date: </strong>{{ formatDate(application.interview_date) }}</p>
                     <p class="mb-3"><strong>Company Email: </strong>{{ application.position.company.contact_email }}</p>
                     <template v-if="auth.currentUser.role=='company'">
@@ -170,15 +174,15 @@ onMounted(() => {
                 </template>
 
                 <template v-else-if="application.status=='selected'">
-                    <p>This application has been <strong>selected</strong>. <RouterLink :to="{ name: 'placement', params: { 'id': application.placements[0].id } }">Click here</RouterLink> to view the linked placement offer.</p>
+                    <p>This application has been <code class="text-success fw-bold">selected</code>. <RouterLink :to="{ name: 'placement', params: { 'id': application.placements[0].id } }">Click here</RouterLink> to view the linked placement offer.</p>
                 </template>
 
                 <template v-else-if="application.status=='rejected'">
-                    <p class="mb-2">This application has been <strong>rejected</strong> by the company.</p>
+                    <p class="mb-2">This application has been <code class="text-danger fw-bold">rejected</code> by the company.</p>
                     <p><strong>Feedback: </strong>{{ application.feedback ? application.feedback : "N/A" }}</p>
                 </template>
 
-                <p v-else-if="application.status=='withdrawn'">This application has been <strong>withdrawn</strong> by the student.</p>
+                <p v-else-if="application.status=='withdrawn'">This application has been <code class="text-danger fw-bold">withdrawn</code> by the student.</p>
             </div>
 
             <Modal :title="'Change Status'" :id="'withdrawApplicationModal'" :yes-label="'Withdraw'" @confirm="withdrawApplication">

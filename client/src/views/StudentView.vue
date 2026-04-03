@@ -1,10 +1,10 @@
 <script setup>
 import { useAuthStore } from "@/stores/auth";
-import { ref, onMounted, reactive } from "vue";
+import { ref, onMounted } from "vue";
 import { api } from "@/utils/api";
 import PaginatedTable from "@/components/PaginatedTable.vue";
 import { useRoute, useRouter } from "vue-router";
-import { formatDate, formatDateNoTime } from "@/utils/helpers";
+import { formatDateNoTime } from "@/utils/helpers";
 import { useAlertStore } from "@/stores/alert";
 import * as bootstrap from "bootstrap";
 import Modal from "@/components/Modal.vue";
@@ -64,15 +64,28 @@ const applications_fields = {
     },
     "Position ID": {
         name: "position_id",
-        filter: false
+        filter: true,
+        label: "Position ID",
+        input: {
+            type: "number",
+            min: "1"
+        }        
     },    
-    "Position": {
+    "Role": {
         name: "position.role",
-        filter: false
+        filter: true,
+        label: "Role",
+        input: {
+            type: "text"
+        }        
     },
     "Company": {
         name: "position.company.name",
-        filter: false  
+        filter: true,
+        label: "Company",
+        input: {
+            type: "text"
+        }
     },
     "Created At": {
         name: "created_at",
@@ -113,18 +126,36 @@ const placements_fields = {
             type: "number",
             min: "1"
         }
-    },  
-    "Position": {
+    },
+    "Application ID": {
+        name: "application_id",
+        filter: true,
+        label: "Application ID",
+        input: {
+            type: "number",
+            min: "1"
+        }
+    },
+    "Role": {
         name: "application.position.role",
-        filter: false
+        filter: true,
+        label: "Role",
+        input: {
+            type: "text"
+        }
     },
     "Company": {
         name: "application.position.company.name",
-        filter: false  
+        filter: true,
+        label: "Company",
+        input: {
+            type: "text"
+        }
     },
     "Salary": {
         name: "salary",
-        filter: false
+        filter: true,
+        label: "Salary \u2265"
     },
     "Joining Date": {
         name: "joining_date",
@@ -169,12 +200,8 @@ onMounted(() => {
             <p class="lead text-muted">Student ID: #{{ route.params.id }}</p>
             <div class="row">
                 <div class="col d-flex gap-2">
-                    <button v-if="auth.currentUser.role=='admin'" type="button" class="btn btn-primary btn-sm" @click='router.push({ "name": "students" })'>
-                        <i class="bi bi-arrow-left me-2"></i>All Students
-                    </button>
-                    <button v-else type="button" class="btn btn-primary btn-sm" @click='router.push({ "name": "company_positions" })'>
-                        <i class="bi bi-arrow-left me-2"></i>Your Positions
-                    </button>
+                    <button v-if="auth.currentUser.role=='admin'" type="button" class="btn btn-primary btn-sm" @click='router.push({ name: "admin_dashboard" })'><i class="bi bi-arrow-left me-2"></i>Dashboard</button>
+                    <button v-else type="button" class="btn btn-primary btn-sm" @click='router.push({ name: "company_dashboard" })'><i class="bi bi-arrow-left me-2"></i>Dashboard</button>
                 </div>
             </div>
         </div>
@@ -184,9 +211,9 @@ onMounted(() => {
     <template v-if="!loading">
         <div class="row mb-3">
             <h3>Student Details</h3>
-            <div class="col d-flex mt-2">
-                <button type="button" v-if="student.resume_url" class="btn btn-sm btn-success" @click="viewResume(student.resume_url)"><i class="bi bi-download me-2"></i>View Resume</button>
-                <button type="button" v-else class="btn btn-sm btn-success" disabled><i class="bi bi-download me-2"></i>View Resume (N/A)</button>                
+            <div class="col d-flex mt-2 mb-2">
+                <button type="button" v-if="student.resume_url" class="btn btn-sm btn-success" @click="viewResume(student.resume_url)"><i class="bi bi-download me-2"></i>Get Resume</button>
+                <button type="button" v-else class="btn btn-sm btn-success" disabled><i class="bi bi-download me-2"></i>Get Resume (N/A)</button>
             </div>
         </div>
 
@@ -222,19 +249,24 @@ onMounted(() => {
                 <p>{{ student.status }}</p>
             </div>
         </div>
-        <div v-if="student.bio" class="row mb-4">
+
+        <template v-if="student.bio">
             <hr class="mb-4">
-            <h3>Student Bio</h3>
-            <p>{{ student.bio }}</p>
-        </div>
+            <div class="row mb-4">
+                <div class="col">
+                    <h3>Student Bio</h3>
+                    <p>{{ student.bio }}</p>
+                </div>
+            </div>
+        </template>
 
         <template v-if="auth.currentUser.role=='admin'">
             <hr class="mb-4">
             <div class="row mb-4">
                 <div class="col">
                     <h3>Current Status: <code>{{ student.status }}</code></h3>
-                    <p v-if="student.status=='whitelisted'">This student is <strong>whitelisted</strong>. They can freely apply for any open positions.</p>
-                    <p v-else>This student is <strong>blacklisted</strong>. They cannot make new job applications.</p>
+                    <p v-if="student.status=='whitelisted'">This student is <code class="text-success fw-bold">whitelisted</code>. They can freely apply for any open positions.</p>
+                    <p v-else>This student is <code class="text-danger fw-bold">blacklisted</code>. They cannot make new job applications.</p>
                     <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#StudentStatusModal"><i class="bi bi-wrench me-2"></i>Change Status</button>
                 </div>
                 <Modal :title="'Change Status'" :id="'StudentStatusModal'" :yes-label="'Confirm'" @confirm="changeStatus">
@@ -244,39 +276,42 @@ onMounted(() => {
                     </template>
                 </Modal>
             </div>
+
+            <hr class="mb-4">
+            <div class="row mb-4">
+                <div class="col">
+                    <h3 class="mb-3">Applications</h3>
+                    <template v-if="!loading">
+                        <div class="col mb-4">
+                            <PaginatedTable :url="applications_endpoint" :fields="applications_fields" :item_route_name="applications_route" />
+                        </div>
+                        <hr class="mb-4">
+
+                        <div class="col">
+                            <h3 class="mb-3">Placements</h3>
+                            <PaginatedTable :url="placements_endpoint" :fields="placements_fields" :item_route_name="placements_route" />
+                        </div>
+                    </template>
+                    <div v-else>Loading...</div>
+                </div>
+            </div>
+        </template>
+
+        <template v-else>
+            <hr class="mb-4">
+            <div class="row mb-4">
+                <div class="col">
+                    <h3 class="mb-3">Applications</h3>
+                    <template v-if="!loading">
+                        <div class="col">
+                            <PaginatedTable :url="company_applications_endpoint" :fields="applications_fields" :item_route_name="applications_route" />
+                        </div>
+                    </template>
+                    <div v-else>Loading...</div>
+                </div>
+            </div>
         </template>
     </template>
 
     <div class="row mb-4" v-else><p>Loading...</p></div>
-    <hr class="mb-4">
-
-    <div class="row mb-4" v-if="auth.currentUser.role=='admin'"">
-        <div class="col">
-            <h3 class="mb-3">Applications</h3>
-            <template v-if="!loading">
-                <div class="col">
-                    <PaginatedTable :url="applications_endpoint" :fields="applications_fields" :item_route_name="applications_route" />
-                </div>
-                <hr class="mb-4">
-
-                <div class="col">
-                    <h3 class="mb-3">Placements</h3>
-                    <PaginatedTable :url="placements_endpoint" :fields="placements_fields" :item_route_name="placements_route" />
-                </div>
-            </template>
-            <div v-else>Loading...</div>
-        </div>
-    </div>
-
-    <div class="row mb-4" v-if="auth.currentUser.role=='company'"">
-        <div class="col">
-            <h3 class="mb-3">Applications</h3>
-            <template v-if="!loading">
-                <div class="col">
-                    <PaginatedTable :url="company_applications_endpoint" :fields="applications_fields" :item_route_name="applications_route" />
-                </div>
-            </template>
-            <div v-else>Loading...</div>
-        </div>
-    </div>    
 </template>

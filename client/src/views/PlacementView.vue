@@ -83,20 +83,26 @@ onMounted(() => {
             </div>
         </div>
     </div>
-    <hr class="mb-4">
 
     <template v-if="!loading">
+        <hr class="mb-4">
         <div class="row mb-4">
-            <h3>Placement Details</h3>
+            <div class="col">
+                <h3>Placement Details</h3>
+                <template v-if="auth.currentUser.role!='student'">
+                    <div class="row">
+                        <div class="col d-flex mt-2 gap-2">
+                            <button type="button" class="btn btn-sm btn-primary" @click="router.push({ name: 'student', params: { id: placement.application.student.id } })"><i class="bi bi-box-arrow-up-right me-2"></i>View Student</button>
+                        </div>
+                    </div>
+                </template>
+            </div>
         </div>
 
         <div class="row mb-4">
             <div class="col">
                 <h6 class="text-primary-emphasis">Student Name</h6>
-                <p>
-                    {{ placement.application.student.first_name + " " + placement.application.student.last_name }}
-                    <RouterLink v-if="auth.currentUser.role!='student'" :to="{name: 'student', params: {'id': placement.application.student.id}}">(click to view)</RouterLink>
-                </p>
+                <p>{{ placement.application.student.first_name + " " + placement.application.student.last_name }}</p>
                 <h6 class="text-primary-emphasis">Student Roll No.</h6>
                 <p>{{ placement.application.student.roll_number }}</p>
             </div>
@@ -113,48 +119,49 @@ onMounted(() => {
                 <p>{{ formatDateNoTime(placement.joining_date) }}</p>
             </div>
         </div>
-        <hr class="mb-4">
 
+        <hr class="mb-4">
         <div class="row mb-4">
             <div class="col">
                 <h3>Current Status: <code>{{ placement.status }}</code></h3>
 
                 <template v-if="placement.status=='pending'">
-                    <p>This placement offer is <strong>pending</strong> the student's decision.</p>
+                    <p>This placement offer is <code class="text-warning fw-bold">pending</code> the student's decision.</p>
                     <div v-if="auth.currentUser.role=='student'" class="row">
                         <div class="col d-flex gap-3">
                             <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#acceptModal"><i class="bi bi-check-lg me-2"></i>Accept</button>
                             <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal"><i class="bi bi-x-lg me-2"></i>Reject</button>
+
+                            <Modal :title="'Accept Placement Offer'" :id="'acceptModal'" :yesLabel="'Accept'" @confirm="acceptPlacement">
+                                <template #modal-body>
+                                    <p>Are you sure you want to <strong>accept</strong> this company's placement offer? This cannot be undone.</p>
+                                </template>
+                            </Modal>
+                            
+                            <Modal :title="'Reject Placement Offer'" :id="'rejectModal'" :yesLabel="'Reject'" @confirm="rejectPlacement">
+                                <template #modal-body>
+                                    <p>Are you sure you want to <strong>reject</strong> this company's placement offer? This cannot be undone.</p>
+                                </template>
+                            </Modal>
                         </div>
                     </div>
-                    <button v-else-if="auth.currentUser.role=='company'" type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#withdrawModal"><i class="bi bi-x-lg me-2"></i>Withdraw</button>
+
+                    <template v-else-if="auth.currentUser.role=='company'">
+                        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#withdrawModal"><i class="bi bi-x-lg me-2"></i>Withdraw</button>
+                        <Modal :title="'Withdraw Placement Offer'" :id="'withdrawModal'" :yesLabel="'Withdraw'" @confirm="withdrawPlacement">
+                            <template #modal-body>
+                                <p>Are you sure you want to <strong>withdraw</strong> your placement offer? This cannot be undone.</p>
+                            </template>
+                        </Modal>
+                    </template>
                 </template>
 
-                <p v-else-if="placement.status=='accepted'">This placement offer has been <strong>accepted</strong> by the student.</p>
+                <p v-else-if="placement.status=='accepted'">This placement offer has been <code class="text-success fw-bold">accepted</code> by the student.</p>
 
-                <p v-else-if="placement.status=='rejected'">This placement offer has been<strong>rejected</strong> by the student.</p>
+                <p v-else-if="placement.status=='rejected'">This placement offer has been <code class="text-danger fw-bold">rejected</code> by the student.</p>
 
-                <p v-else-if="placement.status=='withdrawn'">The placement offer has been <strong>withdrawn</strong> by the company.</p>
+                <p v-else-if="placement.status=='withdrawn'">The placement offer has been <code class="text-danger fw-bold">withdrawn</code> by the company.</p>
             </div>
-
-            <Modal :title="'Accept Placement Offer'" :id="'acceptModal'" :yesLabel="'Accept'" @confirm="acceptPlacement">
-                <template #modal-body>
-                    <p>Are you sure you want to <strong>accept</strong> this company's placement offer? This cannot be undone.</p>
-                </template>
-            </Modal>
-            
-            <Modal :title="'Reject Placement Offer'" :id="'rejectModal'" :yesLabel="'Reject'" @confirm="rejectPlacement">
-                <template #modal-body>
-                    <p>Are you sure you want to <strong>reject</strong> this company's placement offer? This cannot be undone.</p>
-                </template>
-            </Modal>
-
-            <Modal :title="'Withdraw Placement Offer'" :id="'withdrawModal'" :yesLabel="'Withdraw'" @confirm="withdrawPlacement">
-                <template #modal-body>
-                    <p>Are you sure you want to <strong>withdraw</strong> your placement offer? This cannot be undone.</p>
-                </template>
-            </Modal>
         </div>
-        <hr class="mb-4">
     </template>
 </template>
