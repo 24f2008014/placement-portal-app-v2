@@ -72,6 +72,75 @@ const applications_fields = {
     }
 };
 
+const placements_endpoint = `/positions/${route.params.id}/placements`;
+const placements_route = "placement";
+const placements_fields = {
+    "ID": {
+        name: "id",
+        filter: true,
+        label: "ID",
+        type: "number",
+        input: {
+            type: "number",
+            min: "1"
+        }
+    },
+    "Application ID": {
+        name: "application_id",
+        filter: true,
+        label: "Application ID",
+        type: "number",
+        input: {
+            type: "number",
+            min: "1"
+        }
+    },
+    "Student ID": {
+        name: "application.student.id",
+        filter: true,
+        label: "Student ID",
+        type: "number",
+        input: {
+            type: "number",
+            min: "1"
+        }        
+    },
+    "Salary": {
+        name: "salary",
+        filter: true,
+        label: "Salary \u2265",
+        type: "number",
+        input: {
+            type: "number",
+            min: "0"
+        }
+    },
+    "Joining Date": {
+        name: "joining_date",
+        filter: false,
+        type: "date"
+    },  
+    "Created At": {
+        name: "created_at",
+        filter: false,
+        type: "date"
+    },
+    "Status": {
+        name: "status",
+        filter: true,
+        label: "Status",
+        type: "select",
+        input: {
+            type: "select",
+            options: [
+                {label: "Pending", value: "pending"},
+                {label: "Accepted", value: "accepted"},
+                {label: "Rejected", value: "rejected"}
+            ]
+        }
+    }
+};
+
 async function getPosition() {
     try {
         loading.value = true;
@@ -83,13 +152,12 @@ async function getPosition() {
     }
 }
 
-async function changeApproval() {
+async function whitelistPosition() {
     try {
-        const newStatus = (position.value.is_approved == true) ? false : true;
-        const response = await api.patch(`/positions/${route.params.id}`, { status: newStatus });
+        const response = await api.post(`/positions/${route.params.id}/whitelist`, null);
         position.value = response.data;
         bootstrap.Modal.getInstance(document.getElementById("PositionApprovalModal")).hide();
-        alert.addAlert(`Successfully updated Position #${route.params.id}'s approval status.`, "success");
+        alert.addAlert(`Successfully whitelisted Position #${route.params.id}.`, "success");
     } catch (error) {
         console.error(error);
     }
@@ -179,7 +247,7 @@ onMounted(() => {
                     <h3 class="mb-3">About the Company</h3>                    
                     <p>{{ position.company.description }}</p>
                     <div class="col d-flex gap-2">
-                        <button type="button" class="btn btn-success btn-sm" @click='router.push({ name: "company", params: { id: position.company_id } })'><i class="bi bi-box-arrow-up-right me-2"></i>View Company</button>
+                        <button type="button" class="btn btn-primary btn-sm" @click='router.push({ name: "company", params: { id: position.company_id } })'><i class="bi bi-box-arrow-up-right me-2"></i>View Company</button>
                     </div>                    
                 </div>
             </div>
@@ -193,11 +261,10 @@ onMounted(() => {
                 <p v-else>This position has <code class="text-danger fw-bold">not been approved</code> by an administrator.</p>
 
                 <template v-if="auth.currentUser.role=='admin' && !position.is_approved">
-                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#PositionApprovalModal"><i class="bi bi-wrench me-2"></i>Change Approval Status</button>
-                    <Modal :title="'Change Approval Status'" :id="'PositionApprovalModal'" :yes-label="'Change'" @confirm="changeApproval">
+                    <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#PositionApprovalModal"><i class="bi bi-check-lg me-2"></i>Whitelist</button>
+                    <Modal :title="'Whitelist Position'" :id="'PositionApprovalModal'" :yes-label="'Confirm'" @confirm="whitelistPosition">
                         <template #modal-body>
-                            <p v-if="position.is_approved==true">Are you sure you want to change Position #{{ $route.params.id }}'s approval status from <strong>approved</strong> to <strong>not approved</strong>?</p>
-                            <p v-else>Are you sure you want to change Position #{{ $route.params.id }}'s approval status from <strong>not approved</strong> to <strong>approved</strong>?</p>
+                            <p>Are you sure you want to whitelist <strong>Position #{{ $route.params.id }}</strong>?</p>
                         </template>
                     </Modal>
                 </template>
@@ -232,6 +299,13 @@ onMounted(() => {
                     <PaginatedTable :url="applications_endpoint" :fields="applications_fields" :item_route_name="applications_route" />
                 </div>
             </div>
+            <hr class="mb-4">
+            <div class="row">
+                <div class="col">
+                    <h3 class="mb-4">Placements Made</h3>
+                    <PaginatedTable :url="placements_endpoint" :fields="placements_fields" :item_route_name="placements_route" />
+                </div>
+            </div>
         </template>
 
         <template v-if="auth.currentUser.role=='student'">
@@ -241,7 +315,7 @@ onMounted(() => {
                     <h3 class="mb-3">Your Application</h3>
                     <template v-if="studentApplication.length == 0 || studentApplication[0].status=='withdrawn'">
 
-                        <template v-if="position.status=='closed'">
+                        <template v-if="position.status=='closed' || position.is_approved == false">
                             This position is currently not accepting any new applications.
                         </template>
 
