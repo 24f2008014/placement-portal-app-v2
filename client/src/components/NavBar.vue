@@ -4,7 +4,7 @@ const auth = useAuthStore();
 </script>
 
 <template>
-    <nav class="navbar navbar-expand-lg py-2 shadow bg-body-tertiary">
+    <nav class="navbar sticky-top navbar-expand-lg py-2 shadow bg-body-tertiary">
         <div class="container align-items-center">
             <a class="navbar-brand" href="#"><RouterLink :to="{ name: 'home' }" class="nav-link"><i class="bi bi-rocket-takeoff-fill me-2"></i>Placer</RouterLink></a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent">
@@ -15,8 +15,8 @@ const auth = useAuthStore();
                 <ul class="navbar-nav">
                     <template v-if="auth.currentUser.role=='student'">
                         <li class="nav-item"><RouterLink :to="{ name: 'student_dashboard' }" class="nav-link">Dashboard</RouterLink></li>
-                        <!-- <li class="nav-item"><RouterLink :to="{ name: 'companies' }" class="nav-link">Companies</RouterLink></li> -->
                         <li class="nav-item"><RouterLink :to="{ name: 'positions' }" class="nav-link">Positions</RouterLink></li>
+                        <li class="nav-item"><RouterLink :to="{ name: 'companies' }" class="nav-link">Companies</RouterLink></li>
                     </template>
                     <template v-if="auth.currentUser.role=='company'">
                         <li class="nav-item"><RouterLink :to="{ name: 'company_dashboard' }" class="nav-link">Dashboard</RouterLink></li>
@@ -24,10 +24,6 @@ const auth = useAuthStore();
                     </template>
                     <template v-if="auth.currentUser.role=='admin'">
                         <li class="nav-item"><RouterLink :to="{ name: 'admin_dashboard' }" class="nav-link">Dashboard</RouterLink></li>
-                        <!-- <li class="nav-item"><RouterLink :to="{ name: 'companies' }" class="nav-link">Companies</RouterLink></li> -->
-                        <!-- <li class="nav-item"><RouterLink :to="{ name: 'students' }" class="nav-link">Students</RouterLink></li> -->
-                        <!-- <li class="nav-item"><RouterLink :to="{ name: 'positions' }" class="nav-link">Positions</RouterLink><li> -->
-                        <!-- <li class="nav-item"><RouterLink :to="{ name: 'users' }" class="nav-link">Users</RouterLink></li> -->
                     </template>
                 </ul>
 

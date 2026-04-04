@@ -20,6 +20,7 @@ const inputGraduationYear = ref();
 const inputCgpa = ref();
 const departments = ref("");
 const branches = ref("");
+const minGraduationYear = new Date().getFullYear();
 
 const available_branches = computed(() => {
     if (inputDepartment.value != "" && branches.value != "") {
@@ -76,9 +77,10 @@ async function submitForm() {
         router.push({ name: "login" });
     }
     catch (error) {
-        if ("errors" in error.response.data) {
-            errors.value = flattenResponse(error.response.data.errors.json)
-        }
+        console.error(error);
+        // if ("errors" in error.response.data) {
+        //     errors.value = flattenResponse(error.response.data.errors.json)
+        // }
     }
 };
 
@@ -170,7 +172,7 @@ onMounted(() => {
         <div class="row mb-3">
             <div class="col">
                 <label for="inputGraduationYear" class="form-label">Graduation year</label>
-                <input class="form-control" type="number" min="2000" max="2099" :class="{ 'is-invalid': errors.graduation_year }"id="inputGraduationYear" v-model="inputGraduationYear" required aria-describedby="inputGraduationYearValidation">
+                <input class="form-control" type="number" :min="minGraduationYear" max="2099" :class="{ 'is-invalid': errors.graduation_year }"id="inputGraduationYear" v-model="inputGraduationYear" required aria-describedby="inputGraduationYearValidation">
                 <div v-if="errors.graduation_year" class="invalid-feedback" id="inputGraduationYearValidation">{{ errors.graduation_year[0] }}</div>
             </div>
             <div class="col">

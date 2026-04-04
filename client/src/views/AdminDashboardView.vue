@@ -13,6 +13,7 @@ const students_fields = {
         name: "id",
         filter: true,
         label: "ID",
+        type: "number",
         input: {
             type: "number",
             min: "1"
@@ -22,6 +23,7 @@ const students_fields = {
         name: "roll_number",
         filter: true,
         label: "Roll No.",
+        type: "number",
         input: {
             type: "text"
         }
@@ -54,6 +56,7 @@ const students_fields = {
         name: "cgpa",
         filter: true,
         label: "CGPA",
+        type: "number",
         input: {
             type: "number",
             min: "0",
@@ -96,6 +99,7 @@ const companies_fields = {
         name: "id",
         filter: true,
         label: "ID",
+        type: "number",
         input: {
             type: "number",
             min: "1"
@@ -137,6 +141,7 @@ const companies_fields = {
         name: "open_position_count",
         filter: true,
         label: "Open Positions \u2265",
+        type: "number",
         input: {
             type: "number",
             min: "0"
@@ -165,6 +170,7 @@ const positions_fields = {
         name: "id",
         filter: true,
         label: "ID",
+        type: "number",
         input: {
             type: "number",
             min: "1"
@@ -190,6 +196,7 @@ const positions_fields = {
         name: "salary_min",
         filter: true,
         label: "Min. Salary \u2265",
+        type: "number",
         input: {
             type: "number",
             min: "0"
@@ -199,6 +206,7 @@ const positions_fields = {
         name: "salary_max",
         filter: true,
         label: "Max. Salary \u2265",
+        type: "number",
         input: {
             type: "number",
             min: "0"
@@ -206,6 +214,7 @@ const positions_fields = {
     },
     "Min. CGPA": {
         name: "min_cgpa",
+        type: "number",
         filter: false
     },
     "Deadline": {
@@ -252,6 +261,7 @@ const applications_fields = {
         name: "id",
         filter: true,
         label: "ID",
+        type: "number",
         input: {
             type: "number",
             min: "1"
@@ -261,6 +271,7 @@ const applications_fields = {
         name: "student_id",
         filter: true,
         label: "Student ID",
+        type: "number",
         input: {
             type: "number",
             min: "1"
@@ -270,10 +281,11 @@ const applications_fields = {
         name: "position_id",
         filter: true,
         label: "Position ID",
+        type: "number",
         input: {
             type: "number",
             min: "1"
-        }        
+        }
     },    
     "Role": {
         name: "position.role",
@@ -326,6 +338,7 @@ const placements_fields = {
         name: "id",
         filter: true,
         label: "ID",
+        type: "number",
         input: {
             type: "number",
             min: "1"
@@ -335,6 +348,7 @@ const placements_fields = {
         name: "application_id",
         filter: true,
         label: "Application ID",
+        type: "number",
         input: {
             type: "number",
             min: "1"
@@ -344,6 +358,7 @@ const placements_fields = {
         name: "application.student.id",
         filter: true,
         label: "Student ID",
+        type: "number",
         input: {
             type: "number",
             min: "1"
@@ -368,7 +383,12 @@ const placements_fields = {
     "Salary": {
         name: "salary",
         filter: true,
-        label: "Salary \u2265"
+        label: "Salary \u2265",
+        type: "number",
+        input: {
+            type: "number",
+            min: "0"
+        }
     },
     "Joining Date": {
         name: "joining_date",
@@ -432,9 +452,13 @@ onMounted(() => {
             <p class="lead text-muted">See everything at a glance here.</p>
         </div>
     </div>
+    <div class="row mb-4">
+        <div class="col">
+            <button type="button" class="btn btn-sm btn-success" @click="getMonthlyReport"><i class="bi bi-envelope-fill me-2"></i>Get Email Report</button>
+        </div>
+    </div>
     <hr class="mb-4">
 
-    <button type="button" class="btn btn-sm btn-success mb-4" @click="getMonthlyReport">Email Monthly Report</button>
 
     <template v-if="!loading">
         <div class="row">
@@ -460,7 +484,7 @@ onMounted(() => {
                         <button class="nav-link active" id="students-tab" data-bs-toggle="tab" data-bs-target="#students-tab-pane" type="button" role="tab" aria-controls="students-tab-pane" aria-selected="true">Students ({{ stats.num_students }})</button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="companies-tab" data-bs-toggle="tab" data-bs-target="#companies-tab-pane" type="button" role="tab" aria-controls="companies-tab-pane" aria-selected="false">Companies ({{ stats.num_students }})</button>
+                        <button class="nav-link" id="companies-tab" data-bs-toggle="tab" data-bs-target="#companies-tab-pane" type="button" role="tab" aria-controls="companies-tab-pane" aria-selected="false">Companies ({{ stats.num_companies }})</button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="positions-tab" data-bs-toggle="tab" data-bs-target="#positions-tab-pane" type="button" role="tab" aria-controls="positions-tab-pane" aria-selected="false">Positions ({{ stats.num_positions }})</button>

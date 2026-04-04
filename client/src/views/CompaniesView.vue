@@ -21,6 +21,7 @@ const companies_fields = {
         name: "id",
         filter: true,
         label: "ID",
+        type: "number",
         input: {
             type: "number",
             min: "1"
@@ -62,6 +63,7 @@ const companies_fields = {
         name: "open_position_count",
         filter: true,
         label: "Open Positions \u2265",
+        type: "number",
         input: {
             type: "number",
             min: "0"

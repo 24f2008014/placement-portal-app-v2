@@ -144,7 +144,7 @@ onMounted(() => {
             </form>
         </div>
     </div>
-
+    <div class="table-responsive">
     <table class="border table table-hover">
         <thead>
             <tr>
@@ -157,9 +157,12 @@ onMounted(() => {
                 :key="i.id"
                 @click='router.push({ name: props.item_route_name, params: { "id": `${i.id}`} })'
             >
-                 <td v-for="f in Object.values(props.fields)">
+                 <td v-for="f in Object.values(props.fields)" :class="{ 'text-end': f.type=='number' }">
                     <template v-if="f.type=='date'">
                         {{ i[f.name] ? formatDate(flattenResponsePrefixed(i)[f.name]) : "N/A" }}
+                    </template>
+                    <template v-else-if="f.type=='number'">
+                        {{ flattenResponsePrefixed(i)[f.name].toLocaleString("en-US") }}
                     </template>
                     <template v-else>
                         {{ flattenResponsePrefixed(i)[f.name] }}
@@ -168,4 +171,5 @@ onMounted(() => {
             </tr>
         </tbody>
     </table>
+    </div>
 </template>

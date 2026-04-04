@@ -17,6 +17,7 @@ const positions_fields = {
         name: "id",
         filter: true,
         label: "ID",
+        type: "number",
         input: {
             type: "number",
             min: "1"
@@ -34,6 +35,7 @@ const positions_fields = {
         name: "salary_min",
         filter: true,
         label: "Min. Salary \u2265",
+        type: "number",
         input: {
             type: "number",
             min: "0"
@@ -43,6 +45,7 @@ const positions_fields = {
         name: "salary_max",
         filter: true,
         label: "Max. Salary \u2265",
+        type: "number",
         input: {
             type: "number",
             min: "0"
@@ -51,7 +54,13 @@ const positions_fields = {
     "Min. CGPA": {
         name: "min_cgpa",
         filter: true,
-        label: "Min. CGPA \u2265"
+        label: "Min. CGPA \u2265",
+        type: "number",
+        input: {
+            type: "number",
+            min: "0",
+            max: "10"
+        }
     },
     "Deadline": {
         name: "deadline",
@@ -66,6 +75,7 @@ const positions_fields = {
         name: "application_count",
         filter: true,
         label: "Applications \u2265",
+        type: "number",
         input: {
             type: "number",
             min: "0"
@@ -106,6 +116,7 @@ const placements_fields = {
         name: "id",
         filter: true,
         label: "ID",
+        type: "number",
         input: {
             type: "number",
             min: "1"
@@ -115,6 +126,7 @@ const placements_fields = {
         name: "application_id",
         filter: true,
         label: "Application ID",
+        type: "number",
         input: {
             type: "number",
             min: "1"
@@ -124,6 +136,7 @@ const placements_fields = {
         name: "application.student.id",
         filter: true,
         label: "Student ID",
+        type: "number",
         input: {
             type: "number",
             min: "1"
@@ -131,12 +144,17 @@ const placements_fields = {
     },
     "Position": {
         name: "application.position.role",
-        filter: false
+        filter: true,
+        label: "Position",
+        input: {
+            type: "text"
+        }
     },
     "Salary": {
         name: "salary",
         filter: true,
         label: "Salary \u2265",
+        type: "number",
         input: {
             type: "number",
             min: "0"
@@ -176,6 +194,7 @@ const applications_fields = {
         name: "id",
         filter: true,
         label: "ID",
+        type: "number",
         input: {
             type: "number",
             min: "1"
@@ -185,6 +204,7 @@ const applications_fields = {
         name: "student_id",
         filter: true,
         label: "Student ID",
+        type: "number",
         input: {
             type: "number",
             min: "1"
@@ -194,6 +214,7 @@ const applications_fields = {
         name: "position_id",
         filter: true,
         label: "Position ID",
+        type: "number",
         input: {
             type: "number",
             min: "1"
@@ -306,7 +327,7 @@ onMounted(() => {
                     <p>Your company account has been blacklisted, and you cannot list any new positions. Please contact an administrator for further details.</p>
                     <div class="col">
                         <button type="button" class="btn btn-sm btn-success mb-3" disabled><i class="bi bi-plus-lg me-2"></i>New Position</button>
-                    </div>                    
+                    </div>
                 </template>
                 <template v-else>
                     <h4>Status: <code class="text-success">Whitelisted</code></h4>

@@ -19,6 +19,7 @@ const route = useRoute();
 const errors = ref({});
 const studentApplication = ref([]);
 const studentCgpa = ref();
+const studentStatus = ref();
 
 const applications_endpoint = `/positions/${route.params.id}/applications`;
 const applications_route = "application";
@@ -27,6 +28,7 @@ const applications_fields = {
         name: "id",
         filter: true,
         label: "ID",
+        type: "number",
         input: {
             type: "number",
             min: "1"
@@ -36,6 +38,7 @@ const applications_fields = {
         name: "student_id",
         filter: true,
         label: "Student ID",
+        type: "number",
         input: {
             type: "number",
             min: "1"
@@ -131,6 +134,7 @@ async function getStudentCgpa() {
     try {
         const response = await api.get("/students/me");
         studentCgpa.value = response.data.cgpa;
+        studentStatus.value = response.data.status;
     } catch (error) {
         console.error(error);
     }
@@ -242,14 +246,20 @@ onMounted(() => {
                         </template>
 
                         <template v-else>
-                            <template v-if="studentCgpa >= position.min_cgpa">
-                                <p>You don't have any pending applications for this position. Would you like to submit an application?</p>
-                                <button type="button" class="btn btn-sm btn-success" @click="postApplication"><i class="bi bi-plus-lg me-2"></i>Apply</button>
+                            <template v-if="studentStatus=='blacklisted'">
+                                <p>Your account is currently <code class="text-danger fw-bold">blacklisted</code>. You cannot make new applications.</p>
                             </template>
 
                             <template v-else>
-                                <p>Unfortunately, you do not meet the minimum CGPA required for this position ({{ position.min_cgpa }}). You cannot apply.</p>
-                                <button type="button" class="btn btn-sm btn-success" disabled><i class="bi bi-plus-lg me-2"></i>Apply</button>
+                                <template v-if="studentCgpa >= position.min_cgpa">
+                                    <p>You don't have any pending applications for this position. Would you like to submit an application?</p>
+                                    <button type="button" class="btn btn-sm btn-success" @click="postApplication"><i class="bi bi-plus-lg me-2"></i>Apply</button>
+                                </template>
+
+                                <template v-else>
+                                    <p>Unfortunately, you do not meet the minimum CGPA required for this position ({{ position.min_cgpa }}). You cannot apply.</p>
+                                    <button type="button" class="btn btn-sm btn-success" disabled><i class="bi bi-plus-lg me-2"></i>Apply</button>
+                                </template>
                             </template>
                         </template>
 

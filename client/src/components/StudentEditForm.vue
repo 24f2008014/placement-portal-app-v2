@@ -21,6 +21,7 @@ const resumeUrl = ref();
 const departments = ref("");
 const branches = ref("");
 const updateSuccessful = ref(false);
+const minGraduationYear = new Date().getFullYear();
 
 const available_branches = computed(() => {
     if (inputDepartment.value != "" && branches.value != "") {
@@ -186,7 +187,7 @@ onMounted(() => {
         <div class="row mb-3">
             <div class="col">
                 <label for="inputGraduationYear" class="form-label">Graduation Year</label>
-                <input class="form-control" type="number" min="2000" max="2099" :class="{ 'is-invalid': errors.graduation_year }" id="inputGraduationYear" v-model="inputGraduationYear" required aria-describedby="inputGraduationYearValidation">
+                <input class="form-control" type="number" :min="minGraduationYear" max="2099" :class="{ 'is-invalid': errors.graduation_year }" id="inputGraduationYear" v-model="inputGraduationYear" required aria-describedby="inputGraduationYearValidation">
                 <div v-if="errors.graduation_year" class="invalid-feedback" id="inputGraduationYearValidation">{{ errors.graduation_year[0] }}</div>
             </div>
             <div class="col">

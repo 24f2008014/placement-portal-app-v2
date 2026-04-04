@@ -43,7 +43,6 @@ async function withdrawApplication() {
         alert.addAlert(`Successfully withdrew your application (#${route.params.id}).`, "success");
     } catch (error) {
         console.error(error);
-        // errors.value = flattenResponse(error.response.data.json.errors);
     }
 }
 
@@ -78,9 +77,9 @@ async function selectApplication() {
             salary: selectSalary.value
         };
         const response = await api.post(`/applications/${route.params.id}/select`, formData);
-        application.value = response.data;
         bootstrap.Modal.getInstance(document.getElementById("selectModal")).hide();
         alert.addAlert(`Successfully selected application (#${route.params.id}).`, "success");
+        router.push({ name: "placement", params: { id: response.data.id } })
     } catch (error) {
         console.error(error);
         errors.value = flattenResponse(error.response.data);

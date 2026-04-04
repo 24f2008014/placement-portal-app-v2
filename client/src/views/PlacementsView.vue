@@ -8,6 +8,7 @@ const positions_fields = {
         name: "id",
         filter: true,
         label: "ID",
+        type: "number",
         input: {
             type: "number",
             min: "1"
@@ -33,6 +34,7 @@ const positions_fields = {
         name: "salary_min",
         filter: true,
         label: "Min. Salary \u2265",
+        type: "number",
         input: {
             type: "number",
             min: "0"
@@ -42,6 +44,7 @@ const positions_fields = {
         name: "salary_max",
         filter: true,
         label: "Max. Salary \u2265",
+        type: "number",
         input: {
             type: "number",
             min: "0"
@@ -50,7 +53,13 @@ const positions_fields = {
     "Min. CGPA": {
         name: "min_cgpa",
         filter: true,
-        label: "Min. CGPA \u2265"
+        label: "Min. CGPA \u2265",
+        type: "number",
+        input: {
+            type: "number",
+            min: "0",
+            max: "10"
+        }
     },
     "Deadline": {
         name: "deadline",

@@ -7,7 +7,6 @@ import * as bootstrap from "bootstrap";
 import { useAlertStore } from "@/stores/alert";
 import { formatDateNoTime } from "@/utils/helpers";
 import Modal from "@/components/Modal.vue";
-import { flattenResponse } from "@/utils/helpers";
 
 const alert = useAlertStore();
 const auth = useAuthStore();
@@ -28,18 +27,6 @@ async function getPlacement() {
     }
 }
 
-async function withdrawPlacement() {
-    try {
-        const response = await api.post(`/placements/${route.params.id}/withdraw`, null);
-        placement.value = response.data;
-        bootstrap.Modal.getInstance(document.getElementById("withdrawPlacementModal")).hide();
-        alert.addAlert(`Successfully withdrawn your placement offer (#${route.params.id}).`, "success");
-    } catch (error) {
-        console.error(error);
-        errors.value = flattenResponse(error.response.data.json.errors);
-    }
-}
-
 async function acceptPlacement() {
     try {
         const response = await api.post(`/placements/${route.params.id}/accept`, null);
@@ -48,7 +35,6 @@ async function acceptPlacement() {
         alert.addAlert(`Successfully accepted placement offer (#${route.params.id}).`, "success");
     } catch (error) {
         console.error(error);
-        errors.value = flattenResponse(error.response.data.json.errors);
     }
 }
 
@@ -60,7 +46,6 @@ async function rejectPlacement() {
         alert.addAlert(`Successfully rejected placement offer (#${route.params.id}).`, "success");
     } catch (error) {
         console.error(error);
-        errors.value = flattenResponse(error.response.data.json.errors);
     }
 }
 
@@ -76,9 +61,7 @@ onMounted(() => {
             <p class="lead text-muted">Placement ID: #{{ route.params.id }}</p>
             <div class="row">
                 <div class="col d-flex gap-2">
-                    <button type="button" class="btn btn-primary btn-sm" @click='router.push({ "name": "application", params: {"id": placement.application_id} })'>
-                        <i class="bi bi-arrow-left me-2"></i>Application
-                    </button>
+                    <button type="button" class="btn btn-primary btn-sm" @click='router.push({ "name": "application", params: {"id": placement.application_id} })'><i class="bi bi-arrow-left me-2"></i>Application</button>
                 </div>
             </div>
         </div>
@@ -145,22 +128,11 @@ onMounted(() => {
                             </Modal>
                         </div>
                     </div>
-
-                    <template v-else-if="auth.currentUser.role=='company'">
-                        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#withdrawModal"><i class="bi bi-x-lg me-2"></i>Withdraw</button>
-                        <Modal :title="'Withdraw Placement Offer'" :id="'withdrawModal'" :yesLabel="'Withdraw'" @confirm="withdrawPlacement">
-                            <template #modal-body>
-                                <p>Are you sure you want to <strong>withdraw</strong> your placement offer? This cannot be undone.</p>
-                            </template>
-                        </Modal>
-                    </template>
                 </template>
 
                 <p v-else-if="placement.status=='accepted'">This placement offer has been <code class="text-success fw-bold">accepted</code> by the student.</p>
 
                 <p v-else-if="placement.status=='rejected'">This placement offer has been <code class="text-danger fw-bold">rejected</code> by the student.</p>
-
-                <p v-else-if="placement.status=='withdrawn'">The placement offer has been <code class="text-danger fw-bold">withdrawn</code> by the company.</p>
             </div>
         </div>
     </template>

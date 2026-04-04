@@ -10,6 +10,7 @@ const taskStore = useTaskStore();
 const auth = useAuthStore();
 const stats = ref({});
 const loading = ref(true);
+const studentStatus = ref();
 
 const positions_endpoint = "/students/me/positions/unapplied";
 const positions_route = "position";
@@ -18,6 +19,7 @@ const positions_fields = {
         name: "id",
         filter: true,
         label: "ID",
+        type: "number",
         input: {
             type: "number",
             min: "1"
@@ -43,6 +45,7 @@ const positions_fields = {
         name: "salary_min",
         filter: true,
         label: "Min. Salary \u2265",
+        type: "number",
         input: {
             type: "number",
             min: "0"
@@ -52,6 +55,7 @@ const positions_fields = {
         name: "salary_max",
         filter: true,
         label: "Max. Salary \u2265",
+        type: "number",
         input: {
             type: "number",
             min: "0"
@@ -61,9 +65,11 @@ const positions_fields = {
         name: "min_cgpa",
         filter: true,
         label: "Min. CGPA \u2265",
+        type: "number",
         input: {
             type: "number",
-            min: "0"
+            min: "0",
+            max: "10"
         }
     },
     "Created At": {
@@ -89,6 +95,7 @@ const my_applications_fields = {
         name: "id",
         filter: true,
         label: "ID",
+        type: "number",
         input: {
             type: "number",
             min: "1"
@@ -96,15 +103,29 @@ const my_applications_fields = {
     },
     "Position ID": {
         name: "position_id",
-        filter: false
-    },    
-    "Position": {
+        filter: true,
+        label: "Position ID",
+        type: "number",
+        input: {
+            type: "number",
+            min: "1"
+        }
+    },
+    "Role": {
         name: "position.role",
-        filter: false
+        filter: true,
+        label: "Role",
+        input: {
+            type: "text"
+        }
     },
     "Company": {
         name: "position.company.name",
-        filter: false
+        filter: true,
+        label: "Company",
+        input: {
+            type: "text"
+        }
     },
     "Date Applied": {
         name: "created_at",
@@ -146,6 +167,7 @@ const placements_fields = {
         name: "id",
         filter: true,
         label: "ID",
+        type: "number",
         input: {
             type: "number",
             min: "1"
@@ -153,6 +175,7 @@ const placements_fields = {
     },
     "Application ID": {
         name: "application_id",
+        type: "number",
         filter: false
     },
     "Position": {
@@ -165,6 +188,7 @@ const placements_fields = {
     },
     "Salary": {
         name: "salary",
+        type: "number",
         filter: false
     },
     "Joining Date": {
@@ -196,8 +220,10 @@ const placements_fields = {
 
 async function getStats() {
     try {
-        const response = await api.get("/students/me/stats");
-        stats.value = response.data;
+        const response_status = await api.get("/students/me");
+        studentStatus.value = response_status.data.status;
+        const response_stats = await api.get("/students/me/stats");
+        stats.value = response_stats.data;
         loading.value = false;
     } catch (error) {
         console.error(error);
@@ -208,6 +234,7 @@ async function getReminder() {
     try {
         const response = await api.get("/students/me/reminder");
         console.log(response.data);
+        alert.addAlert("Email reminder sent.", "success");
     } catch (error) {
         console.error(error);
     }
@@ -227,15 +254,14 @@ onMounted(() => {
             <h6 class="display-6">Student Dashboard</h6>
             <p class="lead text-muted">Welcome back, {{ auth.currentUser.name }}! See everything at a glance here.</p>
         </div>
-        <div class="row d-flex">
-            <div class="col">
-                <button @click="taskStore.exportCsv" type="button" class="btn btn-sm btn-success mb-3"><i class="bi bi-download me-2"></i>Download Application History</button>
+        <div class="row mb-2">
+            <div class="col d-flex gap-3">
+                <button @click="taskStore.exportCsv" type="button" class="btn btn-sm btn-success"><i class="bi bi-download me-2"></i>Download Application History</button>
+                <button type="button" class="btn btn-sm btn-success" @click="getReminder"><i class="bi bi-envelope-fill me-2"></i>Email Upcoming Interviews</button>
             </div>
         </div>        
     </div>
     <hr class="mb-4">
-
-    <button type="button" class="btn btn-sm btn-success mb-4" @click="getReminder">Email Upcoming Interviews</button>
 
     <template v-if="!loading">
         <div class="row">
@@ -249,20 +275,31 @@ onMounted(() => {
                 <p v-else>None.</p>
             </div>
         </div>
-        <hr class="mb-4">
 
+        <hr class="mb-4">
+        <div class="row mb-4">
+            <div class="col" v-if="studentStatus=='blacklisted'">
+                <h4>Status: <code class="text-danger fw-bold">blacklisted</code></h4>
+                <p>Your account has been blacklisted. You cannot apply to new positions.</p>
+            </div>
+            <div class="col" v-else>
+                <h4>Status: <code class="text-success fw-bold">whitelisted</code></h4>
+                <p>Your account is whitelisted. You can freely apply to new positions.</p>
+            </div>
+        </div>
+        
         <div class="row">
             <div class="col">
                 <ul class="nav nav-tabs" id="myTab" role="tablist">
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="applications-tab" data-bs-toggle="tab" data-bs-target="#applications-tab-pane" type="button" role="tab" aria-controls="applications-tab-pane" aria-selected="true">Your Applications ({{ stats.num_applications }})</button>
+                        <button class="nav-link active" id="applications-tab" data-bs-toggle="tab" data-bs-target="#applications-tab-pane" type="button" role="tab" aria-controls="applications-tab-pane" aria-selected="true">Applications ({{ stats.num_applications }})</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="placements-tab" data-bs-toggle="tab" data-bs-target="#placements-tab-pane" type="button" role="tab" aria-controls="placements-tab-pane" aria-selected="false">Placements ({{ stats.num_placements }})</button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="positions-tab" data-bs-toggle="tab" data-bs-target="#positions-tab-pane" type="button" role="tab" aria-controls="positions-tab-pane" aria-selected="false">Positions</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="placements-tab" data-bs-toggle="tab" data-bs-target="#placements-tab-pane" type="button" role="tab" aria-controls="placements-tab-pane" aria-selected="false">Placements</button>
-                    </li>
+                    </li>                    
                 </ul>
             </div>
 
@@ -270,7 +307,7 @@ onMounted(() => {
                 <div class="tab-pane fade show active" id="applications-tab-pane" role="tabpanel" aria-labelledby="applications-tab" tabindex="0">
                     <div class="row mt-3">
                         <div class="col">
-                            <h4 class="mb-3">Students</h4>
+                            <h4 class="mb-3">Your Applications</h4>
                             <PaginatedTable :url="my_applications_endpoint" :fields="my_applications_fields" :item_route_name="my_applications_route" />
                         </div>
                     </div>
@@ -295,4 +332,5 @@ onMounted(() => {
             </div>
         </div>
     </template>
+    <template v-else><div class="spinner-border spinner-border-sm text-center ms-1"></div></template>
 </template>
