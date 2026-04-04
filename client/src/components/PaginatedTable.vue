@@ -5,7 +5,7 @@ import { useRouter } from "vue-router";
 import { flattenResponse, flattenResponsePrefixed } from "@/utils/helpers";
 import { formatDate } from "@/utils/helpers";
 
-const props = defineProps(["url", "fields", "item_route_name"]);
+const props = defineProps(["url", "fields", "item_route_name", "initialFilters"]);
 const errors = ref({});
 const paginatedData = ref();
 const pagination = ref({});
@@ -53,6 +53,11 @@ const filters = reactive({
 async function getPaginatedData(url, params=null, filters=null) {
     errors.value = {};
     let fetchUrl = url;
+    if (props.initialFilters) {
+        for (const [k, v] of Object.entries(props.initialFilters)) {
+            filters[k] = v;
+        }
+    }
     if (params) {
         fetchUrl = `${url}?sort_by=${params.sort_by}&sort_dir=${params.sort_dir}`;
         if (Object.keys(filters).length!=0) {
@@ -157,7 +162,7 @@ onMounted(() => {
                 :key="i.id"
                 @click='router.push({ name: props.item_route_name, params: { "id": `${i.id}`} })'
             >
-                 <td v-for="f in Object.values(props.fields)" :class="{ 'text-end': f.type=='number' }">
+                <td v-for="f in Object.values(props.fields)">
                     <template v-if="f.type=='date'">
                         {{ i[f.name] ? formatDate(flattenResponsePrefixed(i)[f.name]) : "N/A" }}
                     </template>
