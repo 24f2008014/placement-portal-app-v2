@@ -141,12 +141,14 @@ def get_position(id):
 @authenticate(token_auth, role=["company", "admin"])
 @arguments(ListQueryArgsSchema())
 @response(PaginatedCollection(ApplicationSchema()))
-def get_applications(args, id):
+def get_position_applications(args, id):
     """Get all applications for a position"""
     position = db.get_or_404(Position, id)
-    if token_auth.current_user().company and token_auth.current_user().company != position.company:
-        abort(403)
-    query = db.session.query(Application).where(Application.position == position)
+    query = db.session.query(Application).filter(Application.position == position)
+    if token_auth.current_user().company:
+        if token_auth.current_user().company != position.company:
+            abort(403)
+        query = query.filter(Application.status != "withdrawn")
     items, pagination = paginate_query(
         query=query,
         model=Application,
@@ -160,9 +162,36 @@ def get_applications(args, id):
             "status": "equals"
         },
         allowed_sort={"id", "student_id", "created_at", "updated_at", "placement_count", "status"},      
-        endpoint="main.get_applications"
+        endpoint="main.get_position_applications"
     )
-    print(items)
+    return { "pagination": pagination, "data": items }, 200
+
+@main.route("/positions/<int:id>/placements", methods=["GET"])
+@authenticate(token_auth, role=["company", "admin"])
+@arguments(ListQueryArgsSchema())
+@response(PaginatedCollection(PlacementSchema()))
+def get_position_placements(args, id):
+    """Get all placements for a position"""
+    position = db.get_or_404(Position, id)
+    if token_auth.current_user().company and token_auth.current_user().company != position.company:
+        abort(403)
+    query = db.session.query(Placement).join(Application).filter(Application.position == position)
+    items, pagination = paginate_query(
+        query=query,
+        model=Placement,
+        args=args,
+        allowed_filters={
+            "id": "equals",
+            "application_id": "equals",
+            "application.student_id": "equals",
+            "joining_date": "gt",
+            "salary": "gt",
+            "created_at": "gt",
+            "status": "equals"
+        },
+        allowed_sort={"id", "application_id", "application.student_id", "joining_date", "salary", "created_at", "status"},    
+        endpoint="main.get_position_placements"
+    )
     return { "pagination": pagination, "data": items }, 200
 
 @main.route("/companies/<int:id>/positions", methods=["GET"])
