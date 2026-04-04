@@ -78,10 +78,11 @@ async function selectApplication() {
         };
         const response = await api.post(`/applications/${route.params.id}/select`, formData);
         bootstrap.Modal.getInstance(document.getElementById("selectModal")).hide();
-        alert.addAlert(`Successfully selected application (#${route.params.id}).`, "success");
+        alert.addAlert(`Successfully made placement offer application (#${route.params.id}).`, "success");
         router.push({ name: "placement", params: { id: response.data.id } })
     } catch (error) {
         console.error(error);
+        alert.addAlert(error.response.data.description, "error");
         errors.value = flattenResponse(error.response.data);
     }
 }
@@ -190,20 +191,32 @@ onMounted(() => {
                 </template>
             </Modal>
 
-            <Modal :title="'Shortlist Application'" :id="'shortlistModal'" :yesLabel="'Shortlist'" @confirm="shortlistApplication">
-                <template #modal-body>
-                    <p>Would you like to <strong>shortlist</strong> this student's application (#{{ $route.params.id }}) for an interview?</p>
-                    <form>
-                        <div class="row mb-3">
-                            <div class="col">
-                                <label for="shortlistInterviewDate" class="form-label"><strong>Interview date</strong></label>
-                                <input class="form-control" type="datetime-local" :class="{ 'is-invalid': errors.interview_date } "id="shortlistInterviewDate" v-model="shortlistInterviewDate" required aria-describedby="inputDeadlineValidation" :min="minDate">
-                                <div v-if="errors.interview_date" class="invalid-feedback" id="shortlistInterviewDateValidation">{{ errors.interview_date[0] }}</div>
-                            </div>
+            <div class="modal fade" tabindex="-1" id="shortlistModal">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Shortlist Application</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
-                    </form>
-                </template>
-            </Modal>
+                        <form @submit.prevent="shortlistApplication">
+                            <div class="modal-body">
+                                <p>Would you like to <strong>shortlist</strong> this student's application (#{{ $route.params.id }}) for an interview?</p>
+                                <div class="row mb-3">
+                                    <div class="col">
+                                        <label for="shortlistInterviewDate" class="form-label"><strong>Interview date</strong></label>
+                                        <input class="form-control" type="datetime-local" :class="{ 'is-invalid': errors.interview_date } "id="shortlistInterviewDate" v-model="shortlistInterviewDate" required aria-describedby="inputDeadlineValidation" :min="minDate">
+                                        <div v-if="errors.interview_date" class="invalid-feedback" id="shortlistInterviewDateValidation">{{ errors.interview_date[0] }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-primary btn-sm">Submit</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
 
             <Modal :title="'Reject Application'" :id="'rejectModal'" :yesLabel="'Reject'" @confirm="rejectApplication">
                 <template #modal-body>
@@ -220,25 +233,37 @@ onMounted(() => {
                 </template>
             </Modal>
 
-            <Modal :title="'Select Application'" :id="'selectModal'" :yesLabel="'Select'" @confirm="selectApplication">
-                <template #modal-body>
-                    <p>Would you like to <strong>select</strong> this student's application (#{{ $route.params.id }}) and make them a placement offer?</p>
-                    <form>
-                        <div class="row mb-3">
-                            <div class="col">
-                                <label for="selectJoiningDate" class="form-label"><strong>Joining Date</strong></label>
-                                <input class="form-control" type="date" :class="{ 'is-invalid': errors.joining_date }"id="selectJoiningDate" v-model="selectJoiningDate" required aria-describedby="selectJoiningDateValidation" :min="minDate">
-                                <div v-if="errors.joining_date" class="invalid-feedback" id="selectJoiningDateValidation">{{ errors.joining_date[0] }}</div>
-                            </div>
-                            <div class="col">
-                                <label for="selectSalary" class="form-label"><strong>Salary Offer</strong></label>
-                                <input class="form-control" type="number" :class="{ 'is-invalid': errors.salary }"id="selectSalary" v-model="selectSalary" required aria-describedby="selectSalaryValidation" min=0>
-                                <div v-if="errors.salary" class="invalid-feedback" id="selectSalaryValidation">{{ errors.salary[0] }}</div>
-                            </div>
+            <div class="modal fade" tabindex="-1" id="selectModal">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Select Application</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
-                    </form>
-                </template>
-            </Modal>
+                        <form @submit.prevent="selectApplication">
+                            <div class="modal-body">
+                                <p>Would you like to <strong>select</strong> this student's application (#{{ $route.params.id }}) and make them a placement offer?</p>
+                                <div class="row mb-3">
+                                    <div class="col">
+                                        <label for="selectJoiningDate" class="form-label"><strong>Joining Date</strong></label>
+                                        <input class="form-control" type="date" :class="{ 'is-invalid': errors.joining_date }"id="selectJoiningDate" v-model="selectJoiningDate" required aria-describedby="selectJoiningDateValidation" :min="now.toISOString().slice(0,10)">
+                                        <div v-if="errors.joining_date" class="invalid-feedback" id="selectJoiningDateValidation">{{ errors.joining_date[0] }}</div>
+                                    </div>
+                                    <div class="col">
+                                        <label for="selectSalary" class="form-label"><strong>Salary (Min: {{ application.position.salary_min }})</strong></label>
+                                        <input class="form-control" type="number" :class="{ 'is-invalid': errors.salary }" id="selectSalary" v-model="selectSalary" required aria-describedby="selectSalaryValidation" :min="application.position.salary_min">
+                                        <div v-if="errors.salary" class="invalid-feedback" id="selectSalaryValidation">{{ errors.salary[0] }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-primary btn-sm">Submit</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
     </template>
 </template>
