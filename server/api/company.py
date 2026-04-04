@@ -16,7 +16,7 @@ def get_company_stats():
     """Get company dashboard stats"""
     company = token_auth.current_user().company
     num_positions = db.session.scalar(db.select(func.count()).select_from(Position).where(Position.company == company))
-    num_applications = db.session.scalar(db.select(func.count()).select_from(Application).join(Position).where(Position.company == company))
+    num_applications = db.session.scalar(db.select(func.count()).select_from(Application).join(Position).filter(Position.company == company, Application.status != "withdrawn"))
     num_placements = db.session.scalar(db.select(func.count()).select_from(Placement).join(Application).join(Position).where(Position.company == company))
     upcoming_interviews = db.session.scalars(
         db.select(Application)
@@ -60,6 +60,9 @@ def change_position_status(data, id):
     position = db.get_or_404(Position, id)
     if token_auth.current_user().company and token_auth.current_user().company != position.company:
         abort(403)
+    if (data["status"] == "open") & (position.status == "closed"):
+        if datetime.now() > position.deadline:
+            abort(403, "Can't re-open a position after the deadline has passed.")
     position.update(data)
     db.session.commit()
     return position
@@ -100,7 +103,7 @@ def get_company_positions(args):
 def get_company_applications(args):
     """Get applications for your positions"""
     company = token_auth.current_user().company
-    query = db.session.query(Application).join(Position).filter(Position.company == company)
+    query = db.session.query(Application).join(Position).filter(Position.company == company, Application.status != "withdrawn")
     items, pagination = paginate_query(
         query=query,
         model=Application,
@@ -193,6 +196,9 @@ def select_application(data, id):
         abort(403)
     if application.status != "shortlisted":
         abort(403)
+    min_salary = db.session.scalar(db.select(Position.salary_min).join(Application).filter(Application.id == id))
+    if data["salary"] < min_salary:
+        abort(400, "Salary lower than min_salary.")
     application.status = "selected"
     application.updated_at = datetime.now(timezone.utc)
     placement = Placement(application=application, **data)
