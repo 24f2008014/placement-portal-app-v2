@@ -86,7 +86,7 @@ def refresh():
     print("[Refresh]: Cookie received.")
     # old_token = db.session.execute(db.select(RefreshToken).where(RefreshToken.token_hash == hash)).scalar()
     old_token = db.session.scalar(db.select(RefreshToken).where(RefreshToken.token_hash == hash_token(raw)))
-    if not old_token.is_valid:
+    if not old_token or not old_token.is_valid:
         abort(401)
     if old_token.is_revoked:
         abort(401)
