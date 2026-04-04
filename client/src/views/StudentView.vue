@@ -184,7 +184,62 @@ const placements_fields = {
 };
 
 const company_applications_endpoint = "/companies/me/applications";
-const company_applications_filters = {student_id: `${route.params.id}`};
+const companyApplicationsFilters = {
+    "student_id": route.params.id
+};
+const company_applications_fields = {
+    "ID": {
+        name: "id",
+        filter: true,
+        label: "ID",
+        input: {
+            type: "number",
+            min: "1"
+        }
+    },
+    "Position ID": {
+        name: "position_id",
+        filter: true,
+        label: "Position ID",
+        input: {
+            type: "number",
+            min: "1"
+        }        
+    },    
+    "Role": {
+        name: "position.role",
+        filter: true,
+        label: "Role",
+        input: {
+            type: "text"
+        }        
+    },
+    "Created At": {
+        name: "created_at",
+        filter: false,
+        type: "date"
+    },
+    "Updated At": {
+        name: "updated_at",
+        filter: false,
+        type: "date"
+    },
+    "Status": {
+        name: "status",
+        filter: true,
+        label: "Status",
+        type: "select",
+        input: {
+            type: "select",
+            options: [
+                {label: "Pending", value: "pending"},
+                {label: "Shortlisted", value: "shortlisted"},
+                {label: "Selected", value: "selected"},
+                {label: "Rejected", value: "rejected"}
+            ]
+        }
+    }
+};
 
 onMounted(() => {
     getDepartments();
@@ -300,10 +355,10 @@ onMounted(() => {
             <hr class="mb-4">
             <div class="row mb-4">
                 <div class="col">
-                    <h3 class="mb-3">Applications</h3>
+                    <h3 class="mb-3">Applications to Your Company</h3>
                     <template v-if="!loading">
                         <div class="col">
-                            <PaginatedTable :url="company_applications_endpoint" :fields="applications_fields" :item_route_name="applications_route" />
+                            <PaginatedTable :url="company_applications_endpoint" :fields="company_applications_fields" :item_route_name="applications_route" :initial-filters="companyApplicationsFilters" />
                         </div>
                     </template>
                     <div v-else>Loading...</div>
