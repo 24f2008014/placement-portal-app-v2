@@ -25,9 +25,9 @@
                 {% for i in interviews %}
                 <tr>
                     <td>{{ i.company }}</td>
-                    <td>{{ i.interview_date }}</td>
+                    <td>{{ i.interview_date.strftime("%a %B %d, %Y, %I:%M%p") }}</td>
                     <td>{{ i.position }}</td>
-                    <td>{{ i.application_date }}</td>
+                    <td>{{ i.application_date.strftime("%a %B %d, %Y, %I:%M%p") }}</td>
                 </tr>
                 {% endfor %}
             </tbody>

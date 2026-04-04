@@ -2,7 +2,7 @@ Dear {{ name }},
 
 This is a gentle reminder that you have the following interviews coming up:
 {% for i in interviews %}
-- With the company {{ i.company }} on {{ i.interview_date }} for the position of {{ i.position }} (you applied on {{ i.application_date }})
+- With the company {{ i.company }} on {{ i.interview_date.strftime("%a %B %d, %Y, %I:%M%p") }} for the position of {{ i.position }} (you applied on {{ i.application_date.strftime("%a %B %d, %Y, %I:%M%p") }})
 {% endfor %}
 Please coordinate with the respective company/companies and ensure you attend your interviews without fail. Thank you.
 
