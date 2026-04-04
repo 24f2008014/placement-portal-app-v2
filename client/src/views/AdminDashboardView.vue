@@ -462,16 +462,21 @@ onMounted(() => {
     <template v-if="!loading">
         <div class="row">
             <div class="col">
-                <ul>
-                    <template v-if="stats.num_companies_pending > 0">
-                        <li><strong>Companies pending approval</strong> ({{ stats.num_companies_pending }}):</li>
-                        <ul>
-                            <li v-for="c in stats.companies_pending.slice(0, 10)">
-                                <RouterLink :to="{name: 'company', params: { id: c.id } }">{{ c.name }} (#{{ c.id }})</RouterLink>
-                            </li>
-                        </ul>
-                    </template>
-                    <li v-else><strong>Companies pending approval:</strong> None</li>
+                <ul v-if="stats.num_companies_pending > 0">
+                    <li><strong>Companies pending approval</strong> ({{ stats.num_companies_pending }}):</li>
+                    <ul>
+                        <li v-for="c in stats.companies_pending.slice(0, 10)">
+                            <RouterLink :to="{ name: 'company', params: { id: c.id } }">{{ c.name }} (#{{ c.id }})</RouterLink>
+                        </li>
+                    </ul>
+                </ul>
+                <ul v-if="stats.num_positions_pending > 0">
+                    <li><strong>Positions pending approval</strong> ({{ stats.num_positions_pending }}):</li>
+                    <ul>
+                        <li v-for="p in stats.positions_pending.slice(0, 10)">
+                            <RouterLink :to="{ name: 'position', params: { id: p.id } }">{{ p.role }} (#{{ p.id }})</RouterLink>
+                        </li>
+                    </ul>
                 </ul>
             </div>
         </div>

@@ -248,8 +248,7 @@ const applications_fields = {
                 {label: "Pending", value: "pending"},
                 {label: "Shortlisted", value: "shortlisted"},
                 {label: "Selected", value: "selected"},
-                {label: "Rejected", value: "rejected"},
-                {label: "Withdrawn", value: "withdrawn"}
+                {label: "Rejected", value: "rejected"}
             ]
         }
     }

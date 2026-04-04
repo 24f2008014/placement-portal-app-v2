@@ -2,10 +2,12 @@
 import { onMounted, ref, computed } from "vue";
 import { api } from "@/utils/api";
 import { useRouter } from "vue-router";
-import { markRequiredFields, flattenResponse } from "@/utils/helpers";
+import { markRequiredFields } from "@/utils/helpers";
+import { useAlertStore } from "@/stores/alert";
 
 const router = useRouter();
 const errors = ref({});
+const alert = useAlertStore();
 
 const inputEmail = ref();
 const inputPassword = ref();
@@ -37,9 +39,8 @@ async function getDepartments() {
     try {
         const response = await api.get("/departments");
         departments.value = response.data;
-    }
-    catch (error) {
-        console.log(error);
+    } catch (error) {
+        console.error(error);
     }
 };
 
@@ -47,9 +48,8 @@ async function getBranches() {
     try {
         const response = await api.get("/branches");
         branches.value = response.data;
-    }
-    catch (error) {
-        console.log(error);
+    } catch (error) {
+        console.error(error);
     }
 };
 
@@ -66,7 +66,6 @@ async function submitForm() {
                 last_name: inputLastName.value,
                 date_of_birth: inputDateOfBirth.value,
                 gender: inputGender.value,
-                // department_id: inputDepartment.value,
                 branch_id: inputBranch.value,
                 graduation_year: inputGraduationYear.value,
                 cgpa: inputCgpa.value
@@ -78,9 +77,6 @@ async function submitForm() {
     }
     catch (error) {
         console.error(error);
-        // if ("errors" in error.response.data) {
-        //     errors.value = flattenResponse(error.response.data.errors.json)
-        // }
     }
 };
 
@@ -94,7 +90,7 @@ onMounted(() => {
 <template>
     <h3 class="display-6">Student Registration Form</h3>
     <hr class="mb-4">
-    <!-- <div>{{ errors }}</div> -->
+
     <form class="border px-3 py-3 needs-validation" @submit.prevent="submitForm">
         <div class="mb-3">
             <label for="inputEmail" class="form-label">Email address</label>
@@ -177,7 +173,7 @@ onMounted(() => {
             </div>
             <div class="col">
                 <label for="inputCgpa" class="form-label">Current CGPA</label>
-                <input type="number" class="form-control" id="inputCgpa" :class="{ 'is-invalid': errors.cgpa }" v-model="inputCgpa" min="0" max="10" required aria-describedby="inputCgpaValidation">
+                <input type="number" step="0.01" class="form-control" id="inputCgpa" :class="{ 'is-invalid': errors.cgpa }" v-model="inputCgpa" min="0" max="10" required aria-describedby="inputCgpaValidation">
                 <div v-if="errors.cgpa" class="invalid-feedback" id="inputCgpaValidation">{{ errors.cgpa[0] }}</div>
             </div>
         </div>

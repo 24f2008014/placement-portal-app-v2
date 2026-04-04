@@ -25,7 +25,7 @@ function getDaysUntil(d) {
             <p v-else class="lead text-muted">@ {{ props.position.company.name }}</p>
 
             <div class="row row-cols-1 mb-3">
-                <div class="col"><p class="lead mb-1"><i class="bi bi-currency-rupee me-2"></i>{{ props.position.salary_min }}&ndash;{{ props.position.salary_max }} <span class="text-muted">(monthly)</span></p></div>
+                <div class="col"><p class="lead mb-1"><i class="bi bi-currency-rupee me-2"></i>{{ props.position.salary_min.toLocaleString("en-US") }}&ndash;{{ props.position.salary_max.toLocaleString("en-US") }} <span class="text-muted">(monthly)</span></p></div>
                 <div class="col"><p class="lead mb-1"><i class="bi bi-geo-alt-fill me-2"></i>{{ props.position.company.location }}</p></div>
             </div>
 

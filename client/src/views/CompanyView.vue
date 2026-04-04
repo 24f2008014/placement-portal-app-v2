@@ -94,6 +94,11 @@ const positions_fields = {
             type: "datetime-local"
         }
     },
+    "Application Count": {
+        name: "application_count",
+        filter: false,
+        type: "number"
+    },
     "Approved": {
         name: "is_approved",
         filter: true,
@@ -106,11 +111,6 @@ const positions_fields = {
                 {label: "False", value: false}
             ]
         }
-    },    
-    "Application Count": {
-        name: "application_count",
-        filter: false,
-        type: "number"
     },
     "Status": {
         name: "status",

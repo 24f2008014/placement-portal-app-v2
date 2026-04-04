@@ -5,8 +5,10 @@ import PaginatedTable from "@/components/PaginatedTable.vue";
 import { api } from "@/utils/api";
 import { useTaskStore } from "@/stores/tasks";
 import { formatDate } from "@/utils/helpers";
+import { useAlertStore } from "@/stores/alert";
 
 const taskStore = useTaskStore();
+const alert = useAlertStore();
 const auth = useAuthStore();
 const stats = ref({});
 const loading = ref(true);

@@ -87,14 +87,14 @@ onMounted(() => {
         <div class="row mb-3">
             <div class="col">
                 <label for="inputMinCgpa" class="form-label">Minimum CGPA</label>
-                <input type="number" class="form-control" id="inputMinCgpa" :class="{ 'is-invalid': errors.min_cgpa }" v-model="inputMinCgpa" min="0" max="10" required aria-describedby="inputMinCgpaValidation">
+                <input type="number" step="0.01" class="form-control" id="inputMinCgpa" :class="{ 'is-invalid': errors.min_cgpa }" v-model="inputMinCgpa" min="0" max="10" required aria-describedby="inputMinCgpaValidation">
                 <div v-if="errors.min_cgpa" class="invalid-feedback" id="inputMinCgpaValidation">{{ errors.min_cgpa[0] }}</div>
             </div>
             <div class="col">
                 <label for="inputDeadline" class="form-label">Deadline</label>
-                <input class="form-control" type="datetime-local" :class="{ 'is-invalid': errors.deadline }"id="inputDeadline" v-model="inputDeadline" required aria-describedby="inputDeadlineValidation">
+                <input class="form-control" type="datetime-local" :class="{ 'is-invalid': errors.deadline }"id="inputDeadline" v-model="inputDeadline" required aria-describedby="inputDeadlineValidation" :min="new Date().toISOString().slice(0, 16)">
                 <div v-if="errors.deadline" class="invalid-feedback" id="inputDeadlineValidation">{{ errors.deadline[0] }}</div>
-            </div>            
+            </div>
         </div>
 
         <div class="mb-3">

@@ -47,13 +47,12 @@ async function submitForm() {
             }
         }
         const response = await api.post("/register", formData);
-        updateSuccessful.value = true;
         alert.addAlert("Account successfully created.", "success");
         router.push({ name: "login" });
     }
     catch (error) {
-        console.log(error);
-        if ("errors" in error.response.data) {
+        console.error(error);
+        if (error.response.data && "errors" in error.response.data) {
             errors.value = flattenResponse(error.response.data.errors.json)
         }
     }

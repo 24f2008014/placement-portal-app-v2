@@ -192,7 +192,7 @@ onMounted(() => {
             </div>
             <div class="col">
                 <label for="inputCgpa" class="form-label">Current CGPA</label>
-                <input type="number" class="form-control" id="inputCgpa" :class="{ 'is-invalid': errors.cgpa }" v-model="inputCgpa" min="0" max="10" required aria-describedby="inputCgpaValidation">
+                <input type="number" step="0.01" class="form-control" id="inputCgpa" :class="{ 'is-invalid': errors.cgpa }" v-model="inputCgpa" min="0" max="10" required aria-describedby="inputCgpaValidation">
                 <div v-if="errors.cgpa" class="invalid-feedback" id="inputCgpaValidation">{{ errors.cgpa[0] }}</div>
             </div>
         </div>
