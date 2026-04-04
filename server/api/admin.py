@@ -4,7 +4,7 @@ from sqlalchemy import func
 from datetime import datetime
 from api.app import db, cache
 from api.auth import token_auth
-from api.schemas import StudentSchema, CompanySchema, paginate_query, ListQueryArgsSchema, PaginatedCollection, ApplicationSchema, AdminStatsSchema, PlacementSchema
+from api.schemas import StudentSchema, CompanySchema, paginate_query, ListQueryArgsSchema, PaginatedCollection, ApplicationSchema, AdminStatsSchema, PlacementSchema, PositionSchema
 from api.models import Student, Position, Application, Placement, Company, User
 from api.tasks import monthly_report
 
@@ -32,10 +32,12 @@ def get_stats():
     num_students = db.session.scalar(db.select(func.count()).select_from(Student))
     num_companies = db.session.scalar(db.select(func.count()).select_from(Company))
     num_companies_pending = db.session.scalar(db.select(func.count()).select_from(Company).filter(Company.status == "pending"))
+    num_positions_pending = db.session.scalar(db.select(func.count()).select_from(Position).filter(Position.is_approved == False))
     num_positions = db.session.scalar(db.select(func.count()).select_from(Position))
     num_applications = db.session.scalar(db.select(func.count()).select_from(Application))
     num_placements = db.session.scalar(db.select(func.count()).select_from(Placement))
-    companies_pending = db.session.scalars(db.select(Company).filter(Company.status == "pending"))    
+    companies_pending = db.session.scalars(db.select(Company).filter(Company.status == "pending"))
+    positions_pending = db.session.scalars(db.select(Position).filter(Position.is_approved == False))
     return {
         "num_students": num_students,
         "num_companies": num_companies,
@@ -43,7 +45,9 @@ def get_stats():
         "companies_pending": companies_pending,
         "num_positions": num_positions,
         "num_applications": num_applications,
-        "num_placements": num_placements
+        "num_placements": num_placements,
+        "positions_pending": positions_pending,
+        "num_positions_pending": num_positions_pending
     }
 
 @admin.route("/students", methods=["GET"])
@@ -199,3 +203,15 @@ def get_placements(args):
         endpoint="admin.get_placements"
     )
     return { "pagination": pagination, "data": items }, 200
+
+@admin.route("/positions/<int:id>/whitelist", methods=["POST"])
+@authenticate(token_auth, role=["admin"])
+@response(PositionSchema())
+def change_position_status(id):
+    """Whitelist a position"""
+    position = db.get_or_404(Position, id)
+    if position.is_approved == True:
+        abort(403, f"Position #{id} is already approved by an administrator.")
+    position.is_approved = True
+    db.session.commit()
+    return position
