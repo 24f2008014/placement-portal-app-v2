@@ -358,7 +358,7 @@ class ApplicationSchema(ma.SQLAlchemyAutoSchema):
     position_id = auto_field(dump_only=True)
     status = auto_field(validate=validate.OneOf(["pending", "shortlisted", "selected", "rejected", "withdrawn"]))
     student = fields.Nested(StudentSchema, only=("id", "first_name", "last_name", "roll_number", "resume_url"), dump_only=True)
-    position = fields.Nested(PositionSchema, only=("id", "role", "company_id", "company.name", "company.contact_email"), dump_only=True)
+    position = fields.Nested(PositionSchema, only=("id", "role", "company_id", "company.name", "company.contact_email", "salary_min"), dump_only=True)
     placements = fields.Nested("PlacementSchema", only=("id", "status"), many=True)
     placement_count = auto_field(dump_only=True)
 
@@ -395,9 +395,10 @@ class PlacementSchema(ma.SQLAlchemyAutoSchema):
     
     id = auto_field(dump_only=True)
     application_id = auto_field(dump_only=True)
-    salary = auto_field(validate=validate.Range(min=0))
+    salary = auto_field(validate=validate.Range(min=0), required=True)
     status = auto_field(validate=validate.OneOf(["pending", "accepted", "rejected", "withdrawn"]))
     application = fields.Nested(ApplicationSchema, only=("id", "position.role", "position.company.name", "position.company.id", "position.id", "student.first_name", "student.last_name", "student.roll_number", "student.id"), dump_only=True)
+    joining_date = auto_field(required=True)
 
     @pre_load
     def fix_dates(self, data, **kwargs):
@@ -407,11 +408,18 @@ class PlacementSchema(ma.SQLAlchemyAutoSchema):
                 dt = to_utc(data[f])
                 data[f] = dt
         return data
-
+    
+    @validates("salary")
+    def validates_salary(self, value, **kwargs):
+        if not value or value is None:
+            raise ValidationError("Salary is required.")
+    
     @validates("joining_date")
     def validate_joining_date(self, value, **kwargs):
-        if value < datetime.now():
-            raise ValidationError("Deadline cannot be in the past.")
+        if not value or value is None:
+            raise ValidationError("Joining date is required.")
+        if value and value < datetime.now():
+            raise ValidationError("Joining date cannot be in the past.")
 
     @pre_dump
     def dt_to_local(self, data, **kwargs):
@@ -427,10 +435,12 @@ class AdminStatsSchema(ma.Schema):
     num_students = fields.Integer()
     num_companies = fields.Integer()
     num_companies_pending = fields.Integer()
+    num_positions_pending = fields.Integer()
     companies_pending = fields.Nested(CompanySchema, only=("id", "name",), many=True, dump_only=True)
     num_positions = fields.Integer()
     num_applications = fields.Integer()
     num_placements = fields.Integer()
+    positions_pending = fields.Nested(PositionSchema, only=("id", "role",), many=True, dump_only=True)
 
 class StudentStatsSchema(ma.Schema):
     num_applications = fields.Integer()
