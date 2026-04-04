@@ -211,8 +211,7 @@ const placements_fields = {
             options: [
                 {label: "Pending", value: "pending"},
                 {label: "Accepted", value: "accepted"},
-                {label: "Rejected", value: "rejected"},
-                {label: "Withdrawn", value: "withdrawn"}
+                {label: "Rejected", value: "rejected"}
             ]
         }
     }

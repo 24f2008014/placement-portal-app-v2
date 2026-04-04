@@ -216,17 +216,3 @@ def reject_application(data, id):
     application.updated_at = datetime.now(timezone.utc)
     db.session.commit()
     return application
-
-@company.route("/placements/<int:id>/withdraw", methods=["POST"])
-@authenticate(token_auth, role=["company"])
-@response(PlacementSchema())
-def withdraw_placement(id):
-    """Withdraw a placement offer"""
-    placement = db.get_or_404(Placement, id)
-    if token_auth.current_user().company != placement.application.position.company:
-        abort(403)
-    if placement.status != "pending":
-        abort(403)
-    placement.status = "withdrawn"
-    db.session.commit()
-    return placement
