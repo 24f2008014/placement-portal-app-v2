@@ -218,7 +218,7 @@ def reject_application(data, id):
     return application
 
 @company.route("/placements/<int:id>/withdraw", methods=["POST"])
-@authenticate(token_auth, role=["student"])
+@authenticate(token_auth, role=["company"])
 @response(PlacementSchema())
 def withdraw_placement(id):
     """Withdraw a placement offer"""

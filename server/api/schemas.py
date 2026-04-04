@@ -19,7 +19,10 @@ def to_local(dt: datetime):
     return localized_dt
 
 def to_utc(dt):
-    naive_dt = datetime.strptime(dt, '%Y-%m-%dT%H:%M')
+    try:
+        naive_dt = datetime.strptime(dt, "%Y-%m-%dT%H:%M")
+    except ValueError:
+        naive_dt = datetime.strptime(dt, "%Y-%m-%d")
     localized_dt = naive_dt.replace(tzinfo=ZoneInfo("Asia/Kolkata"))
     utc_dt = localized_dt.astimezone(ZoneInfo("UTC"))
     return utc_dt.replace(tzinfo=None) # .isoformat() is a no no
@@ -250,6 +253,11 @@ class StudentSchema(ma.SQLAlchemyAutoSchema):
         if (old_roll_number != value) and db.session.scalar(db.select(Student).where(Student.roll_number == value)):
             raise ValidationError("Roll number in use. Please provide a unique roll number.")
     
+    @validates("graduation_year")
+    def validate_graduation_year(self, value, **kwargs):
+        if datetime.now().year > value:
+            raise ValidationError("Graduation year cannot be in the past.")
+    
     @pre_load
     def check_resume(self, data, **kwargs):
         if "resume" in data and data["resume"].filename.rsplit(".", 1)[1].lower() == "pdf":
@@ -426,6 +434,7 @@ class AdminStatsSchema(ma.Schema):
 
 class StudentStatsSchema(ma.Schema):
     num_applications = fields.Integer()
+    num_placements = fields.Integer()
     upcoming_interviews = fields.Nested(ApplicationSchema, many=True, dump_only=True)
 
 class CompanyStatsSchema(ma.Schema):

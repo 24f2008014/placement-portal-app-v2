@@ -36,6 +36,9 @@ def export_applications():
 def get_student_stats_self():
     """Get student dashboard statistics"""
     student = token_auth.current_user().student
+    num_applications = db.session.scalar(db.select(func.count()).select_from(Application).filter(Application.student_id == student.id))
+    num_placements = db.session.scalar(db.select(func.count()).select_from(Placement).join(Application).filter(Application.student_id == student.id))
+
     upcoming_interviews = db.session.scalars(
         db.select(Application)
         .filter(
@@ -45,7 +48,8 @@ def get_student_stats_self():
         )
     )    
     return {
-        "num_applications": db.session.scalar(db.select(func.count()).select_from(Application).filter(Application.student_id == student.id)),
+        "num_applications": num_applications,
+        "num_placements": num_placements,
         "upcoming_interviews": upcoming_interviews
     }
 
@@ -89,7 +93,7 @@ def get_applications_self(args):
             "placement_count": "gt",
             "status": "equals"
         },
-        allowed_sort={"id", "position_id", "position.role", "position.company.name", "created_at", "updated_at", "placement_count", "status"},
+        allowed_sort={"id", "position_id", "position.role", "position.company.name", "created_at", "updated_at", "placement_count", "interview_date", "status"},
         endpoint="student.get_applications_self"
     )
     return { "pagination": pagination, "data": items }, 200
