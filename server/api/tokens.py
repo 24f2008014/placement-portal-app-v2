@@ -83,21 +83,25 @@ def refresh():
     raw = request.cookies.get("refresh_token")
     if not raw:
         abort(401)
-    print("[Refresh]: Cookie received.")
+    # print("[Refresh]: Cookie received.")
     # old_token = db.session.execute(db.select(RefreshToken).where(RefreshToken.token_hash == hash)).scalar()
     old_token = db.session.scalar(db.select(RefreshToken).where(RefreshToken.token_hash == hash_token(raw)))
     if not old_token or not old_token.is_valid:
         abort(401)
     if old_token.is_revoked:
         abort(401)
-    print("[Refresh]: Received valid refresh token.")
+    # print("[Refresh]: Received valid refresh token.")
     user = db.session.get(User, int(old_token.user_id))
     access_token = generate_access_token(user.id, user.get_roles())
     refresh_token = generate_refresh_token(user.id)
     old_token.is_revoked = True
     db.session.commit()
-    name = user.student.first_name if "student" in user.get_roles() else ""
-    print("[Refresh]: Sending new tokens.")
+    name = ""
+    if "student" in user.get_roles():
+        name = user.student.first_name
+    elif "company" in user.get_roles():
+        name = user.company.name
+    # print("[Refresh]: Sending new tokens.")
     return token_response(access_token, refresh_token, name)
 
 @tokens.route("/tokens/revoke", methods=["POST"])
