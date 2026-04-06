@@ -129,7 +129,9 @@ def create_application(id):
     
     # Student must meet eligibility criteria
     if student.cgpa < position.min_cgpa:
-        abort(403)
+        abort(403, "Minimum CGPA not met.")
+    if student.branch.department not in position.departments:
+        abort(403, "Department not eligible.")
 
     application = Application(student=student, position=position)
     db.session.add(application)
