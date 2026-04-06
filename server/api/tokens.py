@@ -116,4 +116,14 @@ def revoke():
     old_token = db.session.scalar(db.select(RefreshToken).where(RefreshToken.token_hash == hash_token(raw)))
     old_token.is_revoked = True
     db.session.commit()
-    return {}
+    headers = {
+        "Set-Cookie": dump_cookie(
+            key="refresh_token",
+            value="",
+            httponly=True,
+            samesite="lax", # "strict" for prod. also add `secure=True`.
+            path="/api/tokens/",
+            max_age=0
+        )
+    }    
+    return {}, 204, headers
