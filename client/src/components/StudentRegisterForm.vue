@@ -8,6 +8,7 @@ import { useAlertStore } from "@/stores/alert";
 const router = useRouter();
 const errors = ref({});
 const alert = useAlertStore();
+const loading = ref(true);
 
 const inputEmail = ref();
 const inputPassword = ref();
@@ -35,26 +36,9 @@ const inputBranchDisabled = computed(() => {
     return inputDepartment.value == "";
 });
 
-async function getDepartments() {
-    try {
-        const response = await api.get("/departments");
-        departments.value = response.data;
-    } catch (error) {
-        console.error(error);
-    }
-};
-
-async function getBranches() {
-    try {
-        const response = await api.get("/branches");
-        branches.value = response.data;
-    } catch (error) {
-        console.error(error);
-    }
-};
-
 async function submitForm() {
     errors.value = {};
+    loading.value = true;
     try {
         const formData = {
             email: inputEmail.value,
@@ -70,20 +54,34 @@ async function submitForm() {
                 graduation_year: inputGraduationYear.value,
                 cgpa: inputCgpa.value
             }
-        }
-        const response = await api.post("/register", formData);
+        };
+        await api.post("/register", formData);
         alert.addAlert("Account successfully created.", "success");
         router.push({ name: "login" });
     }
     catch (error) {
-        console.error(error);
+        console.error(error.response.data);
+        if ("errors" in error.response.data) {
+            errors.value = flattenResponse(error.response.data.errors.json)
+        }
+    } finally {
+        loading.value = false;
     }
-};
+}
 
-onMounted(() => {
-    getDepartments();
-    getBranches();
-    markRequiredFields();
+onMounted(async () => {
+    try {
+        markRequiredFields();
+        const [industriesRes, branchRes] = await Promise.all([
+            api.get("/industries"),
+            api.get("/branches")
+        ]);
+        departments.value = industriesRes.data;
+        branches.value = branchRes.data;
+    } catch (error) {
+        alert.addAlert(error.response.data.description, "error");
+        console.error();
+    }
 });
 </script>
 
@@ -183,6 +181,6 @@ onMounted(() => {
             <input class="form-control" type="file" id="inputResume" accept=".pdf" v-model="inputResume">
         </div> -->
 
-        <button type="submit" class="btn btn-primary mb-3">Submit</button>
+        <button type="submit" class="btn btn-primary mb-3" :disabled="loading">Submit</button>
     </form>
 </template>

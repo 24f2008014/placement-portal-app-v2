@@ -15,28 +15,8 @@ const router = useRouter();
 const route = useRoute();
 const loading = ref(true);
 const student = ref(null);
-const errors = ref({});
 const auth = useAuthStore();
 const departments = ref(null);
-
-async function getDepartments() {
-    try {
-        const response = await api.get("/departments");
-        departments.value = response.data;
-    } catch (error) {
-        console.error(error);
-    }
-}
-
-async function getStudent() {
-    try {
-        const response = await api.get(`/students/${route.params.id}`);
-        student.value = response.data;
-        loading.value = false;
-    } catch (error) {
-        console.error(error);
-    }
-}
 
 async function changeStatus() {
     try {
@@ -47,6 +27,7 @@ async function changeStatus() {
         alert.addAlert(`Successfully updated Student #${route.params.id}'s status.`, "success");
     } catch (error) {
         console.error(error);
+        alert.addAlert(error.response.data.description, "error");
     }
 }
 
@@ -241,9 +222,19 @@ const company_applications_fields = {
     }
 };
 
-onMounted(() => {
-    getDepartments();
-    getStudent();
+onMounted(async () => {
+    try {
+        const [studentRes, departmentsRes] = await Promise.all([
+            api.get(`/students/${route.params.id}`),
+            api.get("/departments")
+        ]);
+        student.value = studentRes.data;
+        departments.value = departmentsRes.data;
+        loading.value = false;
+    } catch (error) {
+        alert.addAlert(error.response.data.description, "error");
+        console.error(error);
+    }
 });
 </script>
 

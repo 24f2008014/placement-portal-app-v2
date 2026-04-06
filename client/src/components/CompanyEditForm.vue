@@ -6,41 +6,20 @@ import { useAlertStore } from "@/stores/alert";
 
 const alert = useAlertStore();
 const errors = ref({});
+const loading = ref(true);
+const industries = ref("");
+
 const inputName = ref();
 const inputIndustry = ref("");
+const inputWebsite = ref();
 const inputDescription = ref();
 const inputContactEmail = ref();
 const inputContactPhoneNumber = ref();
-const inputWebsite = ref();
 const inputLocation = ref();
-const industries = ref("");
-
-async function getIndustries() {
-    try {
-        const response = await api.get("/industries");
-        industries.value = response.data;
-    } catch (error) {
-        console.error(error);
-    }
-}
-
-async function getDetails() {
-    try {
-        const response = await api.get("/companies/me");
-        inputName.value = response.data.name;
-        inputIndustry.value = response.data.industry_id;
-        inputDescription.value = response.data.description;
-        inputContactEmail.value = response.data.contact_email;
-        inputContactPhoneNumber.value = response.data.contact_phone_number;
-        inputWebsite.value = response.data.website;
-        inputLocation.value = response.data.location;
-    } catch (error) {
-        console.error(error);
-    }
-}
 
 async function submitForm() {
     errors.value = {};
+    loading.value = true;
     try {
         const formData = {
             name: inputName.value,
@@ -52,19 +31,47 @@ async function submitForm() {
             location: inputLocation.value,
         };
         const response = await api.put("/companies/me", formData);
+
+        inputName.value = response.data.name;
+        inputIndustry.value = response.data.industry_id;
+        inputWebsite.value = response.data.website;
+        inputDescription.value = response.data.description;
+        inputContactEmail.value = response.data.contact_email;
+        inputContactPhoneNumber.value = response.data.contact_phone_number;
+        inputLocation.value = response.data.location;
+
         alert.addAlert("Company profile updated.", "success");
     } catch (error) {
-        console.error(error.response.data)
+        console.error(error.response.data);
         if ("errors" in error.response.data) {
-            errors.value = flattenResponse(error.response.data.errors.json)
+            errors.value = flattenResponse(error.response.data.errors.json);
         }
+    } finally {
+        loading.value = false;
     }
 }
 
-onMounted(() => {
-    getIndustries();
-    getDetails();
-    markRequiredFields();
+onMounted(async () => {
+    try {
+        markRequiredFields();
+        const [industriesRes, companyRes] = await Promise.all([
+            api.get("/industries"),
+            api.get("/companies/me")
+        ]);
+
+        industries.value = industriesRes.data;
+        inputName.value = companyRes.data.name;
+        inputIndustry.value = companyRes.data.industry_id;
+        inputWebsite.value = companyRes.data.website;
+        inputDescription.value = companyRes.data.description;
+        inputContactEmail.value = companyRes.data.contact_email;
+        inputContactPhoneNumber.value = companyRes.data.contact_phone_number;
+        inputLocation.value = companyRes.data.location;
+        loading.value = false;
+    } catch (error) {
+        alert.addAlert(error.response.data.description, "error");
+        console.error(error);
+    }
 });
 </script>
 
@@ -122,6 +129,10 @@ onMounted(() => {
             <div v-if="errors.location" class="invalid-feedback" id="inputLocationValidation">{{ errors.location[0] }}</div>
         </div>
 
-        <button type="submit" class="btn btn-primary mb-3">Submit</button>
+        <div class="row">
+            <div class="col d-flex">
+                <button type="submit" class="btn btn-sm btn-primary mb-2" :disabled="loading">Update</button>
+            </div>
+        </div>
     </form>
 </template>

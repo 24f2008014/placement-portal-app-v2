@@ -11,12 +11,11 @@ import Modal from "@/components/Modal.vue";
 
 const alert = useAlertStore();
 const auth = useAuthStore();
-const loading = ref(true);
-const applicationLoading = ref(true);
-const position = ref(null);
 const router = useRouter();
 const route = useRoute();
-const errors = ref({});
+const loading = ref(true);
+
+const position = ref(null);
 const studentApplication = ref([]);
 const student = ref({});
 
@@ -140,17 +139,6 @@ const placements_fields = {
     }
 };
 
-async function getPosition() {
-    try {
-        loading.value = true;
-        const response = await api.get(`/positions/${route.params.id}`);
-        position.value = response.data;
-        loading.value = false;
-    } catch (error) {
-        console.error(error);
-    }
-}
-
 async function whitelistPosition() {
     try {
         const response = await api.post(`/positions/${route.params.id}/whitelist`, null);
@@ -158,7 +146,8 @@ async function whitelistPosition() {
         bootstrap.Modal.getInstance(document.getElementById("PositionApprovalModal")).hide();
         alert.addAlert(`Successfully whitelisted Position #${route.params.id}.`, "success");
     } catch (error) {
-        console.error(error);
+        console.error(error.response.data);
+        alert.addAlert(error.response.data.description, "error");
     }
 }
 
@@ -170,18 +159,8 @@ async function changeStatus() {
         bootstrap.Modal.getInstance(document.getElementById("PositionStatusModal")).hide();
         alert.addAlert(`Successfully updated Position #${route.params.id}'s status.`, "success");
     } catch (error) {
-        console.error(error);
-    }
-}
-
-async function getStudentApplication() {
-    try {
-        applicationLoading.value = true;
-        const response = await api.get(`/students/me/applications?sort_by=created_at&sort_dir=desc&filters={"position_id":"${route.params.id}"}`);
-        studentApplication.value = response.data.data;
-        applicationLoading.value = false;
-    } catch (error) {
-        console.error(error);
+        console.error(error.response.data);
+        alert.addAlert(error.response.data.description, "error");
     }
 }
 
@@ -192,27 +171,28 @@ async function postApplication() {
         alert.addAlert("Application created!", "success");
         router.push({ name: "application", params: { id: application_id } });
     } catch (error) {
-        console.error(error);
-        alert.addAlert(error, "error");
+        console.error(error.response.data);
+        alert.addAlert(error.response.data.description, "error");
     }
 }
 
-async function getStudent() {
+onMounted(async () => {
     try {
-        applicationLoading.value = true;
-        const response = await api.get("/students/me");
-        student.value = response.data;
-        applicationLoading.value = false;
-    } catch (error) {
-        console.error(error);
-    }
-}
+        const response = await api.get(`/positions/${route.params.id}`);
+        position.value = response.data;
 
-onMounted(() => {
-    getPosition();
-    if (auth.currentUser.role == "student") {
-        getStudent();
-        getStudentApplication();
+        if (auth.currentUser.role == "student") {
+            const [studentRes, studentAppRes] = await Promise.all([
+                api.get("/students/me"),
+                api.get(`/students/me/applications?sort_by=created_at&sort_dir=desc&filters={"position_id":"${route.params.id}"}`)
+            ]);
+            student.value = studentRes.data;
+            studentApplication.value = studentAppRes.data.data;
+        }
+        loading.value = false;
+    } catch (error) {
+        alert.addAlert(error.response.data.description, "error");
+        console.error(error.response.data);
     }
 });
 </script>
@@ -308,7 +288,7 @@ onMounted(() => {
         <template v-if="auth.currentUser.role=='student'">
             <hr class="mb-4">
             <div class="row mb-4">
-                <div class="col" v-if="!applicationLoading">
+                <div class="col">
                     <h3 class="mb-3">Your Application</h3>
                     <template v-if="studentApplication.length == 0 || studentApplication[0].status=='withdrawn'">
 
@@ -351,7 +331,6 @@ onMounted(() => {
                         <button type="button" class="btn btn-sm btn-primary" @click='router.push({name: "application", params: {"id": studentApplication[0].id}})'><i class="bi bi-box-arrow-up-right me-2"></i>View Application</button>
                     </template>
                 </div>
-                <div class="col" v-else><p>Loading...</p></div>
             </div>
         </template>
     </template>

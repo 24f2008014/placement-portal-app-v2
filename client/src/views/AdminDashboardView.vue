@@ -416,28 +416,25 @@ const placements_fields = {
     }
 };
 
-async function getStats() {
-    try {
-        loading.value = true;
-        const response = await api.get("/stats");
-        stats.value = response.data;
-        loading.value = false;
-    } catch (error) {
-        console.error(error.response.data);
-    }
-}
-
 async function getMonthlyReport() {
     try {
         const response = await api.get("/admin/monthly_report");
+        alert.addAlert("Email sent.", "success");
         console.log(response.data);
     } catch (error) {
-        console.error(error);
+        console.error(error.response.data.description);
     }
 }
 
-onMounted(() => {
-    getStats();
+onMounted(async () => {
+    try {
+        const response = await api.get("/stats");
+        stats.value = response.data;
+        loading.value = false;        
+    } catch (error) {
+        alert.addAlert(error.response.data.description, "error");
+        console.error(error)
+    }
 });
 </script>
 

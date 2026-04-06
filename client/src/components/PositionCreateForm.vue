@@ -2,12 +2,13 @@
 import { onMounted, ref } from "vue";
 import { api } from "@/utils/api";
 import { useRouter } from "vue-router";
-import { markRequiredFields, flattenResponse, flattenResponsePrefixed } from "@/utils/helpers";
+import { markRequiredFields, flattenResponse } from "@/utils/helpers";
 import { useAlertStore } from "@/stores/alert";
 
 const alert = useAlertStore();
 const router = useRouter();
 const errors = ref({});
+const loading = ref(true);
 
 const inputRole = ref();
 const inputSalaryMin = ref();
@@ -18,17 +19,9 @@ const inputMinCgpa = ref();
 const inputDepartments = ref([]);
 const departments = ref("");
 
-async function getDepartments() {
-    try {
-        const response = await api.get("/departments");
-        departments.value = response.data;
-    } catch (error) {
-        console.error(error);
-    }
-}
-
 async function submitForm() {
     errors.value = {};
+    loading.value = true;
     try {
         const formData = {
             role: inputRole.value,
@@ -48,12 +41,21 @@ async function submitForm() {
         if ("errors" in error.response.data) {
             errors.value = flattenResponse(error.response.data.errors.json);
         }
+    } finally {
+        loading.value = false;
     }
 }
 
-onMounted(() => {
-    getDepartments();
-    markRequiredFields();
+onMounted(async () => {
+    try {
+        markRequiredFields();
+        const response = await api.get("/departments");
+        departments.value = response.data;
+        loading.value = false;
+    } catch (error) {
+        alert.addAlert(error.response.data.description, "error");
+        console.error(error);
+    }
 });
 </script>
 
@@ -108,6 +110,6 @@ onMounted(() => {
             </template>
         </div>
 
-        <button type="submit" class="btn btn-primary mb-3">Submit</button>
+        <button type="submit" class="btn btn-primary mb-3" :disabled="loading">Submit</button>
     </form>
 </template>

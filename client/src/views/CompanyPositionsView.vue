@@ -6,20 +6,17 @@ import { api } from "@/utils/api";
 const status = ref(null);
 const loading = ref(true);
 
-async function checkStatus() {
+onMounted(async () => {
     try {
         const response = await api.get("/companies/me");
         status.value = response.data.status;
     } catch (error) {
+        alert.addAlert(error.response.data.description, "error");
         console.error(error);
     } finally {
         loading.value = false;
     }
-}
-
-onMounted(() => {
-    checkStatus();
-})
+});
 </script>
 
 <template>
@@ -37,13 +34,13 @@ onMounted(() => {
             <hr class="mb-4">
         </div>
     </div>
-
-    <div v-if="!loading" class="row justify-content-center">
+    
+    <template v-if="loading"><div class="spinner-border spinner-border-sm text-center ms-1"></div></template>
+    <div v-else class="row justify-content-center">
         <div class="col-6">
             <PositionCreateForm v-if="status=='whitelisted'" />
             <p v-else-if="status=='pending'">Your company's registration status is <code class="text-warning fw-bold">pending</code>. Please wait for an administrator to approve your account before listing new positions.</p>
             <p v-else>Your company has been <code class="text-danger fw-bold">blacklisted</code>, and you can't list new positions right now.</p>
         </div>
     </div>
-    <template v-else><div class="spinner-border spinner-border-sm text-center ms-1"></div></template>
 </template>

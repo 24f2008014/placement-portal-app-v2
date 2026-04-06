@@ -24,17 +24,6 @@ const now = new Date();
 const minDate = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
 const rejectFeedback = ref(null);
 
-async function getApplication() {
-    try {
-        loading.value = true;
-        const response = await api.get(`/applications/${route.params.id}`);
-        application.value = response.data;
-        loading.value = false;
-    } catch (error) {
-        console.error(error);
-    }
-}
-
 async function withdrawApplication() {
     try {
         const response = await api.post(`/applications/${route.params.id}/withdraw`);
@@ -43,6 +32,8 @@ async function withdrawApplication() {
         alert.addAlert(`Successfully withdrew your application (#${route.params.id}).`, "success");
     } catch (error) {
         console.error(error);
+        alert.addAlert(error.response.data.description, "error");
+        errors.value = flattenResponse(error.response.data);
     }
 }
 
@@ -54,6 +45,7 @@ async function shortlistApplication() {
         alert.addAlert(`Successfully shortlisted application (#${route.params.id}).`, "success");
     } catch (error) {
         console.error(error);
+        alert.addAlert(error.response.data.description, "error");
         errors.value = flattenResponse(error.response.data);
     }
 }
@@ -66,6 +58,7 @@ async function rejectApplication() {
         alert.addAlert(`Successfully rejected application (#${route.params.id}).`, "success");
     } catch (error) {
         console.error(error);
+        alert.addAlert(error.response.data.description, "error");
         errors.value = flattenResponse(error.response.data);
     }
 }
@@ -87,8 +80,15 @@ async function selectApplication() {
     }
 }
 
-onMounted(() => {
-    getApplication();
+onMounted(async () => {
+    try {
+        const response = await api.get(`/applications/${route.params.id}`);
+        application.value = response.data;
+        loading.value = false;
+    } catch (error) {
+        alert.addAlert(error.response.data.description, "error");
+        console.error(error);
+    }
 });
 </script>
 

@@ -219,30 +219,30 @@ const placements_fields = {
     }
 };
 
-async function getStats() {
-    try {
-        const response_status = await api.get("/students/me");
-        studentStatus.value = response_status.data.status;
-        const response_stats = await api.get("/students/me/stats");
-        stats.value = response_stats.data;
-        loading.value = false;
-    } catch (error) {
-        console.error(error);
-    }
-}
-
 async function getReminder() {
     try {
         const response = await api.get("/students/me/reminder");
         console.log(response.data);
         alert.addAlert("Email reminder sent.", "success");
     } catch (error) {
+        alert.addAlert(error.response.data.description, "error");
         console.error(error);
     }
 }
 
-onMounted(() => {
-    getStats();
+onMounted(async () => {
+    try {
+        const [studentRes, statsRes] = await Promise.all([
+            api.get("/students/me"),
+            api.get("/students/me/stats")
+        ]);
+        studentStatus.value = studentRes.data.status;
+        stats.value = statsRes.data;
+        loading.value = false;
+    } catch (error) {
+        alert.addAlert(error.response.data.description, "error");
+        console.error(error);
+    }
 });
 </script>
 

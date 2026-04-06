@@ -9,18 +9,11 @@ const errors = ref({});
 const inputEmail = ref();
 const inputOldPassword = ref();
 const inputPassword = ref();
-
-async function getDetails() {
-    try {
-        const response = await api.get("/users/me");
-        inputEmail.value = response.data.email;
-    } catch (error) {
-        console.error(error);
-    }
-};
+const loading = ref(true);
 
 async function submitForm() {
     errors.value = {};
+    loading.value = true;
     try {
         const formData = {
             email: inputEmail.value,
@@ -28,21 +21,31 @@ async function submitForm() {
             password: inputPassword.value,
         };
         const response = await api.put("/users/me", formData);
-        alert.addAlert("Account info updated.", "success");
+        inputEmail.value = response.data.email;
         inputOldPassword.value = null;
         inputPassword.value = null;
+        alert.addAlert("Account info updated.", "success");
     } catch (error) {
         console.error(error.response.data);
-        // alert.addAlert(error.response.data, "error");
+        alert.addAlert(error.response.data.description, "error");
         if ("errors" in error.response.data) {
             errors.value = flattenResponse(error.response.data.errors.json);
         }
+    } finally {
+        loading.value = false;
     }
 }
 
-onMounted(() => {
-    getDetails();
-    markRequiredFields();
+onMounted(async () => {
+    try {
+        markRequiredFields();
+        const response = await api.get("/users/me");
+        inputEmail.value = response.data.email;
+        loading.value = false;
+    } catch (error) {
+        console.error(error);
+        alert.addAlert(error.response.data.description, "error");
+    }
 });
 </script>
 
@@ -66,6 +69,7 @@ onMounted(() => {
             <div id="PasswordHelp" class="form-text">Must have at least 6 characters.</div>
             <div v-if="errors.password" class="invalid-feedback" id="inputPasswordValidation">{{ errors.password[0] }}</div>
         </div>
-        <button type="submit" class="btn btn-sm btn-primary mb-2">Update</button>
+
+        <button type="submit" class="btn btn-sm btn-primary mb-2" :disabled="loading">Update</button>
     </form>
 </template>

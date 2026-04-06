@@ -9,23 +9,13 @@ import * as bootstrap from "bootstrap";
 import Modal from "@/components/Modal.vue";
 import { formatDateNoTime } from "@/utils/helpers";
 
+const auth = useAuthStore();
 const alert = useAlertStore();
 const router = useRouter();
 const route = useRoute();
 const loading = ref(true);
-const company = ref({});
-const errors = ref({});
-const auth = useAuthStore();
 
-async function getCompany() {
-    try {
-        const response = await api.get(`/companies/${route.params.id}`);
-        company.value = response.data;
-        loading.value = false;
-    } catch (error) {
-        console.error(error);
-    }
-}
+const company = ref({});
 
 async function changeStatus() {
     try {
@@ -36,6 +26,7 @@ async function changeStatus() {
         alert.addAlert(`Successfully updated Company #${route.params.id}'s status.`, "success");
     } catch (error) {
         console.error(error);
+        alert.addAlert(error.response.data.description, "error");
     }
 };
 
@@ -127,8 +118,15 @@ const positions_fields = {
     }
 };
 
-onMounted(() => {
-    getCompany();
+onMounted(async () => {
+    try {
+        const response = await api.get(`/companies/${route.params.id}`);
+        company.value = response.data;
+        loading.value = false;
+    } catch (error) {
+        console.error(error);
+        alert.addAlert(error.response.data.description, "error");
+    }
 });
 </script>
 

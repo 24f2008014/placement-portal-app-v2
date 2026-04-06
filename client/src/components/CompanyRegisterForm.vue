@@ -18,19 +18,11 @@ const inputContactPhoneNumber = ref();
 const inputWebsite = ref();
 const inputLocation = ref();
 const industries = ref("");
-
-async function getIndustries() {
-    try {
-        const response = await api.get("/industries");
-        industries.value = response.data;
-    }
-    catch (error) {
-        console.log(error);
-    }
-};
+const loading = ref(true);
 
 async function submitForm() {
     errors.value = {};
+    loading.value = true;
     try {
         const formData = {
             email: inputEmail.value,
@@ -45,22 +37,30 @@ async function submitForm() {
                 website: inputWebsite.value,
                 location: inputLocation.value,
             }
-        }
-        const response = await api.post("/register", formData);
+        };
+        await api.post("/register", formData);
         alert.addAlert("Account successfully created.", "success");
         router.push({ name: "login" });
-    }
-    catch (error) {
-        console.error(error);
-        if (error.response.data && "errors" in error.response.data) {
+    } catch (error) {
+        console.error(error.response.data);
+        if ("errors" in error.response.data) {
             errors.value = flattenResponse(error.response.data.errors.json)
         }
+    } finally {
+        loading.value = false;
     }
-};
+}
 
-onMounted(() => {
-    getIndustries();
-    markRequiredFields();
+onMounted(async () => {
+    try {
+        markRequiredFields();
+        const response = await api.get("/industries");
+        industries.value = response.data;
+        loading.value = false;
+    } catch (error) {
+        alert.addAlert(error.response.data.description, "error");
+        console.error(error);
+    }
 });
 </script>
 
@@ -133,6 +133,6 @@ onMounted(() => {
             <div v-if="errors.location" class="invalid-feedback" id="inputLocationValidation">{{ errors.location[0] }}</div>
         </div>
 
-        <button type="submit" class="btn btn-primary mb-3">Submit</button>
+        <button type="submit" class="btn btn-primary mb-3" :disabled="loading">Submit</button>
     </form>
 </template>

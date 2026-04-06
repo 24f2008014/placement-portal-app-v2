@@ -2,10 +2,11 @@
 import { onMounted, ref, computed } from "vue";
 import { api } from "@/utils/api";
 import { useAlertStore } from "@/stores/alert";
-import { markRequiredFields, flattenResponse } from "@/utils/helpers";
+import { markRequiredFields, flattenResponse, viewResume } from "@/utils/helpers";
 
 const alert = useAlertStore();
 const errors = ref({});
+const loading = ref(true);
 const inputRollNumber = ref();
 const inputFirstName = ref();
 const inputLastName = ref();
@@ -15,12 +16,11 @@ const inputDepartment = ref();
 const inputBranch = ref();
 const inputGraduationYear = ref();
 const inputCgpa = ref();
-const inputBio = ref();
+const inputBio = ref("");
 const inputResume = ref();
 const resumeUrl = ref();
 const departments = ref("");
 const branches = ref("");
-const updateSuccessful = ref(false);
 const minGraduationYear = new Date().getFullYear();
 
 const available_branches = computed(() => {
@@ -34,46 +34,9 @@ const inputBranchDisabled = computed(() => {
     return inputDepartment.value == "";
 });
 
-async function getDepartments() {
-    try {
-        const response = await api.get("/departments");
-        departments.value = response.data;
-    } catch (error) {
-        console.error(error);
-    }
-}
-
-async function getBranches() {
-    try {
-        const response = await api.get("/branches");
-        branches.value = response.data;
-    } catch (error) {
-        console.error(error);
-    }
-}
-
-async function getDetails() {
-    try {
-        const response = await api.get("/students/me");
-        console.log(response.data);
-        inputRollNumber.value = response.data.roll_number;
-        inputFirstName.value = response.data.first_name;
-        inputLastName.value = response.data.last_name;
-        inputDateOfBirth.value = response.data.date_of_birth.split("T")[0];
-        inputGender.value = response.data.gender;
-        inputDepartment.value = response.data.branch.department_id;
-        inputBranch.value = response.data.branch_id;
-        inputGraduationYear.value = response.data.graduation_year;
-        inputCgpa.value = response.data.cgpa;
-        inputBio.value = response.data.bio;
-        resumeUrl.value = response.data.resume_url;
-    } catch (error) {
-        console.error(error);
-    }
-}
-
 async function submitForm() {
     errors.value = {};
+    loading.value = true;
     try {
         const formData = new FormData();
         formData.append("roll_number", inputRollNumber.value);
@@ -88,9 +51,22 @@ async function submitForm() {
         if (inputResume.value) {
             formData.append("resume", inputResume.value);
         }
+
         const response = await api.put("/students/me", formData, { headers: { "Content-Type": "multipart/form-data" } });
-        updateSuccessful.value = true;
+        inputRollNumber.value = response.data.roll_number;
+        inputFirstName.value = response.data.first_name;
+        inputLastName.value = response.data.last_name;
+        inputDateOfBirth.value = response.data.date_of_birth.split("T")[0];
+        inputGender.value = response.data.gender;
+        inputDepartment.value = response.data.branch.department_id;
+        inputBranch.value = response.data.branch_id;
+        inputGraduationYear.value = response.data.graduation_year;
+        inputCgpa.value = response.data.cgpa;
+        inputBio.value = response.data.bio;
+        resumeUrl.value = response.data.resume_url;
+
         alert.addAlert("Successfully updated your profile.", "success");
+        loading.value = false;
     } catch (error) {
         console.error(error.response.data);
         if ("errors" in error.response.data) {
@@ -103,22 +79,32 @@ function handleFileUpload(event) {
     inputResume.value = event.target.files[0];
 }
 
-async function viewResume() {
+onMounted(async () => {
     try {
-        const response = await api.get(`/uploads/resumes/${resumeUrl.value}`, {responseType: "blob"});
-        const blob = new Blob([response.data], {type: "application/pdf"})
-        const objectURL = URL.createObjectURL(blob);
-        window.open(objectURL, "_blank");
+        markRequiredFields();
+        const [depRes, branchRes, studentRes] = await Promise.all([
+            api.get("/departments"),
+            api.get("/branches"),
+            api.get("/students/me")
+        ]);
+        departments.value = depRes.data;
+        branches.value = branchRes.data;
+        inputRollNumber.value = studentRes.data.roll_number;
+        inputFirstName.value = studentRes.data.first_name;
+        inputLastName.value = studentRes.data.last_name;
+        inputDateOfBirth.value = studentRes.data.date_of_birth.split("T")[0];
+        inputGender.value = studentRes.data.gender;
+        inputDepartment.value = studentRes.data.branch.department_id;
+        inputBranch.value = studentRes.data.branch_id;
+        inputGraduationYear.value = studentRes.data.graduation_year;
+        inputCgpa.value = studentRes.data.cgpa;
+        inputBio.value = studentRes.data.bio;
+        resumeUrl.value = studentRes.data.resume_url;
+        loading.value = false;
     } catch (error) {
         console.error(error);
+        alert.addAlert(error.response.data.description, "error");
     }
-}
-
-onMounted(() => {
-    getDepartments();
-    getBranches();
-    getDetails();
-    markRequiredFields();
 });
 </script>
 
@@ -208,10 +194,10 @@ onMounted(() => {
         <div class="mb-3">
             <label for="inputResume" class="form-label">Upload Resume (.pdf)
             </label>
-            <p v-if="resumeUrl"><a @click="viewResume" style="color: lightblue; cursor: pointer">View Existing ({{ resumeUrl }})</a></p>
+            <p v-if="resumeUrl"><a @click="viewResume(resumeUrl)" style="color: lightblue; cursor: pointer">View Existing ({{ resumeUrl }})</a></p>
             <input class="form-control" type="file" id="inputResume" accept=".pdf" @change="handleFileUpload">
         </div>
 
-        <button type="submit" class="btn btn-primary mb-2">Update</button>
+        <button type="submit" class="btn btn-primary mb-2" :disabled="loading">Update</button>
     </form>
 </template>

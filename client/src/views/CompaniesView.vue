@@ -2,17 +2,10 @@
 import { ref, onMounted } from "vue";
 import PaginatedTable from "@/components/PaginatedTable.vue";
 import { api } from "@/utils/api";
+import { useAlertStore } from "@/stores/alert";
 
+const alert = useAlertStore();
 const industries = ref();
-
-async function getIndustries() {
-    try {
-        const response = await api.get("/industries");
-        industries.value = response.data;
-    } catch (error) {
-        console.error(error);
-    }
-}
 
 const companies_endpoint = "/companies";
 const companies_route = "company";
@@ -85,8 +78,14 @@ const companies_fields = {
     }
 };
 
-onMounted(() => {
-    getIndustries();
+onMounted(async () => {
+    try {
+        const response = await api.get("/industries");
+        industries.value = response.data;
+    } catch (error) {
+        alert.addAlert(error.response.data.description, "error");
+        console.error(error);
+    }
 });
 </script>
 

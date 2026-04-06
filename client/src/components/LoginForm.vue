@@ -3,12 +3,15 @@ import { onMounted, ref } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import { markRequiredFields } from "@/utils/helpers";
+import { useAlertStore } from "@/stores/alert";
 
 const auth = useAuthStore();
+const alert = useAlertStore();
 const router = useRouter();
 const route = useRoute();
-const errors = ref({});
 const loading = ref(false);
+const errors = ref({});
+
 const inputEmail = ref();
 const inputPassword = ref();
 
@@ -16,10 +19,11 @@ async function submitForm() {
     errors.value = {};
     loading.value = true;
     try {
-        const response = await auth.login(inputEmail.value, inputPassword.value);
+        await auth.login(inputEmail.value, inputPassword.value);
         router.push(route.query.next || "/");
     } catch (error) {
         console.error(error.response.data);
+        alert.addAlert(error.response.data.description, "error");
         errors.value = error.response.data;
     } finally {
         loading.value = false;
@@ -45,7 +49,7 @@ onMounted(() => {
             <div v-if="errors.password" class="invalid-feedback" id="inputPasswordValidation">{{ errors.password[0] }}</div>
         </div>
 
-        <button type="submit" class="btn btn-sm btn-primary mb-2">Login
+        <button type="submit" class="btn btn-sm btn-primary mb-2" :disabled="loading">Login
             <div v-if="loading" class="spinner-border spinner-border-sm text-center ms-1"></div>
         </button>
 

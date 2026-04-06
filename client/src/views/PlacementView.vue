@@ -14,18 +14,6 @@ const loading = ref(true);
 const placement = ref(null);
 const router = useRouter();
 const route = useRoute();
-const errors = ref({});
-
-async function getPlacement() {
-    try {
-        loading.value = true;
-        const response = await api.get(`/placements/${route.params.id}`);
-        placement.value = response.data;
-        loading.value = false;
-    } catch (error) {
-        console.error(error);
-    }
-}
 
 async function acceptPlacement() {
     try {
@@ -35,6 +23,7 @@ async function acceptPlacement() {
         alert.addAlert(`Successfully accepted placement offer (#${route.params.id}).`, "success");
     } catch (error) {
         console.error(error);
+        alert.addAlert(error.response.data.description, "error");
     }
 }
 
@@ -46,11 +35,19 @@ async function rejectPlacement() {
         alert.addAlert(`Successfully rejected placement offer (#${route.params.id}).`, "success");
     } catch (error) {
         console.error(error);
+        alert.addAlert(error.response.data.description, "error");
     }
 }
 
-onMounted(() => {
-    getPlacement();
+onMounted(async () => {
+    try {
+        const response = await api.get(`/placements/${route.params.id}`);
+        placement.value = response.data;
+        loading.value = false;
+    } catch (error) {
+        console.error(error);
+        alert.addAlert(error.response.data.description, "error");
+    }
 });
 </script>
 

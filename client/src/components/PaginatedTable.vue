@@ -15,23 +15,19 @@ const filterDropdownId = useId();
 const hasPrevious = computed(() => {
     return pagination.value.prev !== null;
 });
-
 const hasNext = computed(() => {
     return pagination.value.next !== null;
 });
-
 const getPrevious = (() => {
     if (pagination.value.prev) {
         getPaginatedData(pagination.value.prev.split("/api")[1]);
     }
 });
-
 const getNext = (() => {
     if (pagination.value.next) {
         getPaginatedData(pagination.value.next.split("/api")[1]);
     }
 });
-
 const totalPages = computed(() => Math.ceil(pagination.value.total / pagination.value.limit));
 const currentPage = computed(() => (pagination.value.offset / pagination.value.limit) + 1);
 const startItem = computed(() => pagination.value.offset + 1);
@@ -41,14 +37,14 @@ const tableState = reactive({
     sort_dir: "desc"
 });
 
+const filters = reactive({
+    id: "",
+});
+
 function clearFilters() {
     Object.keys(filters).forEach(k => filters[k] = "");
     getPaginatedData(props.url, tableState, filters);
 }
-
-const filters = reactive({
-    id: "",
-});
 
 async function getPaginatedData(url, params=null, filters=null) {
     errors.value = {};
@@ -69,7 +65,7 @@ async function getPaginatedData(url, params=null, filters=null) {
         paginatedData.value = response.data.data;
         pagination.value = response.data.pagination;
     } catch (error) {
-        console.error(error);
+        console.error(error.response.data);
         if ("errors" in error.response.data) {
             errors.value = flattenResponse(error.response.data.errors.json);
         }
@@ -149,32 +145,41 @@ onMounted(() => {
             </form>
         </div>
     </div>
+
     <div class="table-responsive">
-    <table class="border table table-hover">
-        <thead>
-            <tr>
-                <th scope="col" v-for="k in Object.keys(props.fields)" @click="sort(props.fields[k].name)" :class="sortClasses(props.fields[k].name)">{{ k }}</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr 
-                v-for="i in paginatedData"
-                :key="i.id"
-                @click='router.push({ name: props.item_route_name, params: { "id": `${i.id}`} })'
-            >
-                <td v-for="f in Object.values(props.fields)">
-                    <template v-if="f.type=='date'">
-                        {{ i[f.name] ? formatDate(flattenResponsePrefixed(i)[f.name]) : "N/A" }}
-                    </template>
-                    <template v-else-if="f.type=='number'">
-                        {{ flattenResponsePrefixed(i)[f.name].toLocaleString("en-US") }}
-                    </template>
-                    <template v-else>
-                        {{ flattenResponsePrefixed(i)[f.name] }}
-                    </template>
-                </td>
-            </tr>
-        </tbody>
-    </table>
+        <table class="border table table-hover">
+            <thead>
+                <tr>
+                    <th
+                        scope="col"
+                        v-for="k in Object.keys(props.fields)"
+                        @click="sort(props.fields[k].name)"
+                        :class="sortClasses(props.fields[k].name)"
+                    >
+                        {{ k }}
+                    </th>
+                </tr>
+            </thead>
+            
+            <tbody>
+                <tr 
+                    v-for="i in paginatedData"
+                    :key="i.id"
+                    @click='router.push({ name: props.item_route_name, params: { "id": `${i.id}`} })'
+                >
+                    <td v-for="f in Object.values(props.fields)">
+                        <template v-if="f.type=='date'">
+                            {{ i[f.name] ? formatDate(flattenResponsePrefixed(i)[f.name]) : "N/A" }}
+                        </template>
+                        <template v-else-if="f.type=='number'">
+                            {{ flattenResponsePrefixed(i)[f.name].toLocaleString("en-US") }}
+                        </template>
+                        <template v-else>
+                            {{ flattenResponsePrefixed(i)[f.name] }}
+                        </template>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 </template>

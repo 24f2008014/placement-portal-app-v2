@@ -8,7 +8,6 @@ import { useAuthStore } from "@/stores/auth";
 
 const auth = useAuthStore();
 const loading = ref(true);
-const errors = ref({});
 const status = ref();
 const stats = ref({});
 
@@ -256,32 +255,19 @@ const applications_fields = {
     }
 };
 
-async function checkStatus() {
-    errors.value = {};
+onMounted(async () => {
     try {
-        const response = await api.get("/companies/me");
-        status.value = response.data.status;
-    } catch (error) {
-        console.error(error);
-        if ("errors" in error.response.data) {
-            errors.value = flattenResponse(error.response.data.errors.json);
-        }
-    }
-}
-
-async function getStats() {
-    try {
-        const response = await api.get("/companies/me/stats");
-        stats.value = response.data;
+        const [companyRes, statsRes] = await Promise.all([
+            api.get("/companies/me"),
+            api.get("/companies/me/stats")
+        ]);
+        status.value = companyRes.data.status;
+        stats.value = statsRes.data;
         loading.value = false;
     } catch (error) {
-        console.error(error.response.data);
+        alert.addAlert(error.response.data.description, "error");
+        console.error(error);
     }
-}
-
-onMounted(() => {
-    checkStatus();
-    getStats();
 });
 </script>
 
