@@ -223,6 +223,7 @@ class BranchSchema(ma.SQLAlchemyAutoSchema):
     id = auto_field(dump_only=True)
     department_id = auto_field(dump_only=True)
     name = auto_field(dump_only=True)
+    department = ma.Nested(DepartmentSchema, only=("id", "name",), dump_only=True)
 
 class IndustrySchema(ma.SQLAlchemyAutoSchema):
     class Meta:
@@ -242,7 +243,7 @@ class StudentSchema(ma.SQLAlchemyAutoSchema):
     user_id = auto_field(dump_only=True)
     roll_number = auto_field(validate=validate.Length(min=1))
     gender = auto_field(validate=validate.OneOf(["male", "female", "other"]))
-    branch = fields.Nested(BranchSchema, only=("name", "department_id",), dump_only=True)
+    branch = fields.Nested(BranchSchema, dump_only=True)
     user = fields.Nested(UserSchema, only=("email", "created_at"), dump_only=True)
     resume = fields.Raw(load_only=True, required=False)
 

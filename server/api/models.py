@@ -34,11 +34,13 @@ class Department(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(128))
     positions: Mapped[List["Position"]] = relationship(secondary="position_departments", back_populates="departments")
+    branches: Mapped[List["Branch"]] = relationship(back_populates="department")
 
 class Branch(db.Model):
     id: Mapped[int] = mapped_column(primary_key=True)
     department_id: Mapped[int] = mapped_column(ForeignKey(Department.id))
     name: Mapped[str] = mapped_column(String(128))
+    department: Mapped["Department"] = relationship(back_populates="branches")
     students: Mapped["Student"] = relationship(back_populates="branch")
 
 class Role(db.Model):
