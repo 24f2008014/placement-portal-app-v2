@@ -18,8 +18,7 @@ const router = useRouter();
 const route = useRoute();
 const errors = ref({});
 const studentApplication = ref([]);
-const studentCgpa = ref();
-const studentStatus = ref();
+const student = ref({});
 
 const applications_endpoint = `/positions/${route.params.id}/applications`;
 const applications_route = "application";
@@ -198,11 +197,12 @@ async function postApplication() {
     }
 }
 
-async function getStudentCgpa() {
+async function getStudent() {
     try {
+        applicationLoading.value = true;
         const response = await api.get("/students/me");
-        studentCgpa.value = response.data.cgpa;
-        studentStatus.value = response.data.status;
+        student.value = response.data;
+        applicationLoading.value = false;
     } catch (error) {
         console.error(error);
     }
@@ -211,7 +211,7 @@ async function getStudentCgpa() {
 onMounted(() => {
     getPosition();
     if (auth.currentUser.role == "student") {
-        getStudentCgpa();
+        getStudent();
         getStudentApplication();
     }
 });
@@ -269,10 +269,7 @@ onMounted(() => {
                     </Modal>
                 </template>
             </div>
-        </div>
 
-        <hr class="mb-4">
-        <div class="row mb-4">
             <div class="col">
                 <h3>Current Status: <code>{{ position.status }}</code></h3>
                 <p v-if="position.status=='closed'">This position is currently <code class="text-danger fw-bold">closed</code>.</p>
@@ -288,7 +285,7 @@ onMounted(() => {
                         </Modal>
                     </template>
                 </template>
-            </div>
+            </div>            
         </div>
     
         <template v-if="auth.currentUser.role!='student' && position.is_approved==true">
@@ -320,18 +317,28 @@ onMounted(() => {
                         </template>
 
                         <template v-else>
-                            <template v-if="studentStatus=='blacklisted'">
+                            <template v-if="student.status=='blacklisted'">
                                 <p>Your account is currently <code class="text-danger fw-bold">blacklisted</code>. You cannot make new applications.</p>
                             </template>
 
                             <template v-else>
-                                <template v-if="studentCgpa >= position.min_cgpa">
-                                    <p>You don't have any pending applications for this position. Would you like to submit an application?</p>
+                                <p class="mb-1">
+                                    <strong>Your CGPA:</strong> {{ student.cgpa }}
+                                    <i v-if="student.cgpa >= position.min_cgpa" class="bi bi-check-lg text-success"></i>
+                                    <i v-else class="bi bi-x-lg text-danger"></i>
+                                </p>
+                                <p>
+                                    <strong>Your Department:</strong> {{ student.branch.department.name }}
+                                    <i v-if="position.departments.some(d => d.id == student.branch.department_id)" class="bi bi-check-lg text-success"></i>
+                                    <i v-else class="bi bi-x-lg text-danger"></i>                                    
+                                </p>
+                                <template v-if="(student.cgpa >= position.min_cgpa) && position.departments.some(d => d.id == student.branch.department_id)">
+                                    <p>You're eligible to apply, and you don't have any pending applications for this position. Would you like to submit an application?</p>
                                     <button type="button" class="btn btn-sm btn-success" @click="postApplication"><i class="bi bi-plus-lg me-2"></i>Apply</button>
                                 </template>
 
                                 <template v-else>
-                                    <p>Unfortunately, you do not meet the minimum CGPA required for this position ({{ position.min_cgpa }}). You cannot apply.</p>
+                                    <p>Unfortunately, you do not meet the eligibility requirements for this application. You cannot apply.</p>
                                     <button type="button" class="btn btn-sm btn-success" disabled><i class="bi bi-plus-lg me-2"></i>Apply</button>
                                 </template>
                             </template>
@@ -340,8 +347,8 @@ onMounted(() => {
                     </template>
 
                     <template v-else>
-                        <p>You have already applied to this position. Click the button below to view your latest application.</p>
-                        <button type="button" class="btn btn-sm btn-primary" @click='router.push({name: "application", params: {"id": studentApplication[0].id}})'>View Application</button>
+                        <p>You have already applied to this position. Click the button to view the status of your latest application.</p>
+                        <button type="button" class="btn btn-sm btn-primary" @click='router.push({name: "application", params: {"id": studentApplication[0].id}})'><i class="bi bi-box-arrow-up-right me-2"></i>View Application</button>
                     </template>
                 </div>
                 <div class="col" v-else><p>Loading...</p></div>
