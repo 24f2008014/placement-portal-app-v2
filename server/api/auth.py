@@ -3,9 +3,9 @@ from flask_httpauth import HTTPBasicAuth, HTTPTokenAuth
 from api import db
 from api.models import User
 from werkzeug.exceptions import Unauthorized, Forbidden
-import jwt, time
+import jwt
 
-basic_auth = HTTPBasicAuth(scheme="custom")
+basic_auth = HTTPBasicAuth(scheme="custom") # Custom is to avoid the default browser login prompt
 token_auth = HTTPTokenAuth()
 
 @basic_auth.verify_password
@@ -19,14 +19,12 @@ def verify_password(email, password):
 @basic_auth.error_handler
 def basic_auth_error(status=401):
     """Error handler for basic authentication."""
-    # 401 (Unauthorized): Incorrect credentials.
-    # 403 (Forbidden): Correct credentials, but insufficient permissions.
-    error = Forbidden() if status == 403 else Unauthorized()
+    error = Forbidden() if status == 403 else Unauthorized() # 401 = unauthorized. 403 = forbidden.
     return {
         "code": error.code,
         "message": error.name,
         "description": error.description
-    }, error.code # Override 200
+    }, error.code # Override the default 200.
 
 @token_auth.get_user_roles
 def get_user_roles(user):
@@ -58,4 +56,4 @@ def token_auth_error(status=401):
         "code": error.code,
         "message": error.name,
         "description": error.description
-    }, error.code # Override 200
+    }, error.code # Override the default 200.

@@ -107,12 +107,12 @@ def create_application(id):
 
     # Blacklisted students cannot make any new applications
     if student.status == "blacklisted":
-        abort(403)
+        abort(403, "Student is blacklisted.")
     position = db.get_or_404(Position, id)
 
     # Position must be admin-approved, open for applications, and have a deadline in the future
     if position.status == "closed" or position.is_approved == False or datetime.now() > position.deadline:
-        abort(403)
+        abort(403, "Position must be approved by an administrator and open for applications, and the deadline must be in the future.")
     
     # Student must not have an existing in-progress application
     existing_application = db.session.scalar(
@@ -125,13 +125,13 @@ def create_application(id):
         )
     )
     if existing_application is not None:
-        abort(403)
+        abort(403, "Student already has an in-progress application for this position.")
     
     # Student must meet eligibility criteria
     if student.cgpa < position.min_cgpa:
         abort(403, "Minimum CGPA not met.")
     if student.branch.department not in position.departments:
-        abort(403, "Department not eligible.")
+        abort(403, "Student's department is not eligible.")
 
     application = Application(student=student, position=position)
     db.session.add(application)
@@ -151,7 +151,7 @@ def withdraw_application(id):
     if token_auth.current_user().student != application.student:
         abort(403)
     if application.status != "pending":
-        abort(403)
+        abort(403, "Application must be in the `pending` status.")
     application.status = "withdrawn"
     application.deleted_at = datetime.now(timezone.utc)
     db.session.commit()
@@ -166,7 +166,7 @@ def accept_placement(id):
     if token_auth.current_user().student != placement.application.student:
         abort(403)
     if placement.status != "pending":
-        abort(403)
+        abort(403, "Placement must be in the `pending` status.")
     placement.status = "accepted"
     db.session.commit()
     return placement
@@ -180,7 +180,7 @@ def reject_placement(id):
     if token_auth.current_user().student != placement.student:
         abort(403)
     if placement.status != "pending":
-        abort(403)
+        abort(403, "Placement must be in the `pending` status.")
     placement.status = "rejected"
     db.session.commit()
     return placement

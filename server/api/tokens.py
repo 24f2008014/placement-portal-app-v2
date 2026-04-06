@@ -1,5 +1,5 @@
-from flask import Blueprint, current_app, url_for, request, abort
-from apifairy import authenticate, body, response, other_responses
+from flask import Blueprint, current_app, request, abort
+from apifairy import authenticate, response, other_responses
 from api import db
 from api.auth import basic_auth
 from api.schemas import TokenSchema, EmptySchema
@@ -83,25 +83,23 @@ def refresh():
     raw = request.cookies.get("refresh_token")
     if not raw:
         abort(401)
-    # print("[Refresh]: Cookie received.")
-    # old_token = db.session.execute(db.select(RefreshToken).where(RefreshToken.token_hash == hash)).scalar()
+    
     old_token = db.session.scalar(db.select(RefreshToken).where(RefreshToken.token_hash == hash_token(raw)))
-    if not old_token or not old_token.is_valid:
+    if (not old_token) or (not old_token.is_valid) or old_token.is_revoked:
         abort(401)
-    if old_token.is_revoked:
-        abort(401)
-    # print("[Refresh]: Received valid refresh token.")
+    
     user = db.session.get(User, int(old_token.user_id))
     access_token = generate_access_token(user.id, user.get_roles())
     refresh_token = generate_refresh_token(user.id)
     old_token.is_revoked = True
     db.session.commit()
+    
     name = ""
     if "student" in user.get_roles():
         name = user.student.first_name
     elif "company" in user.get_roles():
         name = user.company.name
-    # print("[Refresh]: Sending new tokens.")
+    
     return token_response(access_token, refresh_token, name)
 
 @tokens.route("/tokens/revoke", methods=["POST"])
@@ -112,16 +110,18 @@ def revoke():
     raw = request.cookies.get("refresh_token")
     if not raw:
         abort(401)
-    # old_token = db.session.execute(db.select(RefreshToken).where(RefreshToken.token_hash == hash)).scalar()
+    
     old_token = db.session.scalar(db.select(RefreshToken).where(RefreshToken.token_hash == hash_token(raw)))
     old_token.is_revoked = True
     db.session.commit()
+
+    # Delete old cookie by setting new cookie with max_age=0
     headers = {
         "Set-Cookie": dump_cookie(
             key="refresh_token",
             value="",
             httponly=True,
-            samesite="lax", # "strict" for prod. also add `secure=True`.
+            samesite="lax",
             path="/api/tokens/",
             max_age=0
         )

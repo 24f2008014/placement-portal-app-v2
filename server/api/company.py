@@ -42,8 +42,7 @@ def new_position(data):
     """Create new position"""
     company = token_auth.current_user().company
     if company.status != "whitelisted":
-        abort(403)
-    # position = Position(company=company, **data)
+        abort(403, "Company is blacklisted.")
     position = data
     position.company = company
     position.is_approved = False
@@ -178,7 +177,7 @@ def shortlist_application(data, id):
     if token_auth.current_user().company != application.position.company:
         abort(403)
     if application.status != "pending":
-        abort(403)
+        abort(403, f"Application cannot be shortlisted in its current status: {application.status}")
     application.status = "shortlisted"
     application.update(data)
     application.updated_at = datetime.now(timezone.utc)
@@ -195,10 +194,10 @@ def select_application(data, id):
     if token_auth.current_user().company != application.position.company:
         abort(403)
     if application.status != "shortlisted":
-        abort(403)
+        abort(403, f"Application cannot be shortlisted in its current status: {application.status}")
     min_salary = db.session.scalar(db.select(Position.salary_min).join(Application).filter(Application.id == id))
     if data["salary"] < min_salary:
-        abort(400, "Salary lower than min_salary.")
+        abort(400, f"Salary cannot be lower than the associated position's min_salary: {min_salary}.")
     application.status = "selected"
     application.updated_at = datetime.now(timezone.utc)
     placement = Placement(application=application, **data)
@@ -216,7 +215,7 @@ def reject_application(data, id):
     if token_auth.current_user().company != application.position.company:
         abort(403)
     if application.status in ["selected", "rejected", "withdrawn"]:
-        abort(403)
+        abort(403, f"Application cannot be rejected in its current status: {application.status}.")
     application.update(data)
     application.status = "rejected"
     application.updated_at = datetime.now(timezone.utc)

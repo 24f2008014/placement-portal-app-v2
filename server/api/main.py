@@ -97,10 +97,6 @@ def get_industries():
 def get_positions(args):
     """Get all positions
     Can be filtered using query arguments. Filters must be in the format `?filters={"key1":"value1","key1":"value2"}`.
-
-    Allowed `filters`: `id` (=), `role` (ILIKE), `salary_min` (>=), `salary_max` (>=), `deadline` (>=), `min_cgpa` (>=), `status` (=).
-    
-    Allowed `sort_by`: `id`, `role`, `salary_min`, `salary_max`, `deadline`, `min_cgpa`, `status`.
     """
     query = db.session.query(Position).join(Company)
     if token_auth.current_user().student:
