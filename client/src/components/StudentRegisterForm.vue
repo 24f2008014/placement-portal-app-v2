@@ -72,12 +72,13 @@ async function submitForm() {
 onMounted(async () => {
     try {
         markRequiredFields();
-        const [industriesRes, branchRes] = await Promise.all([
-            api.get("/industries"),
+        const [departmentsRes, branchRes] = await Promise.all([
+            api.get("/departments"),
             api.get("/branches")
         ]);
-        departments.value = industriesRes.data;
+        departments.value = departmentsRes.data;
         branches.value = branchRes.data;
+        loading.value = false;
     } catch (error) {
         alert.addAlert(error.response.data.description, "error");
         console.error();

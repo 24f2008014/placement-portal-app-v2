@@ -2,7 +2,9 @@
 import { onMounted, ref } from "vue";
 import { api } from "@/utils/api";
 import PaginatedTable from "@/components/PaginatedTable.vue";
+import { useAlertStore } from "@/stores/alert";
 
+const alert = useAlertStore();
 const loading = ref(true);
 const stats = ref({});
 
@@ -422,7 +424,8 @@ async function getMonthlyReport() {
         alert.addAlert("Email sent.", "success");
         console.log(response.data);
     } catch (error) {
-        console.error(error.response.data.description);
+        alert.addAlert(error.response.data.description, "error");
+        console.error(error);
     }
 }
 
