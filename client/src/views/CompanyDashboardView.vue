@@ -4,7 +4,9 @@ import { api } from "@/utils/api";
 import PaginatedTable from "@/components/PaginatedTable.vue";
 import { formatDate } from "@/utils/helpers";
 import router from "@/router";
+import { useAuthStore } from "@/stores/auth";
 
+const auth = useAuthStore();
 const loading = ref(true);
 const errors = ref({});
 const status = ref();
@@ -290,7 +292,7 @@ onMounted(() => {
         </div>
         <div class="col">
             <h6 class="display-6">Company Dashboard</h6>
-            <p class="lead text-muted">See everything at a glance here.</p>
+            <p class="lead text-muted">Welcome back, {{ auth.currentUser.name }}! See everything at a glance here.</p>
         </div>
     </div>
     <hr class="mb-4">

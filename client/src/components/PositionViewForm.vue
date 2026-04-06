@@ -39,12 +39,16 @@ function getDaysUntil(d) {
 
         <div class="col">
             <h5 class="mb-2">Eligibility</h5>
-            <p class="mb-1"><i class="bi bi-dash me-2 fs-6"></i><strong>Minimum CGPA:</strong> {{ props.position.min_cgpa }}</p>
-            <p class="mb-2"><i class="bi bi-dash me-2 fs-6"></i><strong>Departments:</strong></p>
             <ul>
-                <li v-for="d in props.position.departments" :id="d.id">{{ d.name }}</li>
+                <li>Minimum CGPA: {{ props.position.min_cgpa }}</li>
+                <li>
+                    Departments:
+                    <ul>
+                        <li v-for="d in props.position.departments" :id="d.id">{{ d.name }}</li>
+                    </ul>
+                </li>
             </ul>
-            <h5 class="mb-2">Opening Date</h5>
+            <h5 class="mb-2">Posted On</h5>
             <p class="mb-4"><i class="bi bi-calendar-check fs-6 me-2"></i>{{ formatDateNoTime(props.position.created_at) }}</p>
             <h5 class="mb-2">Deadline</h5>
             <p class="mb-1"><i class="bi bi-calendar-check fs-6 me-2"></i>{{ formatDate(props.position.deadline) }} ({{ getDaysUntil(props.position.deadline) }} days left)</p>

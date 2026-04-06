@@ -39,11 +39,11 @@ onMounted(() => {
     </div>
 
     <div v-if="!loading" class="row justify-content-center">
-            <div class="col-6">
-                <PositionCreateForm v-if="status=='whitelisted'" />
-                <p v-else-if="status=='pending'">Your company's registration status is <code class="text-warning fw-bold">pending</code>. Please wait for an administrator to approve your account before listing new positions.</p>
-                <p v-else>Your company has been <code class="text-danger fw-bold">blacklisted</code>, and you can't list new positions right now.</p>
-            </div>
+        <div class="col-6">
+            <PositionCreateForm v-if="status=='whitelisted'" />
+            <p v-else-if="status=='pending'">Your company's registration status is <code class="text-warning fw-bold">pending</code>. Please wait for an administrator to approve your account before listing new positions.</p>
+            <p v-else>Your company has been <code class="text-danger fw-bold">blacklisted</code>, and you can't list new positions right now.</p>
+        </div>
     </div>
-    <div v-else>Loading...</div>
+    <template v-else><div class="spinner-border spinner-border-sm text-center ms-1"></div></template>
 </template>

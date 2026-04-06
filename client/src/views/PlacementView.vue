@@ -86,7 +86,7 @@ onMounted(() => {
             <div class="col">
                 <h6 class="text-primary-emphasis">Student Name</h6>
                 <p>{{ placement.application.student.first_name + " " + placement.application.student.last_name }}</p>
-                <h6 class="text-primary-emphasis">Student Roll No.</h6>
+                <h6 class="text-primary-emphasis">Student Roll Number</h6>
                 <p>{{ placement.application.student.roll_number }}</p>
             </div>
             <div class="col">
@@ -96,8 +96,8 @@ onMounted(() => {
                 <p>{{ placement.application.position.company.name }}</p>
             </div>
             <div class="col">
-                <h6 class="text-primary-emphasis">Salary</h6>
-                <p>{{ placement.salary }}</p>
+                <h6 class="text-primary-emphasis">Salary (Monthly)</h6>
+                <p>{{ placement.salary.toLocaleString("en-US") }}</p>
                 <h6 class="text-primary-emphasis">Joining Date</h6>
                 <p>{{ formatDateNoTime(placement.joining_date) }}</p>
             </div>
