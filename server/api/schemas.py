@@ -447,6 +447,7 @@ class StudentStatsSchema(ma.Schema):
     num_applications = fields.Integer()
     num_placements = fields.Integer()
     upcoming_interviews = fields.Nested(ApplicationSchema, many=True, dump_only=True)
+    pending_placements = fields.Nested(PlacementSchema, many=True, dump_only=True)
 
 class CompanyStatsSchema(ma.Schema):
     num_positions = fields.Integer()

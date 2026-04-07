@@ -38,7 +38,6 @@ def get_student_stats_self():
     student = token_auth.current_user().student
     num_applications = db.session.scalar(db.select(func.count()).select_from(Application).filter(Application.student_id == student.id))
     num_placements = db.session.scalar(db.select(func.count()).select_from(Placement).join(Application).filter(Application.student_id == student.id))
-
     upcoming_interviews = db.session.scalars(
         db.select(Application)
         .filter(
@@ -46,11 +45,21 @@ def get_student_stats_self():
             Application.status == "shortlisted",
             Application.interview_date > datetime.now()
         )
-    )    
+    )
+    pending_placements = db.session.scalars(
+        db.select(Placement)
+        .join(Application)
+        .filter(
+            Application.student_id == student.id,
+            Placement.status == "pending"
+        )
+    )
+
     return {
         "num_applications": num_applications,
         "num_placements": num_placements,
-        "upcoming_interviews": upcoming_interviews
+        "upcoming_interviews": upcoming_interviews,
+        "pending_placements": pending_placements
     }
 
 @student.route("/students/me", methods=["GET"])
