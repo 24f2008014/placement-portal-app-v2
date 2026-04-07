@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from "vue";
+import { onMounted, ref, computed } from "vue";
 import { api } from "@/utils/api";
 import { useRouter } from "vue-router";
 import { markRequiredFields, flattenResponse } from "@/utils/helpers";
@@ -18,6 +18,7 @@ const inputDeadline = ref();
 const inputMinCgpa = ref();
 const inputDepartments = ref([]);
 const departments = ref("");
+const inputDepartmentsValid = computed(() => inputDepartments.value.length > 0);
 
 async function submitForm() {
     errors.value = {};
@@ -51,6 +52,9 @@ onMounted(async () => {
         markRequiredFields();
         const response = await api.get("/departments");
         departments.value = response.data;
+        for (const d of departments.value) {
+            inputDepartments.value.push(d.id);
+        }
         loading.value = false;
     } catch (error) {
         alert.addAlert(error.response.data.description, "error");
@@ -102,14 +106,20 @@ onMounted(async () => {
         <div class="mb-3">
             <p class="mb-2">Eligible Departments</p>
             <hr>
-            <template v-for="d in departments">
-                <div class="form-check">
-                    <input class="form-check-input" type="checkbox" :value="d.id" :id="`d-${d.id}`" v-model="inputDepartments">
-                    <label class="form-check-label" :for="`d-${d.id}`">{{ d.name }}</label>
+            <template v-if="!loading">
+                <template v-for="d in departments">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" :value="d.id" :id="`d-${d.id}`" v-model="inputDepartments">
+                        <label class="form-check-label" :for="`d-${d.id}`">{{ d.name }}</label>
+                    </div>
+                </template>
+                <div v-if="!inputDepartmentsValid">
+                    <p class="text-danger">Please select at least one eligible department.</p>
                 </div>
             </template>
+            <div v-else><div class="spinner-border spinner-border-sm text-center ms-1"></div></div>
         </div>
 
-        <button type="submit" class="btn btn-primary mb-3" :disabled="loading">Submit</button>
+        <button type="submit" class="btn btn-primary mb-3" :disabled="loading || !inputDepartmentsValid">Submit</button>
     </form>
 </template>

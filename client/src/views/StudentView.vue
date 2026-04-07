@@ -337,7 +337,7 @@ onMounted(async () => {
                             <PaginatedTable :url="placements_endpoint" :fields="placements_fields" :item_route_name="placements_route" />
                         </div>
                     </template>
-                    <div v-else>Loading...</div>
+                    <template v-else><div class="spinner-border spinner-border-sm text-center ms-1"></div></template>
                 </div>
             </div>
         </template>
@@ -352,11 +352,11 @@ onMounted(async () => {
                             <PaginatedTable :url="company_applications_endpoint" :fields="company_applications_fields" :item_route_name="applications_route" :initial-filters="companyApplicationsFilters" />
                         </div>
                     </template>
-                    <div v-else>Loading...</div>
+                    <template v-else><div class="spinner-border spinner-border-sm text-center ms-1"></div></template>
                 </div>
             </div>
         </template>
     </template>
 
-    <div class="row mb-4" v-else><p>Loading...</p></div>
+    <template v-else><div class="spinner-border spinner-border-sm text-center ms-1"></div></template>
 </template>

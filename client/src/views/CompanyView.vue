@@ -215,5 +215,5 @@ onMounted(async () => {
         </template>
     </template>
 
-    <div class="row mb-4" v-else><p>Loading...</p></div>
+    <div class="row mb-4" v-else><div class="spinner-border spinner-border-sm text-center ms-1"></div></div>
 </template>

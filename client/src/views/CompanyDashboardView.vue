@@ -281,24 +281,26 @@ onMounted(async () => {
             <p class="lead text-muted">Welcome back, {{ auth.currentUser.name }}! See everything at a glance here.</p>
         </div>
     </div>
-    <hr class="mb-4">
 
     <template v-if="loading"><div class="spinner-border spinner-border-sm text-center ms-1"></div></template>
 
     <template v-else>
-        <div class="row">
-            <div class="col">
-                <h3>Scheduled Interviews</h3>
-                <ul v-if="stats.upcoming_interviews.length > 0">
-                    <li v-for="i in stats.upcoming_interviews">
-                        {{ i.student.first_name + " " + i.student.last_name }} on <strong>{{ formatDate(i.interview_date) }}</strong> for the position of <strong>{{ i.position.role }}</strong> <RouterLink :to="{name: 'application', params: { id: i.id } }">(view application)</RouterLink>
-                    </li>
-                </ul>
-                <p v-else>None.</p>
+        <template v-if="stats.upcoming_interviews.length > 0">
+            <hr class="mb-4">
+            <div class="row">
+                <div class="col">
+                    <h4>Scheduled Interviews</h4>
+                    <ul v-if="stats.upcoming_interviews.length > 0">
+                        <li v-for="i in stats.upcoming_interviews">
+                            {{ i.student.first_name + " " + i.student.last_name }} on <strong>{{ formatDate(i.interview_date) }}</strong> for the position of <strong>{{ i.position.role }}</strong> <RouterLink :to="{name: 'application', params: { id: i.id } }">(view application)</RouterLink>
+                        </li>
+                    </ul>
+                    <p v-else>None.</p>
+                </div>
             </div>
-        </div>
-        <hr class="mb-4">
+        </template>
 
+        <hr class="mb-4">
         <div class="row">
             <div class="col">
                 <template v-if="status=='pending'">
@@ -324,8 +326,8 @@ onMounted(async () => {
                 </template>
             </div>
         </div>
-        <hr class="mb-4">
 
+        <hr class="mb-4">
         <div class="row">
             <div class="col">
             <ul class="nav nav-tabs" id="myTab" role="tablist">
@@ -342,7 +344,7 @@ onMounted(async () => {
             </div>
 
             <div class="tab-content" id="myTabContent">
-                <div class="tab-pane fade show active" id="positions-tab-pane" role="tabpanel" aria-labelledby="positions-tab" tabindex="0">
+                <div class="tab-pane show active" id="positions-tab-pane" role="tabpanel" aria-labelledby="positions-tab" tabindex="0">
                     <div class="row mt-3">
                         <div class="col">
                             <h4 class="mb-3">Your Positions</h4>
@@ -350,7 +352,7 @@ onMounted(async () => {
                         </div>
                     </div>
                 </div>
-                <div class="tab-pane fade" id="applications-tab-pane" role="tabpanel" aria-labelledby="applications-tab" tabindex="0">
+                <div class="tab-pane" id="applications-tab-pane" role="tabpanel" aria-labelledby="applications-tab" tabindex="0">
                     <div class="row mt-3">
                         <div class="col">
                             <h4 class="mb-3">Applications Received</h4>
@@ -358,7 +360,7 @@ onMounted(async () => {
                         </div>
                     </div>
                 </div>
-                <div class="tab-pane fade" id="placements-tab-pane" role="tabpanel" aria-labelledby="placements-tab" tabindex="0">
+                <div class="tab-pane" id="placements-tab-pane" role="tabpanel" aria-labelledby="placements-tab" tabindex="0">
                     <div class="row mt-3">
                         <div class="col">
                             <h4 class="mb-3">Your Placement Offers</h4>

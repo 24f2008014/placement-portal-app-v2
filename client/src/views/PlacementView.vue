@@ -133,4 +133,5 @@ onMounted(async () => {
             </div>
         </div>
     </template>
+    <template v-else><div class="spinner-border spinner-border-sm text-center ms-1"></div></template>
 </template>

@@ -97,7 +97,7 @@ onMounted(async () => {
                     <h3 class="card-title">Average Placement</h3>
                     <p><i class="bi bi-piggy-bank-fill" style="font-size: 2rem;"></i></p>
                     <div v-if="loading" class="spinner-border spinner-border-sm text-center ms-1"></div>
-                    <p v-else class="card-text lead fs-3 fw-bold">&#8377;{{ stats.avg_placement_salary.toLocaleString("en-US") }}</p>
+                    <p v-else class="card-text lead fs-3 fw-bold">&#8377;{{ stats.avg_placement_salary ? stats.avg_placement_salary.toLocaleString("en-US") : 0 }}</p>
                 </div>
             </div>
         </div>

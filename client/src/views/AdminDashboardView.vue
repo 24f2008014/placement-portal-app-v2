@@ -547,5 +547,5 @@ onMounted(async () => {
         </div>
     </template>
 
-    <template v-else>Loading...</template>
+    <template v-else><div class="spinner-border spinner-border-sm text-center ms-1"></div></template>
 </template>
