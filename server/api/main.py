@@ -92,18 +92,21 @@ def register(data):
     return user
 
 @main.route("/departments", methods=["GET"])
+@cache.cached(30)
 @response(DepartmentSchema(many=True))
 def get_departments():
     """Get all departments"""
     return db.session.scalars(db.select(Department))
 
 @main.route("/branches", methods=["GET"])
+@cache.cached(30)
 @response(BranchSchema(many=True))
 def get_branches():
     """Get all branches"""
     return db.session.scalars(db.select(Branch))
 
 @main.route("/industries", methods=["GET"])
+@cache.cached(30)
 @response(IndustrySchema(many=True))
 def get_industries():
     """Get all industries"""
