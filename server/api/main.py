@@ -1,17 +1,36 @@
 import os
 from flask import Blueprint, abort, send_from_directory, current_app
-from api.app import db
+from api.app import db, cache
 from apifairy import authenticate, body, response, other_responses, arguments
 from api.auth import token_auth
-from api.schemas import UserSchema, RegisterSchema, StudentSchema, DepartmentSchema, BranchSchema, UpdateUserSchema, IndustrySchema, CompanySchema, PositionSchema, paginate_query, ListQueryArgsSchema, PaginatedCollection, ApplicationSchema, PlacementSchema
+from api.schemas import UserSchema, RegisterSchema, StudentSchema, DepartmentSchema, BranchSchema, UpdateUserSchema, IndustrySchema, CompanySchema, PositionSchema, paginate_query, ListQueryArgsSchema, PaginatedCollection, ApplicationSchema, PlacementSchema, HomeStatsSchema
 from api.models import User, Role, Department, Branch, Student, Industry, Position, Application, Placement, Company
 from celery.result import AsyncResult
+from sqlalchemy import func
 
 main = Blueprint("main", __name__)
 
 @main.route("/")
 def index():
     return "Hello!"
+
+@main.route("/home/stats")
+@response(HomeStatsSchema())
+@cache.cached(30)
+def get_home_stats():
+    """Get landing page statistics"""
+    num_students = db.session.scalar(db.select(func.count()).select_from(Student))
+    num_companies = db.session.scalar(db.select(func.count()).select_from(Company))
+    num_positions = db.session.scalar(db.select(func.count()).select_from(Position))
+    num_placements = db.session.scalar(db.select(func.count()).select_from(Placement))
+    avg_placement_salary = db.session.scalar(db.select(func.avg(Placement.salary)).where(Placement.salary > 0))
+    return {
+        "num_students": num_students,
+        "num_companies": num_companies,
+        "num_positions": num_positions,
+        "num_placements": num_placements,
+        "avg_placement_salary": avg_placement_salary
+    }
 
 @main.route("/result/<id>", methods=["GET"])
 @authenticate(token_auth)
@@ -74,18 +93,21 @@ def register(data):
 
 @main.route("/departments", methods=["GET"])
 @response(DepartmentSchema(many=True))
+@cache.cached(60)
 def get_departments():
     """Get all departments"""
     return db.session.scalars(db.select(Department))
 
 @main.route("/branches", methods=["GET"])
 @response(BranchSchema(many=True))
+@cache.cached(60)
 def get_branches():
     """Get all branches"""
     return db.session.scalars(db.select(Branch))
 
 @main.route("/industries", methods=["GET"])
 @response(IndustrySchema(many=True))
+@cache.cached(60)
 def get_industries():
     """Get all industries"""
     return db.session.scalars(db.select(Industry))
