@@ -262,20 +262,35 @@ onMounted(async () => {
             </div>
         </div>        
     </div>
-    <hr class="mb-4">
 
     <template v-if="!loading">
-        <div class="row">
-            <div class="col">
-                <h4>Scheduled Interviews</h4>
-                <ul v-if="stats.upcoming_interviews.length > 0">
-                    <li v-for="i in stats.upcoming_interviews">
-                        With the company <strong>{{ i.position.company.name }}</strong> on <strong>{{ formatDate(i.interview_date) }}</strong> for the position of <strong>{{ i.position.role }}</strong> <RouterLink :to="{name: 'application', params: { id: i.id } }">(view application)</RouterLink>
-                    </li>
-                </ul>
-                <p v-else>None.</p>
+        <template v-if="stats.pending_placements.length > 0">
+            <hr class="mb-4">
+            <div class="row">
+                <div class="col">
+                    <h4>Pending Placement Offers</h4>
+                    <ul>
+                        <li v-for="p in stats.pending_placements">
+                            For the role of <strong>{{ p.application.position.role }}</strong> with the company <strong>{{ p.application.position.company.name }}</strong> <RouterLink :to="{name: 'placement', params: { id: p.id } }">(view offer)</RouterLink>
+                        </li>
+                    </ul>
+                </div>
             </div>
-        </div>
+        </template>
+
+        <template v-if="stats.upcoming_interviews.length > 0">
+            <hr class="mb-4">
+            <div class="row">
+                <div class="col">
+                    <h4>Scheduled Interviews</h4>
+                    <ul>
+                        <li v-for="i in stats.upcoming_interviews">
+                            With the company <strong>{{ i.position.company.name }}</strong> on <strong>{{ formatDate(i.interview_date) }}</strong> for the position of <strong>{{ i.position.role }}</strong> <RouterLink :to="{name: 'application', params: { id: i.id } }">(view application)</RouterLink>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </template>
 
         <hr class="mb-4">
         <div class="row mb-4">
@@ -293,19 +308,19 @@ onMounted(async () => {
             <div class="col">
                 <ul class="nav nav-tabs" id="myTab" role="tablist">
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="applications-tab" data-bs-toggle="tab" data-bs-target="#applications-tab-pane" type="button" role="tab" aria-controls="applications-tab-pane" aria-selected="true">Applications ({{ stats.num_applications }})</button>
+                        <button class="nav-link active" id="positions-tab" data-bs-toggle="tab" data-bs-target="#positions-tab-pane" type="button" role="tab" aria-controls="positions-tab-pane" aria-selected="false">Positions</button>
+                    </li>                    
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="applications-tab" data-bs-toggle="tab" data-bs-target="#applications-tab-pane" type="button" role="tab" aria-controls="applications-tab-pane" aria-selected="true">Applications ({{ stats.num_applications }})</button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="placements-tab" data-bs-toggle="tab" data-bs-target="#placements-tab-pane" type="button" role="tab" aria-controls="placements-tab-pane" aria-selected="false">Placements ({{ stats.num_placements }})</button>
                     </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="positions-tab" data-bs-toggle="tab" data-bs-target="#positions-tab-pane" type="button" role="tab" aria-controls="positions-tab-pane" aria-selected="false">Positions</button>
-                    </li>                    
                 </ul>
             </div>
 
             <div class="tab-content" id="myTabContent">
-                <div class="tab-pane fade show active" id="applications-tab-pane" role="tabpanel" aria-labelledby="applications-tab" tabindex="0">
+                <div class="tab-pane" id="applications-tab-pane" role="tabpanel" aria-labelledby="applications-tab" tabindex="0">
                     <div class="row mt-3">
                         <div class="col">
                             <h4 class="mb-3">Your Applications</h4>
@@ -313,7 +328,7 @@ onMounted(async () => {
                         </div>
                     </div>
                 </div>
-                <div class="tab-pane fade" id="positions-tab-pane" role="tabpanel" aria-labelledby="positions-tab" tabindex="0">
+                <div class="tab-pane show active" id="positions-tab-pane" role="tabpanel" aria-labelledby="positions-tab" tabindex="0">
                     <div class="row mt-3">
                         <div class="col">
                             <h4 class="mb-3">Positions</h4>
@@ -322,7 +337,7 @@ onMounted(async () => {
                         </div>
                     </div>
                 </div>
-                <div class="tab-pane fade" id="placements-tab-pane" role="tabpanel" aria-labelledby="placements-tab" tabindex="0">
+                <div class="tab-pane" id="placements-tab-pane" role="tabpanel" aria-labelledby="placements-tab" tabindex="0">
                     <div class="row mt-3">
                         <div class="col">
                             <h4 class="mb-3">Your Placements</h4>
